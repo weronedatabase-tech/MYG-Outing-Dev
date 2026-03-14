@@ -1,912 +1,527 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<title>Trainee Info Card Generator</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<!-- Tailwind CSS -->
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<!-- Phosphor Icons -->
-<script src="https://unpkg.com/@phosphor-icons/web"></script>
-<!-- Google Fonts (Inter) -->
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<!-- ========================================== -->
-<!-- ENVIRONMENT CONFIGURATION                  -->
-<!-- ========================================== -->
-<script>
-// Change this variable to 'DEV' or 'PROD' to switch environments
-const ACTIVE_ENV = 'DEV';
-
-const ENV_URLS = {
-  PROD: "https://script.google.com/macros/s/AKfycbxvb1ps89oUF1i75Ba-9yCQFFoojLCmly_55HT2P6W7WkKJa3I6vLRWiDRS0kqcj5uYDw/exec",
-  DEV: "https://script.google.com/macros/s/AKfycbz5lEH75nTIX2epTYjirnSesn0Lt7HAUrczaEYTL031haBWzNaQSw9FmOowU_5jD1TY/exec"
-};
-
-const GAS_WEB_APP_URL = ENV_URLS[ACTIVE_ENV];
-</script>
-<!-- ========================================== -->
-
-<style>
-  :root { 
-    --bg-color: #f3f4f6; 
-    --text-color: #111827; 
-    --glass-bg: rgba(255, 255, 255, 0.8); 
-    --glass-border: rgba(0, 0, 0, 0.1); 
-    --glass-strong-bg: #ffffff; 
-    --input-bg: #ffffff; 
-    --input-border: #d1d5db; 
-    --input-text: #111827; 
-    --primary: #3b82f6; 
-    --primary-hover: #2563eb;
-    --success-bg: rgba(16, 185, 129, 0.1);
-    --success-border: #10b981;
-    --error-bg: rgba(239, 68, 68, 0.1);
-    --error-border: #ef4444;
-  }
-  .dark { 
-    --bg-color: #0f172a; 
-    --text-color: #e2e8f0; 
-    --glass-bg: rgba(30, 41, 59, 0.7); 
-    --glass-border: rgba(255, 255, 255, 0.1); 
-    --glass-strong-bg: rgba(15, 23, 42, 0.95); 
-    --input-bg: #1e293b; 
-    --input-border: #334155; 
-    --input-text: #ffffff; 
-    --primary: #3b82f6; 
-    --primary-hover: #60a5fa;
-    --success-bg: rgba(16, 185, 129, 0.15);
-    --error-bg: rgba(239, 68, 68, 0.15);
-  }
-
-  /* Custom Scrollbar */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background-color: var(--input-border); border-radius: 10px; }
-  ::-webkit-scrollbar-thumb:hover { background-color: var(--primary); }
-
-  body { 
-    font-family: 'Inter', sans-serif; 
-    background-color: var(--bg-color); 
-    color: var(--text-color); 
-    -webkit-tap-highlight-color: transparent; 
-    transition: background-color 0.3s, color 0.3s;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .glass { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); }
-  .glass-strong { background: var(--glass-strong-bg); }
-  
-  .fade-in { animation: fadeIn 0.3s ease-out; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-  .input-field { background: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); font-size: 0.95rem; padding: 0.75rem; border-radius: 0.5rem; width: 100%; outline: none; transition: all 0.2s; }
-  .input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); }
-
-  .btn-primary { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.5rem; width: 100%; font-size: 1.05rem; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); transition: transform 0.1s, box-shadow 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; border: none; cursor: pointer; }
-  .btn-primary:active { transform: scale(0.98); box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3); }
-  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-  .btn-secondary { background: var(--input-bg); color: var(--text-color); border: 1px solid var(--input-border); font-weight: 600; padding: 0.75rem 1.5rem; border-radius: 0.5rem; width: 100%; font-size: 1.05rem; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer; }
-  .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
-  .btn-secondary:active { transform: scale(0.98); }
-  .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-  .btn-small-pill { padding: 0.35rem 0.85rem; font-size: 0.8rem; font-weight: 600; border-radius: 9999px; background-color: transparent; border: 1px solid var(--primary); color: var(--primary); cursor: pointer; transition: all 0.2s; }
-  .btn-small-pill.active { background-color: var(--primary); color: white; }
-  .btn-small-pill:hover:not(.active) { background-color: rgba(59, 130, 246, 0.1); }
-
-  /* App Structure Layout */
-  .app-view { display: none; flex-direction: column; gap: 0.75rem; height: 100%; flex-grow: 1; overflow: hidden; animation: fadeIn 0.3s ease-in-out; }
-  .dialog-container { flex-grow: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 0.75rem 0.75rem 0.75rem; display: flex; flex-direction: column; overflow: hidden; }
-  .panels-container { display: flex; flex-direction: column; gap: 0.75rem; flex-grow: 1; overflow: hidden; }
-  @media (min-width: 768px) { .panels-container { flex-direction: row; } }
-  
-  .section-panel { background-color: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.6rem; flex: 1; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-
-  /* Checkbox Lists */
-  .checkbox-list-wrapper { overflow-y: auto; flex-grow: 1; background-color: var(--input-bg); border-radius: 0.5rem; border: 1px solid var(--input-border); padding: 0; }
-  .checkbox-list-wrapper label { display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 1rem; border-bottom: 1px solid var(--glass-border); cursor: pointer; transition: background-color 0.2s; font-size: 0.95rem; color: var(--text-color); touch-action: manipulation; }
-  .checkbox-list-wrapper label:last-child { border-bottom: none; }
-  .checkbox-list-wrapper label:hover { background-color: rgba(128, 128, 128, 0.05); }
-  .checkbox-list-wrapper input[type="checkbox"] { width: 1.25rem; height: 1.25rem; flex-shrink: 0; accent-color: var(--primary); cursor: pointer; }
-  .checkbox-list-wrapper label span { flex: 1; line-height: 1.3; }
-
-  /* Generic Checkbox */
-  .header-checkbox { width: 1.35rem; height: 1.35rem; accent-color: var(--primary); cursor: pointer; }
-
-  /* Results Styling */
-  .result-item { display: flex; gap: 0.75rem; align-items: flex-start; padding: 1rem; border-radius: 0.5rem; border: 1px solid; font-size: 0.95rem; word-break: break-word; flex-shrink: 0; }
-  .result-item.success { background-color: var(--success-bg); border-color: var(--success-border); }
-  .result-item.success a { color: var(--primary); text-decoration: underline; font-weight: 600; }
-  .result-item.error { background-color: var(--error-bg); border-color: var(--error-border); }
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MINDS MYG Outings Organiser</title>
+    <base target="_blank">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .search-results { max-height: 250px; overflow-y: auto; }
+        .modal-content { max-height: 80vh; }
+        body { -webkit-tap-highlight-color: transparent; }
+    </style>
 </head>
-<body>
+<body class="bg-slate-900 min-h-screen font-sans text-slate-200 pb-20 selection:bg-blue-500 selection:text-white">
 
-<!-- Dev Mode Banner -->
-<div id="dev-banner" class="w-full bg-red-600 text-white text-center text-xs font-bold py-1 hidden z-[1000] tracking-widest uppercase">DEV MODE</div>
+    <!-- CONFIGURATION & API HANDLER -->
+    <script>
+        // --- FRONTEND CONFIGURATION ---
+        // Change this to 'DEV' or 'PROD'
+        const FRONTEND_DEFAULT_ENV = 'DEV'; 
 
-<!-- Toast Notification -->
-<div id="toast" class="fixed top-12 left-1/2 transform -translate-x-1/2 z-[9990] glass px-5 py-3 rounded-full shadow-2xl hidden flex items-center gap-2 text-sm font-bold whitespace-nowrap transition-all duration-300">
-  <span id="toast-msg">Notification</span>
-</div>
+        // --- API ENDPOINTS ---
+        const APIS = {
+            DEV: 'https://script.google.com/macros/s/AKfycbywS4uXR4G_S-Xqvqrkohckp76SEzp78dIyOLwBp6a5pLtHjUxwGjDyo4grEsHxerta/exec',
+            PROD: 'https://script.google.com/macros/s/AKfycbwOQHiPXoVB10_T81K1mfWPZyahHFXHnrbR7KuM4GI0tQjnsaGjQMunDJWcXRP5g0aENQ/exec'
+        };
 
-<!-- Header -->
-<header class="glass sticky top-0 z-40 px-4 py-3 flex justify-between items-center shadow-sm mb-4">
-  <div class="flex items-center gap-3">
-    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-md">
-      <i class="ph-bold ph-identification-card text-white text-xl"></i>
+        // --- SET ENVIRONMENT ---
+        const currentEnv = FRONTEND_DEFAULT_ENV;
+        const ACTIVE_API_URL = APIS[currentEnv];
+
+        console.log(`Running in ${currentEnv} mode connected to: ${ACTIVE_API_URL}`);
+
+        // --- API CALLER ---
+        async function apiCall(action, data = {}) {
+            try {
+                const response = await fetch(ACTIVE_API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: action, data: data }),
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
+                });
+                
+                const json = await response.json();
+                return json;
+            } catch (error) {
+                console.error("API Error:", error);
+                return { success: false, message: "Connection Error. Please check internet." };
+            }
+        }
+    </script>
+
+    <!-- STICKY HEADER -->
+    <div class="sticky top-0 z-50 shadow-lg">
+        
+        <!-- DEV MODE BAR (Default Hidden, JS unhides if DEV) -->
+        <div id="devBar" class="hidden bg-red-600 text-white text-center text-xs font-bold py-1 border-b border-red-800">
+            DEV MODE
+        </div>
+        <script>
+            // This ensures the bar only shows if the variable above is truly 'DEV'
+            if (currentEnv === 'DEV') {
+                document.getElementById('devBar').classList.remove('hidden');
+            }
+        </script>
+
+        <nav class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700">
+            <div class="container mx-auto px-4 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="showView('landing')">
+                    <div class="bg-blue-600 p-2 rounded-lg shadow-lg shadow-blue-500/20">
+                        <i class="fa-solid fa-calendar-days text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-white leading-tight">MINDS MYG</h1>
+                        <p class="text-xs text-slate-400">Outings Organiser</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <button onclick="refreshApp()" class="text-slate-400 hover:text-white text-sm transition-colors group" title="Force Refresh Data">
+                        <i id="refreshIcon" class="fa-solid fa-arrows-rotate group-hover:text-blue-400"></i>
+                        <span class="hidden sm:inline ml-1">Refresh</span>
+                    </button>
+                    <div class="h-4 w-px bg-slate-700"></div>
+                    <button onclick="showView('landing')" class="text-slate-400 hover:text-white text-sm transition-colors">
+                        <i class="fa-solid fa-house"></i>
+                        <span class="hidden sm:inline ml-1">Home</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
     </div>
-    <div class="flex flex-col">
-      <span class="font-bold text-[1.1rem] leading-tight">Info Cards</span>
-      <span class="text-[0.65rem] opacity-60 uppercase tracking-widest leading-none">Generator Portal</span>
+
+    <!-- MAIN CONTENT -->
+    <main class="container mx-auto p-4 mt-4 max-w-xl">
+        
+        <!-- LANDING PAGE -->
+        <div id="view-landing" class="fade-in space-y-4">
+            <h2 class="text-xl font-bold text-center text-white mb-6">Select Profile</h2>
+            <div onclick="requestAccess('comm')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-blue-500/50 rounded-2xl p-6 cursor-pointer transition-all shadow-lg flex items-center gap-4 group">
+                <div class="bg-blue-900/50 p-4 rounded-xl text-blue-400 group-hover:scale-110 transition-transform"><i class="fa-solid fa-user-tie text-2xl"></i></div>
+                <div><h3 class="text-lg font-bold text-white">Comm Profile</h3><p class="text-sm text-slate-400">Create outings & scrub data <i class="fa-solid fa-lock text-xs ml-1 opacity-50"></i></p></div>
+            </div>
+            <div onclick="showView('volunteer')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-green-500/50 rounded-2xl p-6 cursor-pointer transition-all shadow-lg flex items-center gap-4 group">
+                <div class="bg-green-900/50 p-4 rounded-xl text-green-400 group-hover:scale-110 transition-transform"><i class="fa-solid fa-users text-2xl"></i></div>
+                <div><h3 class="text-lg font-bold text-white">Volunteer & Trainee</h3><p class="text-sm text-slate-400">Update attendance</p></div>
+            </div>
+            <div onclick="requestAccess('settings')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-purple-500/50 rounded-2xl p-6 cursor-pointer transition-all shadow-lg flex items-center gap-4 group">
+                <div class="bg-purple-900/50 p-4 rounded-xl text-purple-400 group-hover:scale-110 transition-transform"><i class="fa-solid fa-sliders text-2xl"></i></div>
+                <div><h3 class="text-lg font-bold text-white">Settings</h3><p class="text-sm text-slate-400">Configure attendance fields <i class="fa-solid fa-lock text-xs ml-1 opacity-50"></i></p></div>
+            </div>
+        </div>
+
+        <!-- AUTH MODAL -->
+        <div id="authModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+            <div class="bg-slate-800 w-full max-w-sm rounded-2xl border border-slate-700 p-6 shadow-2xl transform transition-all scale-100">
+                <h3 class="text-lg font-bold text-white mb-4 text-center">Restricted Access</h3>
+                <p class="text-sm text-slate-400 mb-4 text-center">Please enter the admin password.</p>
+                <form onsubmit="handleAuth(event)">
+                    <input type="password" id="adminPassword" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white text-center tracking-widest focus:border-blue-500 outline-none mb-4" placeholder="Password" required>
+                    <div id="authError" class="hidden text-red-400 text-xs text-center mb-3 font-bold">Incorrect Password</div>
+                    <div class="flex gap-2">
+                        <button type="button" onclick="closeAuthModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 rounded-lg">Cancel</button>
+                        <button type="submit" id="authBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg">Access</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- COMM VIEW -->
+        <div id="view-comm" class="hidden fade-in space-y-6">
+            <div class="flex items-center gap-2 mb-2"><button onclick="showView('landing')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-arrow-left"></i> Back</button><h2 class="text-xl font-bold text-blue-400">Comm Dashboard</h2></div>
+            <div id="commGlobalStatus" class="hidden mb-4 p-3 rounded-lg text-sm text-center"></div>
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                <h3 class="font-bold text-white mb-2"><i class="fa-solid fa-folder-plus text-blue-500 mr-2"></i>Create New Outing</h3>
+                <button onclick="openModal()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm">Create Outing</button>
+            </div>
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                <h3 class="font-bold text-white mb-2"><i class="fa-solid fa-user-group text-teal-500 mr-2"></i>Auto Pairing and Grouping</h3>
+                <div class="relative mb-3">
+                    <label class="text-[10px] text-slate-400 uppercase font-bold mb-1 block flex items-center gap-1">Select Event <span id="commSheetLoading" class="hidden"><i class="fa-solid fa-circle-notch fa-spin text-teal-500"></i></span></label>
+                    <select id="commSheetSelector" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-2 px-3 text-sm focus:border-teal-500 outline-none text-white"><option disabled selected>Loading...</option></select>
+                </div>
+                <div class="flex gap-2 mt-3">
+                    <button id="scrubBtn" onclick="handlePair()" class="flex-1 bg-slate-700 hover:bg-teal-600 hover:text-white text-teal-400 border border-teal-500/30 font-bold py-3 rounded-xl transition-all text-sm">Pair Now</button>
+                    <button id="groupBtn" onclick="handleGroup()" class="flex-1 bg-slate-700 hover:bg-purple-600 hover:text-white text-purple-400 border border-purple-500/30 font-bold py-3 rounded-xl transition-all text-sm">Group Now</button>
+                </div>
+                <div id="scrubStatus" class="hidden mt-4 p-3 bg-slate-900 rounded-xl text-xs whitespace-pre-wrap font-mono border border-slate-700"></div>
+            </div>
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                <h3 class="font-bold text-white mb-3"><i class="fa-solid fa-list-ul text-purple-500 mr-2"></i>Upcoming Outings</h3>
+                <div id="upcomingList" class="space-y-4 text-sm text-slate-400"><p class="text-xs italic"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading events...</p></div>
+            </div>
+        </div>
+
+        <!-- VOLUNTEER VIEW -->
+        <div id="view-volunteer" class="hidden fade-in space-y-6">
+            <div class="flex items-center gap-2 mb-2"><button onclick="showView('landing')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-arrow-left"></i> Back</button><h2 class="text-xl font-bold text-green-400">Attendance Update</h2></div>
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="relative">
+                    <label class="text-xs font-bold text-green-400 uppercase flex items-center gap-2">1. Select Upcoming Event <span id="volSheetLoading" class="hidden"><i class="fa-solid fa-spinner fa-spin"></i></span></label>
+                    <div class="relative mt-1">
+                        <select id="volSheetSelector" class="w-full mt-1 bg-slate-900 border border-slate-600 rounded-lg py-3 px-3 text-sm text-white focus:border-green-500 outline-none appearance-none" onchange="resetVolForm()"><option disabled selected>Loading...</option></select>
+                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-slate-500"><i class="fa-solid fa-chevron-down"></i></div>
+                        <div id="volSheetSpinner" class="absolute right-8 top-3 hidden pointer-events-none text-green-500"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
+                    </div>
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-green-400 uppercase">2. Select Type</label>
+                    <div class="flex gap-2 mt-1">
+                        <button type="button" onclick="setVolType('trainee', this)" class="vol-type-btn flex-1 bg-slate-900 border border-slate-600 hover:border-green-500 py-3 rounded-lg text-sm transition-colors text-slate-300">Trainee</button>
+                        <button type="button" onclick="setVolType('volunteer', this)" class="vol-type-btn flex-1 bg-slate-900 border border-slate-600 hover:border-green-500 py-3 rounded-lg text-sm transition-colors text-slate-300">Volunteer</button>
+                    </div>
+                </div>
+                <div id="volNameSection" class="hidden">
+                    <label class="text-xs font-bold text-green-400 uppercase">3. Search / Select Name</label>
+                    <div class="relative mt-1">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-solid fa-magnifying-glass text-slate-500"></i></div>
+                            <input type="text" id="volNameSearch" class="w-full bg-slate-900 border border-slate-600 rounded-lg py-3 pl-10 pr-10 text-sm text-white focus:border-green-500 outline-none placeholder-slate-500" placeholder="Type to search..." onfocus="autoScrollAndFocus(this)" oninput="filterNames()" autocomplete="off">
+                            <div id="nameLoader" class="absolute right-3 top-3 hidden"><div class="text-slate-400 text-xs"><i class="fa-solid fa-circle-notch fa-spin"></i></div></div>
+                            <button onclick="clearSearch()" id="clearSearchBtn" class="absolute right-3 top-3 text-slate-500 hover:text-white hidden z-20"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                        <ul id="volNameList" class="absolute z-50 w-full bg-slate-800 border-2 border-cyan-500 rounded-xl mt-2 shadow-[0_0_20px_rgba(6,182,212,0.3)] hidden max-h-60 overflow-y-auto"></ul>
+                    </div>
+                    <div id="addNewVolContainer" class="hidden mt-3 text-center">
+                        <button type="button" onclick="showAddNewForm()" class="text-sm text-green-400 hover:text-green-300 font-bold flex items-center justify-center gap-2 w-full py-2 bg-slate-700/50 rounded-lg border border-dashed border-green-500/30">
+                            <i class="fa-solid fa-user-plus"></i> ＋ Can't find your name above? Add yourself in here
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="volFormContainer" class="hidden bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                <h3 id="formTitle" class="font-bold text-white mb-4 border-b border-slate-700 pb-2">Update Details</h3>
+                <form id="attendanceForm" onsubmit="submitAttendance(event)" class="space-y-4">
+                    <div id="newVolProjectContainer" class="hidden mb-4 relative">
+                        <label class="block text-xs font-bold text-slate-400 mb-1">Project Group *</label>
+                        <div class="relative">
+                            <input type="text" id="newVolProjectSearch" name="Project" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-sm text-white focus:border-green-500 outline-none" placeholder="Search Project..." onfocus="toggleProjectList(true)" oninput="filterProjects()" autocomplete="off">
+                            <ul id="projectList" class="absolute z-50 w-full bg-slate-800 border-2 border-cyan-500 rounded-xl mt-2 shadow-[0_0_20px_rgba(6,182,212,0.3)] hidden max-h-40 overflow-y-auto"></ul>
+                        </div>
+                    </div>
+                    <div id="dynamicFields" class="grid grid-cols-1 gap-4"></div>
+                    <div id="volFormStatus" class="hidden p-3 rounded-lg text-xs text-center"></div>
+                    <button id="volSubmitBtn" type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg mt-4">Update Attendance</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- SETTINGS VIEW -->
+        <div id="view-settings" class="hidden fade-in space-y-6">
+            <div class="flex items-center gap-2 mb-2"><button onclick="showView('landing')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-arrow-left"></i> Back</button><h2 class="text-xl font-bold text-purple-400">Field Configuration</h2></div>
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                <p class="text-xs text-slate-400 mb-4">Select columns visible to volunteers (from Template).</p>
+                <div class="mb-2 text-right"><button onclick="loadSettings()" class="text-xs text-blue-400 hover:text-blue-300 underline">Refresh Configuration</button></div>
+                <div id="settingsLoader" class="hidden flex justify-center py-4"><div class="loader"></div></div>
+                <div id="settingsContent" class="hidden space-y-6">
+                    <div><h3 class="text-sm font-bold text-white bg-slate-700 p-2 rounded mb-2">Trainee Tab Columns</h3><div id="traineeColsContainer" class="grid grid-cols-2 gap-2 text-sm"></div></div>
+                    <div><h3 class="text-sm font-bold text-white bg-slate-700 p-2 rounded mb-2">Volunteer Tab Columns</h3><div id="volColsContainer" class="grid grid-cols-2 gap-2 text-sm"></div></div>
+                    <div id="settingsStatus" class="hidden p-3 rounded text-center text-xs"></div>
+                    <button onclick="saveSettings()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl shadow-lg">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- === FULL PAGE STATUS OVERLAY === -->
+    <div id="fullPageOverlay" class="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-sm hidden flex flex-col items-center justify-center p-4 transition-opacity duration-300">
+        <!-- LOADING STATE -->
+        <div id="overlayLoading" class="flex flex-col items-center">
+            <div class="w-16 h-16 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+            <h2 id="overlayLoadingText" class="text-xl font-bold text-white animate-pulse">Saving...</h2>
+        </div>
+
+        <!-- SUCCESS STATE -->
+        <div id="overlaySuccess" class="hidden flex flex-col items-center text-center scale-100 transition-transform">
+            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(34,197,94,0.4)]">
+                <i class="fa-solid fa-check text-4xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Success!</h2>
+            <p id="overlaySuccessText" class="text-slate-300 mb-8 max-w-xs text-sm">Operation completed.</p>
+            <button onclick="closeOverlay()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-10 rounded-xl border border-slate-600 shadow-lg transition-all transform hover:scale-105">
+                Close
+            </button>
+        </div>
+        
+        <!-- ERROR STATE -->
+         <div id="overlayError" class="hidden flex flex-col items-center text-center">
+            <div class="w-20 h-20 bg-red-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(239,68,68,0.4)]">
+                <i class="fa-solid fa-xmark text-4xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Error</h2>
+            <p id="overlayErrorText" class="text-red-200 mb-8 max-w-xs text-sm">Something went wrong.</p>
+            <button onclick="closeOverlay()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-10 rounded-xl border border-slate-600 shadow-lg transition-all transform hover:scale-105">
+                Close
+            </button>
+        </div>
     </div>
-  </div>
-  <button onclick="toggleTheme()" class="p-2 rounded-full bg-gray-500/10 hover:bg-gray-500/20 text-lg border border-gray-500/20 transition-colors" title="Toggle Theme">
-    🌗
-  </button>
-</header>
 
-<div class="dialog-container">
-
-  <!-- Loader View -->
-  <div id="loader" class="app-view" style="display: flex; justify-content: center; align-items: center; flex-direction: column;">
-    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500 mb-4"></div>
-    <span id="loader-message" class="opacity-70 font-medium animate-pulse text-lg">Initializing...</span>
-  </div>
-
-  <!-- Landing / Login View -->
-  <div id="landing-page" class="app-view items-center justify-center pb-20">
-    <div class="glass p-6 md:p-8 rounded-2xl w-full max-w-md shadow-2xl text-center">
-      <h2 class="text-xl font-bold mb-2">Select Volunteer Profile</h2>
-      <p class="opacity-70 mb-6 text-sm">Choose your access level to begin generating trainee cards.</p>
-      
-      <div class="flex flex-col gap-3">
-          <button type="button" class="btn-primary" onclick="promptForPassword('Regular Volunteer')">
-            <i class="ph-bold ph-user text-xl"></i> Regular Volunteer
-          </button>
-          <button type="button" class="btn-primary" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);" onclick="promptForPassword('Adhoc Volunteer')">
-            <i class="ph-bold ph-users-three text-xl"></i> Adhoc / Exposure Session
-          </button>
-          
-          <div class="border-t border-gray-300 dark:border-gray-700 my-3"></div>
-          
-          <button type="button" id="settingsButton" class="btn-secondary" onclick="promptForPassword('Settings')">
-            <i class="ph-bold ph-gear text-xl"></i> Admin Settings
-          </button>
-      </div>
+    <!-- REMINDER MODAL -->
+    <div id="reminderModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 w-full max-w-lg rounded-2xl border border-slate-700 flex flex-col max-h-[90vh] shadow-2xl">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-white font-bold"><i class="fa-regular fa-message mr-2 text-blue-400"></i>Reminder Message</h3>
+                <button onclick="closeReminderModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-4 flex-grow overflow-y-auto">
+                <p class="text-xs text-slate-400 mb-2">Copy this message to send to volunteers:</p>
+                <textarea id="modalReminderText" class="w-full h-64 bg-slate-900 border border-slate-600 rounded-lg p-3 text-sm text-slate-300 font-mono resize-none focus:border-blue-500 outline-none" readonly></textarea>
+            </div>
+            <div class="p-4 border-t border-slate-700 flex justify-end gap-2">
+                <button onclick="closeReminderModal()" class="px-4 py-2 text-slate-300 hover:text-white text-sm font-bold">Close</button>
+                <button onclick="copyFromModal(this)" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold flex items-center gap-2">
+                    <i class="fa-regular fa-copy"></i> Copy Message
+                </button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <!-- Main App View -->
-  <main id="main-app-content" class="app-view">
+    <!-- CREATE MODAL -->
+    <div id="createModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-2 opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-800 w-full max-w-2xl rounded-2xl border border-slate-700 flex flex-col max-h-[95vh] transform scale-95 transition-transform" id="modalPanel"><div class="p-4 border-b border-slate-700 flex justify-between items-center"><h3 class="text-white font-bold">New Outing</h3><button onclick="closeModal()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button></div><div class="p-6 overflow-y-auto"><form id="outingForm" onsubmit="handleCreate(event)" class="space-y-4"><input class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white" id="eventName" placeholder="Event Name" required><input type="text" id="eventDate" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white placeholder-slate-400 [color-scheme:dark]" placeholder="Event Date" onfocus="(this.type='date')" onblur="formatDateDisplay(this)" required><div class="text-xs text-slate-400 uppercase font-bold">Meeting (Loc & Time)</div><div class="grid grid-cols-3 gap-2"><input name="meetingLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 1"><input name="meetingTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="meetingLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 2"><input name="meetingTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="meetingLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 3"><input name="meetingTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="meetingLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 4"><input name="meetingTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="text-xs text-slate-400 uppercase font-bold">Dismissal (Loc & Time)</div><div class="grid grid-cols-3 gap-2"><input name="dismissalLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 1"><input name="dismissalTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="dismissalLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 2"><input name="dismissalTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="dismissalLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 3"><input name="dismissalTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="dismissalLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 4"><input name="dismissalTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div id="createStatusArea" class="hidden text-center text-xs p-2"></div><button id="submitCreateBtn" type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Generate</button></form></div></div>
+    </div>
+
+   <!-- JAVASCRIPT -->
+   <script>
+    let currentSheetList = [];
+    let selectedVolType = null;
+    let allNames = [];
+    let allProjects = []; 
+    let currentVolTypeRequest = null;
+    let isAdminAuthenticated = false;
+    let pendingView = "";
+    let currentActiveView = 'landing';
+    let outingReminders = {};
+
+    function showView(viewId) { currentActiveView = viewId; document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden')); document.getElementById('view-' + viewId).classList.remove('hidden'); document.getElementById('volFormStatus').classList.add('hidden'); document.getElementById('scrubStatus').classList.add('hidden'); document.getElementById('createStatusArea').classList.add('hidden'); document.getElementById('settingsStatus').classList.add('hidden'); if (viewId === 'comm' || viewId === 'volunteer') loadSheets(viewId); if (viewId === 'settings') loadSettings(); }
+    function refreshApp() { const icon = document.getElementById('refreshIcon'); icon.classList.add('fa-spin'); if (currentActiveView === 'comm') loadSheets('comm'); else if (currentActiveView === 'volunteer') { loadSheets('volunteer'); resetVolForm(); } else if (currentActiveView === 'settings') loadSettings(); setTimeout(() => icon.classList.remove('fa-spin'), 1000); }
+    function requestAccess(viewId) { if (isAdminAuthenticated) { showView(viewId); } else { pendingView = viewId; document.getElementById('authModal').classList.remove('hidden'); document.getElementById('adminPassword').value = ""; document.getElementById('authError').classList.add('hidden'); document.getElementById('adminPassword').focus(); } }
+    function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); pendingView = ""; }
+    function handleAuth(e) { e.preventDefault(); const pwd = document.getElementById('adminPassword').value; const btn = document.getElementById('authBtn'); btn.disabled = true; btn.innerText = "Checking..."; apiCall('verifyAdminPassword', pwd).then(isValid => { btn.disabled = false; btn.innerText = "Access"; if (isValid) { isAdminAuthenticated = true; const target = pendingView; closeAuthModal(); if(target) showView(target); } else { document.getElementById('authError').classList.remove('hidden'); document.getElementById('adminPassword').value = ""; } }); }
     
-    <!-- App V1 Content (Regular) -->
-    <div id="app-v1-content" class="app-view">
-      <div class="panels-container">
-          
-          <!-- Trainee Panel -->
-          <div class="section-panel">
-             <div class="section-header">
-                 <div class="flex items-center gap-2">
-                   <input type="checkbox" id="checkAllTrainees" class="header-checkbox" title="Select/Deselect All">
-                   <h2 class="section-title">Select Trainee(s)</h2>
-                 </div>
-                 <span id="traineeCountText" class="text-xs font-bold px-2 py-1 rounded-full bg-gray-500/10 text-gray-500 border border-gray-500/20">0 / 0</span>
-             </div>
-             <div class="relative">
-               <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-               <input type="text" id="traineeSearchV1" class="input-field pl-10" placeholder="Search trainees..." onkeyup="filterList('traineeSearchV1', 'traineeSelectionContainer')">
-             </div>
-             <div class="checkbox-list-wrapper shadow-inner">
-                 <div id="traineeSelectionContainer" class="flex flex-col"></div>
-             </div>
-          </div>
-
-          <!-- Fields Panel -->
-          <div class="section-panel" id="field-selection-section">
-             <div class="section-header">
-                 <div class="flex items-center gap-2">
-                  <input type="checkbox" id="checkAllFields" class="header-checkbox" title="Select/Deselect All">
-                  <h2 class="section-title">Select Fields</h2>
-                 </div>
-                 <button type="button" id="defaultFieldsButton" class="btn-small-pill">Default Fields</button>
-             </div>
-             <div class="relative">
-               <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-               <input type="text" id="fieldSearchV1" class="input-field pl-10" placeholder="Search fields..." onkeyup="filterList('fieldSearchV1', 'fieldSelectionContainer')">
-             </div>
-             <div class="checkbox-list-wrapper shadow-inner">
-                 <div id="fieldSelectionContainer" class="flex flex-col"></div>
-             </div>
-          </div>
-      </div>
-      
-      <div class="flex flex-col md:flex-row-reverse gap-3 mt-2 shrink-0">
-         <button type="button" id="generateButton" class="btn-primary flex-grow" onclick="handleGenerate()">
-           <i class="ph-bold ph-magic-wand text-xl"></i> Generate Card(s)
-         </button>
-         <button type="button" id="backToProfilesButtonV1" class="btn-secondary md:w-32" onclick="goToLandingPage()">
-           <i class="ph-bold ph-arrow-left text-xl"></i> Back
-         </button>
-     </div>
-    </div>
-
-    <!-- App V2 Content (Adhoc) -->
-    <div id="app-v2-content" class="app-view">
-      <div class="section-panel h-full">
-         <div class="section-header border-b border-gray-200 dark:border-gray-700 pb-3 mb-2">
-             <div class="flex items-center gap-2">
-               <input type="checkbox" id="checkAllTraineesV2" class="header-checkbox" title="Select/Deselect All">
-               <h2 class="text-lg font-bold">Select Trainee(s)</h2>
-             </div>
-             <span id="traineeCountTextV2" class="text-xs font-bold px-2 py-1 rounded-full bg-gray-500/10 text-gray-500 border border-gray-500/20">0 / 0</span>
-         </div>
-         <div class="relative mb-2">
-           <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-           <input type="text" id="traineeSearchV2" class="input-field pl-10" placeholder="Search trainees..." onkeyup="filterList('traineeSearchV2', 'traineeSelectionContainerV2')">
-         </div>
-         <div class="checkbox-list-wrapper shadow-inner">
-             <div id="traineeSelectionContainerV2" class="flex flex-col"></div>
-         </div>
-      </div>
-      
-      <div class="flex flex-col md:flex-row-reverse gap-3 mt-2 shrink-0">
-         <button type="button" id="generateButtonV2" class="btn-primary flex-grow" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);" onclick="handleGenerateV2()">
-           <i class="ph-bold ph-magic-wand text-xl"></i> Generate Card(s)
-         </button>
-         <button type="button" id="backToProfilesButtonV2" class="btn-secondary md:w-32" onclick="goToLandingPage()">
-           <i class="ph-bold ph-arrow-left text-xl"></i> Back
-         </button>
-     </div>
-    </div>
-  </main>
-
-  <!-- Generation Results View -->
-  <div id="app-results-view" class="app-view">
-    <div class="section-panel h-full">
-       <div class="section-header border-b border-gray-200 dark:border-gray-700 pb-3 mb-2"> 
-         <h2 class="text-lg font-bold flex items-center gap-2"><i class="ph-bold ph-check-circle text-green-500 text-xl"></i> Generation Results</h2> 
-       </div>
-       <div id="resultMessage" class="result-list bg-gray-50 dark:bg-gray-800/50 p-2 rounded-lg"></div>
-    </div>
-    
-    <div class="flex flex-col md:flex-row-reverse gap-3 mt-2 shrink-0">
-       <button type="button" id="backToSelectionsButton" class="btn-primary flex-grow" onclick="backToSelections()">
-         <i class="ph-bold ph-arrow-u-up-left text-xl"></i> Back to Selections
-       </button>
-       <button type="button" id="backToProfilesButtonResults" class="btn-secondary flex-grow" onclick="goToLandingPage()">
-         <i class="ph-bold ph-house text-xl"></i> Main Menu
-       </button>
-   </div>
-  </div>
-
-  <!-- Settings View -->
-  <div id="settings-page" class="app-view">
-   <div class="panels-container">
-       
-       <!-- Regular Settings -->
-       <div class="section-panel">
-           <div class="section-header">
-               <div class="flex items-center gap-2">
-                 <input type="checkbox" id="checkAllSettingsRegular" class="header-checkbox">
-                 <h2 class="font-bold text-blue-500">Regular Fields</h2>
-               </div>
-           </div>
-           <div class="relative">
-             <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-             <input type="text" id="settingsRegularSearch" class="input-field pl-10" placeholder="Search fields..." onkeyup="filterList('settingsRegularSearch', 'settings-regular-fields')">
-           </div>
-           <div class="checkbox-list-wrapper shadow-inner"><div id="settings-regular-fields" class="flex flex-col"></div></div>
-       </div>
-
-       <!-- Adhoc Settings -->
-       <div class="section-panel">
-           <div class="section-header">
-               <div class="flex items-center gap-2">
-                 <input type="checkbox" id="checkAllSettingsAdhoc" class="header-checkbox">
-                 <h2 class="font-bold text-purple-500">Adhoc Fields</h2>
-               </div>
-           </div>
-           <div class="relative">
-             <i class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-             <input type="text" id="settingsAdhocSearch" class="input-field pl-10" placeholder="Search fields..." onkeyup="filterList('settingsAdhocSearch', 'settings-adhoc-fields')">
-           </div>
-           <div class="checkbox-list-wrapper shadow-inner"><div id="settings-adhoc-fields" class="flex flex-col"></div></div>
-       </div>
-
-       <!-- Password Settings -->
-       <div class="section-panel">
-           <div class="section-header border-b border-gray-200 dark:border-gray-700 pb-2">
-               <h2 class="font-bold text-gray-700 dark:text-gray-300"><i class="ph-bold ph-lock-key mr-1"></i> Change Passwords</h2>
-           </div>
-           <div class="flex-grow overflow-y-auto pr-2 space-y-4 pt-2">
-               <div>
-                 <label class="block text-xs font-bold opacity-60 mb-1">Regular Volunteer</label>
-                 <div class="relative">
-                   <input type="password" id="new-reg-pass" class="input-field pr-10">
-                   <button type="button" onclick="togglePasswordIcon(this, 'new-reg-pass')" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><i class="ph-bold ph-eye-slash text-lg"></i></button>
-                 </div>
-               </div>
-               <div class="border-t border-gray-200 dark:border-gray-700"></div>
-               <div>
-                 <label class="block text-xs font-bold opacity-60 mb-1">Adhoc Volunteer</label>
-                 <div class="relative">
-                   <input type="password" id="new-adhoc-pass" class="input-field pr-10">
-                   <button type="button" onclick="togglePasswordIcon(this, 'new-adhoc-pass')" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><i class="ph-bold ph-eye-slash text-lg"></i></button>
-                 </div>
-               </div>
-               <div class="border-t border-gray-200 dark:border-gray-700"></div>
-               <div>
-                 <label class="block text-xs font-bold opacity-60 mb-1">New Settings Admin</label>
-                 <div class="relative">
-                   <input type="password" id="new-settings-pass" class="input-field pr-10">
-                   <button type="button" onclick="togglePasswordIcon(this, 'new-settings-pass')" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><i class="ph-bold ph-eye-slash text-lg"></i></button>
-                 </div>
-               </div>
-               <div>
-                 <label class="block text-xs font-bold opacity-60 mb-1">Confirm Settings Admin</label>
-                 <div class="relative">
-                   <input type="password" id="confirm-settings-pass" class="input-field pr-10">
-                   <button type="button" onclick="togglePasswordIcon(this, 'confirm-settings-pass')" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400"><i class="ph-bold ph-eye-slash text-lg"></i></button>
-                 </div>
-               </div>
-               <p id="password-change-error" class="text-red-500 text-sm font-bold text-center"></p>
-               <button type="button" class="btn-secondary text-sm py-2" onclick="handleUpdatePasswords()"><i class="ph-bold ph-floppy-disk"></i> Save Passwords Only</button>
-           </div>
-       </div>
-   </div>
-   
-   <div class="flex flex-col md:flex-row-reverse gap-3 mt-2 shrink-0">
-       <button type="button" class="btn-primary bg-green-600 hover:bg-green-700 md:flex-grow" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="handleSaveSettings()">
-         <i class="ph-bold ph-floppy-disk text-xl"></i> Save Field Settings
-       </button>
-       <button type="button" class="btn-secondary md:w-32" onclick="goToLandingPage()">
-         <i class="ph-bold ph-x text-xl"></i> Cancel
-       </button>
-   </div>
-  </div>
-</div>
-
-<!-- Password Modal Overlay -->
-<div id="password-modal" class="modal-overlay">
-  <!-- Click background to close -->
-  <div class="absolute inset-0 bg-gray-900 bg-opacity-50" onclick="closePasswordModal()"></div>
-  
-  <div class="glass-strong p-6 rounded-2xl w-full max-w-sm shadow-2xl relative z-10 mx-4">
-   <div class="flex justify-between items-center mb-4">
-     <h3 id="password-modal-title" class="text-lg font-bold">Enter Password</h3>
-     <button onclick="closePasswordModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="ph-bold ph-x text-xl"></i></button>
-   </div>
-   
-   <p id="password-modal-error" class="text-red-500 text-sm font-bold mb-2 hidden">Invalid password</p>
-   
-   <form onsubmit="event.preventDefault(); handlePasswordSubmit();">
-     <div class="relative mb-6">
-       <input id="password-input" type="password" class="input-field text-center tracking-widest text-xl pr-10" placeholder="••••••••" oninput="document.getElementById('password-modal-error').classList.add('hidden')">
-       <button type="button" onclick="togglePasswordIcon(this, 'password-input')" class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-primary"><i class="ph-bold ph-eye-slash text-xl"></i></button>
-     </div>
-     <div class="flex gap-3">
-         <button type="button" class="btn-secondary py-2" onclick="closePasswordModal()">Cancel</button>
-         <button type="submit" class="btn-primary py-2">Unlock</button>
-     </div>
-   </form>
-  </div>
-</div>
-
-<script>
-// ==========================================
-// THEME & UTILITY LOGIC
-// ==========================================
-function toggleTheme(save = true) {
-  const html = document.documentElement;
-  const isDark = html.classList.toggle('dark');
-  if (save) localStorage.setItem('theme', isDark ? 'dark' : 'light');
-}
-
-function togglePasswordIcon(btn, inputId) {
-  const input = document.getElementById(inputId);
-  const icon = btn.querySelector('i');
-  const isPass = input.type === 'password';
-  input.type = isPass ? 'text' : 'password';
-  icon.classList.replace(isPass ? 'ph-eye-slash' : 'ph-eye', isPass ? 'ph-eye' : 'ph-eye-slash');
-}
-
-function showToast(msg, isError = false) {
-  const el = document.getElementById('toast');
-  el.innerText = msg;
-  
-  // Base classes
-  el.className = `fixed top-12 left-1/2 transform -translate-x-1/2 z-[9990] glass px-5 py-3 rounded-full shadow-2xl flex items-center gap-2 text-sm font-bold whitespace-nowrap transition-all duration-300`;
-  
-  if (isError) {
-    el.classList.add("text-red-500", "border-red-500", "bg-red-500/10");
-  } else {
-    el.classList.add("text-blue-500", "border-blue-500", "bg-blue-500/10");
-  }
-  
-  // Clear any existing timeout
-  if(window.toastTimer) clearTimeout(window.toastTimer);
-  
-  window.toastTimer = setTimeout(() => {
-    el.classList.add('hidden');
-  }, 3500);
-}
-
-// Initialize Theme
-if (localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
-
-// ==========================================
-// APP LOGIC
-// ==========================================
-let availableFields =[], allTrainees =[], appSettings = {};
-let totalTrainees = 0, previousAppView = '', selectedProfileForAppV1 = 'Regular Volunteer';
-let profileOrSettingsToAuth = '', currentProfile = '';
-let areDefaultsSelected = true;
-
-// Original constraints mapped from backend
-const fieldsToExclude =["Project", "Trainee's Short Name", "Links for House Visit", "Map Link to Trainee's House", "SGEnable Concession Card CAN Number", "Links", "Contact Details (Home / Office / Mobile)", "Trainee's Photo"];
-const fieldNameUpdates = { "Primary Contact Name": "Contact 1 Relation (Name)", "Contact 3 Relation / Name": "Contact 3 Relation (Name)", "Age (Current Year)": "Age", "Spoken Language": "Spoken Language / Dialect" };
-let defaultFieldHeadersForAppV2Values =[];
-
-/**
- * Utility function to handle requests to the GAS backend.
- */
-async function callBackend(action, payload = {}) {
-  try {
-    const response = await fetch(GAS_WEB_APP_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, payload })
-    });
-    
-    const rawText = await response.text();
-    let result;
-    try {
-      result = JSON.parse(rawText);
-    } catch (e) {
-      if (rawText.trim().startsWith('<')) {
-        throw new Error(`Received HTML page from ${ACTIVE_ENV}. Check Google Apps Script "Who has access" settings.`);
-      }
-      throw new Error("Invalid response format from server.");
+    // --- OVERLAY LOGIC ---
+    function showOverlay(type, msg) {
+        document.getElementById('fullPageOverlay').classList.remove('hidden');
+        document.getElementById('overlayLoading').classList.add('hidden');
+        document.getElementById('overlaySuccess').classList.add('hidden');
+        document.getElementById('overlayError').classList.add('hidden');
+        
+        if (type === 'loading') {
+            document.getElementById('overlayLoading').classList.remove('hidden');
+            document.getElementById('overlayLoadingText').innerText = msg || "Processing...";
+        } else if (type === 'success') {
+            document.getElementById('overlaySuccess').classList.remove('hidden');
+            document.getElementById('overlaySuccessText').innerText = msg;
+        } else {
+            document.getElementById('overlayError').classList.remove('hidden');
+            document.getElementById('overlayErrorText').innerText = msg;
+        }
     }
-    if (!result.success) throw new Error(result.error);
-    return result.data;
-  } catch (error) {
-    if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
-       throw new Error("Connection failed/timed out. Backend permissions might be wrong, or generation took too long.");
+
+    function closeOverlay() {
+        document.getElementById('fullPageOverlay').classList.add('hidden');
     }
-    throw error;
-  }
-}
 
-function filterList(inputId, containerId) {
- const input = document.getElementById(inputId);
- const filter = input.value.toUpperCase();
- const container = document.getElementById(containerId);
- const items = container.getElementsByTagName('label');
- let allVisibleAreChecked = true;
- let visibleCount = 0;
- for (let i = 0; i < items.length; i++) {
-   const span = items[i].getElementsByTagName('span')[0];
-   if (span) {
-     const txtValue = span.textContent || span.innerText;
-     if (txtValue.toUpperCase().indexOf(filter) > -1) {
-       items[i].style.display = "flex";
-       visibleCount++;
-       if (!items[i].querySelector('input').checked) allVisibleAreChecked = false;
-     } else {
-       items[i].style.display = "none";
-     }
-   }
- }
- let checkAllBox;
- if (containerId.includes('traineeSelectionContainerV2')) checkAllBox = document.getElementById('checkAllTraineesV2');
- else if (containerId.includes('traineeSelectionContainer')) checkAllBox = document.getElementById('checkAllTrainees');
- else if (containerId.includes('fieldSelectionContainer')) checkAllBox = document.getElementById('checkAllFields');
- else if (containerId.includes('settings-regular-fields')) checkAllBox = document.getElementById('checkAllSettingsRegular');
- else if (containerId.includes('settings-adhoc-fields')) checkAllBox = document.getElementById('checkAllSettingsAdhoc');
- if (checkAllBox) checkAllBox.checked = visibleCount > 0 && allVisibleAreChecked;
-}
+    function showFlashMessage(elementId, message, type) { const el = document.getElementById(elementId); el.innerText = message; el.classList.remove('hidden', 'bg-green-900/20', 'text-green-400', 'border-green-500/30', 'bg-red-900/20', 'text-red-400', 'border-red-500/30'); if (type === 'success') { el.classList.add('bg-green-900/20', 'text-green-400', 'border', 'border-green-500/30'); } else { el.classList.add('bg-red-900/20', 'text-red-400', 'border', 'border-red-500/30'); } el.classList.remove('hidden'); setTimeout(() => { el.classList.add('hidden'); }, 5000); }
+    function formatDateDisplay(input) { const val = input.value; if(!val) { input.type='text'; return; } const date = new Date(val); if(isNaN(date.getTime())) { input.type='text'; return; } const day = date.getDate().toString().padStart(2, '0'); const month = date.toLocaleString('default', { month: 'short' }); const year = date.getFullYear(); input.type = 'text'; input.value = `${day} ${month} ${year}`; }
 
-/**
-* Main entry point utilizing DOMContentLoaded
-*/
-document.addEventListener('DOMContentLoaded', () => {
- if (ACTIVE_ENV === 'DEV') {
-   document.getElementById('dev-banner').style.display = 'block';
- }
- 
- setLoadingState(true, 'Connecting to Server...');
- callBackend('getInitialData')
-   .then(data => {
-     appSettings = data.appSettings;
-     allTrainees = data.allTrainees;
-     availableFields = data.availableFields;
-     setLoadingState(false);
-     switchView('landing-page');
-   })
-   .catch(err => {
-     showError(err.message);
-     document.getElementById('loader-message').innerHTML = `<span class="text-red-500 font-bold">Error:</span> ${err.message}`;
-     document.querySelector('.spinner').style.display = 'none';
-   });
-});
+    // --- LOAD SHEETS ---
+    function loadSheets(viewId) {
+        const selectorId = viewId === 'comm' ? 'commSheetSelector' : 'volSheetSelector';
+        const loadingId = viewId === 'comm' ? 'commSheetSpinner' : 'volSheetSpinner';
+        const selector = document.getElementById(selectorId);
+        const spinner = document.getElementById(loadingId);
+        const listContainer = document.getElementById('upcomingList');
+        selector.innerHTML = '<option disabled selected>↻ Searching events...</option>';
+        selector.disabled = true;
+        if(spinner) spinner.classList.remove('hidden');
+        if(viewId === 'comm' && listContainer) listContainer.innerHTML = '<p class="text-xs italic"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading events...</p>';
 
-function switchView(viewId) {
- document.querySelectorAll('.app-view').forEach(v => v.style.display = 'none');
- document.getElementById(viewId).style.display = 'flex';
-}
+        apiCall('getRecentOutingSheets', null).then(res => {
+            if(spinner) spinner.classList.add('hidden');
+            selector.disabled = false;
+            selector.innerHTML = '';
+            
+            if(viewId === 'comm' && listContainer) {
+                listContainer.innerHTML = '';
+                outingReminders = {}; 
+                if(res.success && res.data.length > 0) {
+                    let allCards = '';
+                    res.data.forEach((item, index) => {
+                        allCards += `
+                        <div class="flex flex-col gap-2 p-4 bg-slate-700/50 rounded-xl border border-slate-600 shadow-md relative">
+                           <div class="flex justify-between items-start">
+                             <div><div class="font-bold text-white text-sm">${item.displayName}</div><div class="text-slate-400 text-xs">${item.formattedDate}</div></div>
+                             <div class="flex gap-2 text-xs"><a href="${item.folderUrl}" target="_blank" class="text-blue-400 hover:text-blue-300"><i class="fa-regular fa-folder-open"></i></a><a href="${item.sheetUrl}" target="_blank" class="text-green-400 hover:text-green-300"><i class="fa-regular fa-file-excel"></i></a></div>
+                           </div>
+                           <div id="stats-${index}" class="text-xs text-slate-500 animate-pulse mt-2">Loading stats...</div>
+                           <div id="btn-group-${index}" class="hidden flex gap-2 mt-2 pt-2 border-t border-slate-600/50">
+                               <button onclick="openReminderModal('${index}')" class="flex-1 bg-slate-800 hover:bg-slate-600 text-slate-300 text-xs py-2 px-3 rounded border border-slate-600 transition-colors"><i class="fa-regular fa-message mr-1"></i> Reminder Message</button>
+                               <button onclick="copyReminderDirect('${index}', this)" class="bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white text-xs py-2 px-3 rounded border border-slate-600 transition-colors"><i class="fa-regular fa-copy"></i></button>
+                           </div>
+                        </div>`;
+                    });
+                    listContainer.innerHTML = allCards;
+                    res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
+                } else {
+                    listContainer.innerHTML = '<p class="text-xs text-slate-500 italic">No upcoming outings found.</p>';
+                }
+            }
+            if(res.success && res.data.length > 0) {
+                currentSheetList = res.data;
+                res.data.forEach(item => {
+                    let opt = document.createElement('option');
+                    opt.value = item.sheetUrl;
+                    opt.text = item.displayName;
+                    selector.appendChild(opt);
+                });
+                selector.selectedIndex = 0;
+                if(viewId === 'volunteer') resetVolForm();
+            } else {
+                selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+            }
+        });
+    }
 
-function setLoadingState(isLoading, message = 'Loading...') {
- document.querySelectorAll('button, input').forEach(el => el.disabled = isLoading);
- if (isLoading) {
-   document.getElementById('loader-message').textContent = message;
-   document.querySelector('.spinner').style.display = 'block'; // Reset spinner if it was hidden
-   switchView('loader');
- }
-}
+    function fetchOutingStats(url, index) {
+        apiCall('getOutingDetails', url).then(res => {
+            const container = document.getElementById(`stats-${index}`);
+            const btnGroup = document.getElementById(`btn-group-${index}`);
+            if(res.success) {
+                let html = '<table class="w-full text-[10px] text-left border-collapse"><tr class="text-slate-400 border-b border-slate-600"><th>Proj</th><th class="text-center">Trainees</th><th class="text-center">CG</th><th class="text-center">Vols</th></tr>';
+                const sortedKeys = Object.keys(res.stats).sort();
+                if(sortedKeys.length === 0) {
+                    html += '<tr><td colspan="4" class="text-center py-2 text-slate-500 italic">No data yet</td></tr>';
+                } else {
+                    for(const proj of sortedKeys) {
+                        const d = res.stats[proj];
+                        html += `<tr class="border-b border-slate-600/50 last:border-0"><td class="py-1 font-bold text-slate-300">${proj}</td><td class="text-center text-slate-400"><span class="text-white">${d.tY}</span>/${d.tTot}</td><td class="text-center text-slate-400 text-white">${d.cY}</td><td class="text-center text-slate-400"><span class="text-white">${d.vY}</span>/${d.vTot}</td></tr>`;
+                    }
+                }
+                html += '</table>';
+                container.innerHTML = html;
+                container.classList.remove('animate-pulse');
+                
+                let msg = "";
+                if(res.pending && res.pending.length > 0) {
+                    const list = res.pending.join('\n');
+                    msg = `Hello👋, gentle reminder for volunteers of these trainees to update their attendance by tomorrow:\n${list}\n\nVolunteers please update your own attendance as well, Thank You!!🙏`;
+                } else {
+                    msg = "Great news! All trainees have updated their attendance.\n\nVolunteers please ensure your own attendance is updated too, Thank You!!🙏";
+                }
+                outingReminders[index] = msg;
+                if(btnGroup) btnGroup.classList.remove('hidden');
+            } else {
+                container.innerHTML = '<span class="text-red-400">Error loading stats</span>';
+            }
+        });
+    }
 
-function promptForPassword(target) {
- profileOrSettingsToAuth = target;
- const title = document.getElementById('password-modal-title');
- const input = document.getElementById('password-input');
- const error = document.getElementById('password-modal-error');
- let displayName = target === 'Adhoc Volunteer' ? 'Adhoc Volunteer / Exposure' : target;
- title.textContent = `Login: ${displayName}`;
- error.classList.add('hidden');
- input.value = '';
- input.type = 'password'; // Reset to hidden
- document.querySelector('#password-modal i').className = 'ph-bold ph-eye-slash text-xl';
- document.getElementById('password-modal').style.display = 'flex';
- 
- setTimeout(() => { try { input.focus(); } catch(e) {} }, 100);
-}
+    function openReminderModal(index) {
+        const msg = outingReminders[index];
+        if(!msg) return;
+        document.getElementById('modalReminderText').value = msg;
+        document.getElementById('reminderModal').classList.remove('hidden');
+    }
+    function closeReminderModal() { document.getElementById('reminderModal').classList.add('hidden'); }
+    function copyFromModal(btn) { performCopy(document.getElementById('modalReminderText').value, btn); }
+    function copyReminderDirect(index, btn) { performCopy(outingReminders[index], btn); }
+    function performCopy(text, btn) {
+        navigator.clipboard.writeText(text).then(() => {
+            const original = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+            btn.classList.add('text-green-400', 'border-green-500');
+            setTimeout(() => {
+                btn.innerHTML = original;
+                btn.classList.remove('text-green-400', 'border-green-500');
+            }, 2000);
+        });
+    }
 
-function closePasswordModal() {
- document.getElementById('password-modal').style.display = 'none';
- document.activeElement.blur();
-}
-
-function handlePasswordSubmit() {
- const password = document.getElementById('password-input').value;
- const errorEl = document.getElementById('password-modal-error');
- if (!password) {
-   errorEl.textContent = 'Password cannot be empty.';
-   errorEl.classList.remove('hidden');
-   return;
- }
- 
- const submitBtn = document.querySelector('#password-modal button[type="submit"]');
- const originalText = submitBtn.innerText;
- submitBtn.innerText = 'Verifying...';
- submitBtn.disabled = true;
- 
- const action = profileOrSettingsToAuth === 'Settings' ? 'verifySettingsPassword' : 'verifyPassword';
- const payload = profileOrSettingsToAuth === 'Settings' ? { password } : { profile: profileOrSettingsToAuth, password };
-
- callBackend(action, payload)
-   .then(isValid => {
-     submitBtn.innerText = originalText;
-     submitBtn.disabled = false;
+     function autoScrollAndFocus(input) { toggleSearchList(true); setTimeout(() => { input.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); }
+     function setVolType(type, btn) { selectedVolType = type; currentVolTypeRequest = type; allNames = []; document.getElementById('volNameList').innerHTML = ""; resetSearch(); document.querySelectorAll('.vol-type-btn').forEach(b => { b.classList.remove('bg-green-600', 'text-white', 'border-transparent'); b.classList.add('bg-slate-900', 'text-slate-300', 'border-slate-600'); }); btn.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-600'); btn.classList.add('bg-green-600', 'text-white', 'border-transparent'); document.getElementById('volNameSection').classList.remove('hidden'); document.getElementById('volFormContainer').classList.add('hidden'); if (type === 'volunteer') { document.getElementById('addNewVolContainer').classList.remove('hidden'); } else { document.getElementById('addNewVolContainer').classList.add('hidden'); } loadVolNames(type); }
+     function resetVolForm() { document.getElementById('volNameSection').classList.add('hidden'); document.getElementById('volFormContainer').classList.add('hidden'); document.getElementById('volSubmitBtn').innerText = "Update Attendance"; selectedVolType = null; currentVolTypeRequest = null; allNames = []; document.querySelectorAll('.vol-type-btn').forEach(b => { b.classList.remove('bg-green-600', 'text-white', 'border-transparent'); b.classList.add('bg-slate-900', 'text-slate-300', 'border-slate-600'); }); resetSearch(); }
+     function resetSearch() { const input = document.getElementById('volNameSearch'); input.value = ""; toggleSearchList(false); document.getElementById('clearSearchBtn').classList.add('hidden'); }
+     function loadVolNames(requestedType) { const url = document.getElementById('volSheetSelector').value; const loader = document.getElementById('nameLoader'); const input = document.getElementById('volNameSearch'); if(!url || !requestedType || url === "Select an Event") return; input.placeholder = "Loading names..."; input.disabled = true; loader.classList.remove('hidden'); apiCall('getNamesList', { url: url, type: requestedType }).then(res => { if (currentVolTypeRequest !== requestedType) return; loader.classList.add('hidden'); input.disabled = false; input.placeholder = "Type to search..."; if(res.success) allNames = res.names; }); }
+     function toggleSearchList(show) { const list = document.getElementById('volNameList'); if(show) { list.classList.remove('hidden'); if(document.getElementById('volNameSearch').value.length > 0) filterNames(); } else { setTimeout(() => list.classList.add('hidden'), 200); } }
+     function clearSearch() { document.getElementById('volNameSearch').value = ""; filterNames(); document.getElementById('volFormContainer').classList.add('hidden'); document.getElementById('clearSearchBtn').classList.add('hidden'); }
+     function filterNames() { const input = document.getElementById('volNameSearch'); const filter = input.value.toLowerCase(); const list = document.getElementById('volNameList'); const clearBtn = document.getElementById('clearSearchBtn'); if(filter.length > 0) { list.classList.remove('hidden'); clearBtn.classList.remove('hidden'); } else { list.classList.add('hidden'); clearBtn.classList.add('hidden'); return; } list.innerHTML = ""; const matches = allNames.filter(n => n.toLowerCase().includes(filter)); matches.forEach(name => { const li = document.createElement('li'); li.className = "px-4 py-3 bg-slate-800 text-slate-200 border-b border-slate-600 hover:bg-cyan-600 hover:text-white cursor-pointer text-sm transition-colors last:border-0"; li.innerText = name; li.onmousedown = () => selectName(name); list.appendChild(li); }); if(matches.length === 0) { const li = document.createElement('li'); li.className = "px-4 py-3 text-sm text-slate-500 italic"; li.innerText = "No matches found."; list.appendChild(li); } }
+     function selectName(name) { document.getElementById('volNameSearch').value = name; document.getElementById('volNameList').classList.add('hidden'); loadVolData(name, false); }
+     function showAddNewForm() { const input = document.getElementById('volNameSearch'); input.value = ""; document.getElementById('volNameList').classList.add('hidden'); loadVolData(null, true); }
+     function getValueFuzzy(dataObj, lookupKey) { if (!dataObj) return ""; if (dataObj[lookupKey] !== undefined) return dataObj[lookupKey]; const cleanLookup = lookupKey.toLowerCase().replace(/[^a-z0-9]/g, ""); for (let key in dataObj) { const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, ""); if (cleanKey === cleanLookup) return dataObj[key]; if (cleanLookup.includes("caregiver") && cleanKey.includes("caregiver")) return dataObj[key]; } return ""; }
+     function toggleDependentFields(el) { const val = el.value; const deps = document.querySelectorAll('.attendance-dependent'); deps.forEach(d => { if(val === 'N') d.classList.add('hidden'); else d.classList.remove('hidden'); }); }
+     function toggleProjectList(show) { const list = document.getElementById('projectList'); if(show) { list.classList.remove('hidden'); filterProjects(); } else { setTimeout(() => list.classList.add('hidden'), 200); } }
+     function filterProjects() { const input = document.getElementById('newVolProjectSearch'); const filter = input.value.toLowerCase(); const list = document.getElementById('projectList'); list.innerHTML = ""; const matches = allProjects.filter(p => p.toLowerCase().includes(filter)); matches.forEach(proj => { const li = document.createElement('li'); li.className = "px-4 py-3 bg-slate-800 text-slate-200 border-b border-slate-600 hover:bg-cyan-600 hover:text-white cursor-pointer text-sm transition-colors last:border-0"; li.innerText = proj; li.onmousedown = () => selectProject(proj); list.appendChild(li); }); if(matches.length === 0) { const li = document.createElement('li'); li.className = "px-4 py-3 text-sm text-slate-500 italic"; li.innerText = "No matches found."; list.appendChild(li); } }
+     function selectProject(proj) { document.getElementById('newVolProjectSearch').value = proj; document.getElementById('projectList').classList.add('hidden'); }
+     function loadVolData(name, isManualNew) { const url = document.getElementById('volSheetSelector').value; const container = document.getElementById('volFormContainer'); const fieldsDiv = document.getElementById('dynamicFields'); const title = document.getElementById('formTitle'); const submitBtn = document.getElementById('volSubmitBtn'); const projectContainer = document.getElementById('newVolProjectContainer'); container.classList.remove('hidden'); fieldsDiv.innerHTML = '<div class="text-center"><div class="loader inline-block"></div></div>'; if (isManualNew) { title.innerText = "Add New Volunteer"; submitBtn.innerText = "Add New Volunteer & Update Attendance"; projectContainer.classList.remove('hidden'); document.getElementById('newVolProjectSearch').value = ""; document.getElementById('newVolProjectSearch').required = true; } else { title.innerText = "Loading..."; submitBtn.innerText = "Update Attendance"; projectContainer.classList.add('hidden'); document.getElementById('newVolProjectSearch').required = false; } apiCall('getPersonData', { url: url, type: selectedVolType, name: name }).then(res => { fieldsDiv.innerHTML = ''; if(res.success) { const data = res.data; const config = res.config; const meetingOpts = res.meetingOpts || []; const dismissalOpts = res.dismissalOpts || []; const isNew = res.isNew || isManualNew; allProjects = res.projectOpts || []; title.innerHTML = isNew ? `Add New: <span class="text-green-400">Volunteer</span>` : `Update: <span class="text-blue-400">${name}</span>`; if(isNew) submitBtn.innerText = "Add New Volunteer & Update Attendance"; else submitBtn.innerText = "Update Attendance"; let fieldsToShow = (config && config.length > 0) ? config : res.headers.map(h => h.replace(/\[.*?\]/g,"").trim()); if (isNew) { const nameFieldExists = fieldsToShow.some(f => f.toLowerCase().includes("name")); if (!nameFieldExists) { const rawNameHeader = res.headers.find(h => h.toLowerCase().includes("name")) || "Volunteer Name"; fieldsToShow.unshift(rawNameHeader.replace(/\[.*?\]/g,"").trim()); } } fieldsToShow.forEach(header => { let val = isNew ? "" : (getValueFuzzy(data, header)); let cleanH = header.toLowerCase(); let isNameField = cleanH.includes("name"); if(isNew && cleanH.includes("project")) return; let isReadOnly = isNameField && !isNew; if(isNew && isNameField) val = ""; if(!isNew && isNameField) val = name; let inputHtml = ""; let wrapperClass = "mb-1"; if (!isNameField && !cleanH.includes("attending")) { wrapperClass += " attendance-dependent"; } if (cleanH.includes("attending")) { inputHtml = ` <select name="${header}" onchange="toggleDependentFields(this)" class="w-full bg-slate-900 border border-slate-600 text-white rounded p-2 text-sm focus:border-green-500"> <option value="" ${val===""?"selected":""}>Select...</option> <option value="Y" ${val.toLowerCase()==="y"?"selected":""}>Y (Yes)</option> <option value="N" ${val.toLowerCase()==="n"?"selected":""}>N (No)</option> </select>`; } else if (cleanH.includes("meeting location") || cleanH.includes("dismissal location")) { const isDismissal = cleanH.includes("dismissal"); const optionsList = isDismissal ? dismissalOpts : meetingOpts; const placeholder = isDismissal ? "Select Dismissal..." : "Select Meeting..."; let optionsHtml = optionsList.map(opt => { const isSelected = val.toString().trim().toLowerCase() === opt.toString().trim().toLowerCase(); return `<option value="${opt}" ${isSelected ? "selected" : ""}>${opt}</option>`; }).join(""); const valTrimmed = val.toString().trim(); if (valTrimmed !== "") { const listHasValue = optionsList.some(opt => opt.toString().trim().toLowerCase() === valTrimmed.toLowerCase()); if (!listHasValue) { optionsHtml += `<option value="${val}" selected>${val} (Current)</option>`; } } inputHtml = ` <select name="${header}" class="w-full bg-slate-900 border border-slate-600 text-white rounded p-2 text-sm focus:border-green-500"> <option value="">${placeholder}</option> ${optionsHtml} </select>`; } else { let type = "text"; if(cleanH.includes("date")) type = "date"; if(cleanH.includes("time")) type = "time"; inputHtml = `<input name="${header}" type="${type}" value="${val}" ${isReadOnly ? 'readonly' : ''} class="w-full bg-slate-900 border ${isReadOnly ? 'border-slate-700 text-slate-500' : 'border-slate-600 text-white focus:border-green-500'} rounded p-2 text-sm [color-scheme:dark]">`; } fieldsDiv.innerHTML += `<div class="${wrapperClass}"><label class="block text-xs font-bold text-slate-400 mb-1">${header}</label>${inputHtml}</div>`; }); const attSelect = document.querySelector('select[name*="Attending"], select[name*="attending"]'); if(attSelect) toggleDependentFields(attSelect); } else { fieldsDiv.innerHTML = '<div class="text-red-400">Error: ' + res.message + '</div>'; } }).getPersonData(url, selectedVolType, name); }
      
-     if (isValid) {
-       closePasswordModal();
-       if (profileOrSettingsToAuth === 'Settings') {
-         loadSettingsPage();
-       } else {
-         currentProfile = profileOrSettingsToAuth;
-         const appVersion = profileOrSettingsToAuth === 'Regular Volunteer' ? 'AppV1' : 'AppV2';
-         loadApp(appVersion, currentProfile);
-       }
-     } else {
-       errorEl.textContent = 'Incorrect password. Please try again.';
-       errorEl.classList.remove('hidden');
-       document.getElementById('password-input').select();
+     // --- UPDATED SUBMIT FUNCTION WITH OVERLAY ---
+     function submitAttendance(e) { 
+        e.preventDefault(); 
+        const btn = document.getElementById('volSubmitBtn'); 
+        
+        // Show Loading Overlay
+        showOverlay('loading', 'Saving Attendance...');
+        
+        const formEl = document.getElementById('attendanceForm'); 
+        const formData = new FormData(formEl); 
+        let dataObj = {}; 
+        formData.forEach((value, key) => dataObj[key] = value); 
+        let target = document.getElementById('volNameSearch').value; 
+        if (!target || target === "") { for (let k in dataObj) { if (k.toLowerCase().includes("name")) { target = dataObj[k]; break; } } } 
+        const payload = { sheetUrl: document.getElementById('volSheetSelector').value, type: selectedVolType, data: dataObj, targetName: target }; 
+        
+        apiCall('submitAttendanceData', payload).then(res => { 
+            if(res.success) {
+                showOverlay('success', res.message);
+                if(selectedVolType === 'volunteer') { 
+                    if(res.message.includes("added")) { 
+                        resetVolForm(); 
+                        document.getElementById('volNameSearch').value = ""; 
+                    } 
+                    const url = document.getElementById('volSheetSelector').value; 
+                    apiCall('getNamesList', { url: url, type: 'volunteer' }).then(r => { if(r.success) allNames = r.names; }); 
+                } 
+            } else {
+                showOverlay('error', res.message);
+            }
+        }); 
      }
-   })
-   .catch(err => {
-     submitBtn.innerText = originalText;
-     submitBtn.disabled = false;
-     closePasswordModal();
-     showToast(`Verification Failed: ${err.message}`, true);
-   });
-}
 
-function processAvailableFields(fields) {
- let processedFields = fields
-   .filter(field => !fieldsToExclude.includes(field.label))
-   .map(field => fieldNameUpdates[field.label] ? { label: fieldNameUpdates[field.label], value: field.value } : field);
- const contactFieldLabels =["Contact 1 Relation (Name)", "Contact 1 Number", "Contact 2 Relation (Name)", "Contact 2 Number", "Contact 3 Relation (Name)", "Contact 3 Number"];
- if (processedFields.some(f => contactFieldLabels.includes(f.label))) {
-   processedFields = processedFields.filter(f => !contactFieldLabels.includes(f.label));
-   const careGiverField = { label: 'Caregiver Contact Info', value: 'caregiverContactInfo' };
-   const addressIndex = processedFields.findIndex(f => f.label === 'Address');
-   processedFields.splice(addressIndex !== -1 ? addressIndex + 1 : processedFields.length, 0, careGiverField);
- }
- return processedFields;
-}
-
-function loadSettingsPage() {
- availableFields = processAvailableFields(availableFields);
- populateSettingsForm();
- switchView('settings-page');
-}
-
-function populateSettingsForm() {
- const regularContainer = document.getElementById('settings-regular-fields');
- const adhocContainer = document.getElementById('settings-adhoc-fields');
- const allAvailableFields =[...new Set(availableFields.map(f => f.label))].sort();
- const regularDefaults = appSettings.profileDefaultFieldMappings['Regular Volunteer'] ||[];
- const adhocDefaults = appSettings.profileDefaultFieldMappings['Adhoc Volunteer / Exposure Session'] ||[];
- let regularHtml =[];
- let adhocHtml =[];
- 
- allAvailableFields.forEach(fieldLabel => {
-   const regularId = `setting-reg-${fieldLabel.replace(/\W/g, '_')}`;
-   const adhocId = `setting-adhoc-${fieldLabel.replace(/\W/g, '_')}`;
-   const regularChecked = regularDefaults.includes(fieldLabel) ? 'checked' : '';
-   regularHtml.push(`<label for="${regularId}"><input type="checkbox" value="${fieldLabel}" id="${regularId}" ${regularChecked}><span>${fieldLabel}</span></label>`);
-   const adhocChecked = adhocDefaults.includes(fieldLabel) ? 'checked' : '';
-   adhocHtml.push(`<label for="${adhocId}"><input type="checkbox" value="${fieldLabel}" id="${adhocId}" ${adhocChecked}><span>${fieldLabel}</span></label>`);
- });
- 
- regularContainer.innerHTML = regularHtml.join('');
- adhocContainer.innerHTML = adhocHtml.join('');
- 
- document.getElementById('checkAllSettingsRegular').addEventListener('change', function() {
-   document.querySelectorAll('#settings-regular-fields input[type="checkbox"]').forEach(cb => { if (cb.parentElement.style.display !== 'none') cb.checked = this.checked; });
- });
- document.getElementById('checkAllSettingsAdhoc').addEventListener('change', function() {
-   document.querySelectorAll('#settings-adhoc-fields input[type="checkbox"]').forEach(cb => { if (cb.parentElement.style.display !== 'none') cb.checked = this.checked; });
- });['new-reg-pass', 'new-adhoc-pass', 'new-settings-pass', 'confirm-settings-pass'].forEach(id => {
-     let el = document.getElementById(id);
-     el.value = '';
-     el.type = 'password';
-     el.nextElementSibling.querySelector('i').className = 'ph-bold ph-eye-slash text-lg';
- });
- document.getElementById('password-change-error').textContent = '';
-}
-
-function handleSaveSettings() {
- setLoadingState(true, "Saving configurations...");
- const newMappings = {
-   "Regular Volunteer": Array.from(document.querySelectorAll('#settings-regular-fields input:checked')).map(cb => cb.value),
-   "Adhoc Volunteer / Exposure Session": Array.from(document.querySelectorAll('#settings-adhoc-fields input:checked')).map(cb => cb.value)
- };
- callBackend('saveAppSettings', { newMappings })
-   .then(() => {
-       showToast("Settings Saved Successfully!");
-       setTimeout(goToLandingPage, 1000);
-   }) 
-   .catch(err => {
-     setLoadingState(false);
-     showToast(`Failed: ${err.message}`, true);
-   });
-}
-
-function handleUpdatePasswords() {
- const newRegPass = document.getElementById('new-reg-pass').value;
- const newAdhocPass = document.getElementById('new-adhoc-pass').value;
- const newSettingsPass = document.getElementById('new-settings-pass').value;
- const confirmSettingsPass = document.getElementById('confirm-settings-pass').value;
- const errorEl = document.getElementById('password-change-error');
- errorEl.textContent = '';
- 
- if (newSettingsPass && newSettingsPass !== confirmSettingsPass) {
-   errorEl.textContent = 'New Settings passwords do not match.';
-   return;
- }
- 
- const passwordsToUpdate = {};
- if (newRegPass) passwordsToUpdate['Regular Volunteer'] = newRegPass;
- if (newAdhocPass) passwordsToUpdate['Adhoc Volunteer'] = newAdhocPass;
- if (newSettingsPass) passwordsToUpdate['Settings'] = newSettingsPass;
- 
- if (Object.keys(passwordsToUpdate).length === 0) {
-   errorEl.textContent = 'Please enter a new password in at least one field.';
-   return;
- }
- 
- setLoadingState(true, 'Updating passwords...');
- callBackend('updatePasswords', { passwords: passwordsToUpdate })
-   .then(message => {
-     showToast("Passwords Updated Successfully!");
-     setTimeout(goToLandingPage, 1500);
-   })
-   .catch(err => {
-     setLoadingState(false);
-     errorEl.textContent = `Error: ${err.message}`;
-   });
-}
-
-function loadApp(appVersion, profile = '') {
- availableFields = processAvailableFields(availableFields);
- const adhocLabels = appSettings.profileDefaultFieldMappings["Adhoc Volunteer / Exposure Session"];
- defaultFieldHeadersForAppV2Values = availableFields.filter(f => adhocLabels.includes(f.label)).map(f => f.value);
- 
- switchView('main-app-content');
- document.getElementById('app-v1-content').style.display = (appVersion === 'AppV1') ? 'flex' : 'none';
- document.getElementById('app-v2-content').style.display = (appVersion === 'AppV2') ? 'flex' : 'none';
- 
- if (appVersion === 'AppV1') initializeAppV1(profile);
- else initializeAppV2();
-}
-
-function initializeAppV1(profile) {
- selectedProfileForAppV1 = profile;
- populateTraineesForView('AppV1');
- populateFieldsForAppV1();
- areDefaultsSelected = true;
- const defaultButton = document.getElementById('defaultFieldsButton');
- defaultButton.classList.add('active');
- defaultButton.onclick = handleDefaultFieldsToggle;
- updateFieldsBasedOnDefaults();
-}
-
-function initializeAppV2() {
- populateTraineesForView('AppV2');
-}
-
-function populateTraineesForView(view) {
- const containerId = view === 'AppV1' ? 'traineeSelectionContainer' : 'traineeSelectionContainerV2';
- const checkAllId = view === 'AppV1' ? 'checkAllTrainees' : 'checkAllTraineesV2';
- const container = document.getElementById(containerId);
- totalTrainees = allTrainees.length;
- if (totalTrainees === 0) {
-   container.innerHTML = '<div style="padding:1.5rem;text-align:center;color:var(--text-muted-color);"><i class="ph-bold ph-warning-circle text-2xl mb-2"></i><br>No active trainees found.</div>';
-   return;
- }
- const traineeHtml = allTrainees.map(t => {
-   const id = `${view.toLowerCase()}-trainee-${t.replace(/\W/g, '_')}`;
-   return `<label for="${id}"><input type="checkbox" value="${t}" id="${id}"><span>${t}</span></label>`;
- }).join('');
- container.innerHTML = traineeHtml;
- 
- container.querySelectorAll('input').forEach(input => input.addEventListener('change', () => updateTraineeCountForView(view)));
- document.getElementById(checkAllId).onchange = function() {
-   document.querySelectorAll(`#${containerId} input`).forEach(cb => { if (cb.parentElement.style.display !== 'none') cb.checked = this.checked; });
-   updateTraineeCountForView(view);
- };
- updateTraineeCountForView(view);
-}
-
-function updateTraineeCountForView(view) {
- const containerId = view === 'AppV1' ? 'traineeSelectionContainer' : 'traineeSelectionContainerV2';
- const count = document.querySelectorAll(`#${containerId} input:checked`).length;
- const countTextId = view === 'AppV1' ? 'traineeCountText' : 'traineeCountTextV2';
- document.getElementById(countTextId).textContent = `${count} / ${totalTrainees}`;
-}
-
-function populateFieldsForAppV1() {
- const container = document.getElementById('fieldSelectionContainer');
- const fieldHtml = availableFields.map(field => {
-   const id = 'field-' + field.value.replace(/\W/g, '_');
-   return `<label for="${id}"><input type="checkbox" name="selectedField" value="${field.value}" id="${id}"><span>${field.label}</span></label>`;
- }).join('');
- container.innerHTML = fieldHtml;
- 
- document.getElementById('checkAllFields').onchange = function() {
-   document.querySelectorAll('#fieldSelectionContainer input').forEach(cb => { if (cb.parentElement.style.display !== 'none') cb.checked = this.checked; });
-   if (this.checked) {
-     areDefaultsSelected = false;
-     document.getElementById('defaultFieldsButton').classList.remove('active');
-   }
- };
-}
-
-function handleDefaultFieldsToggle() {
- areDefaultsSelected = !areDefaultsSelected;
- document.getElementById('defaultFieldsButton').classList.toggle('active', areDefaultsSelected);
- if (areDefaultsSelected) {
-   document.getElementById('checkAllFields').checked = false;
- }
- updateFieldsBasedOnDefaults();
-}
-
-function updateFieldsBasedOnDefaults() {
- const defaultLabels = appSettings.profileDefaultFieldMappings[selectedProfileForAppV1] ||[];
- document.querySelectorAll('#fieldSelectionContainer input').forEach(cb => {
-   const field = availableFields.find(f => f.value === cb.value);
-   cb.checked = areDefaultsSelected && field && defaultLabels.includes(field.label);
- });
-}
-
-function handleGenerate() {
- const trainees = Array.from(document.querySelectorAll('#traineeSelectionContainer input:checked')).map(cb => cb.value);
- const fields = Array.from(document.querySelectorAll('#fieldSelectionContainer input:checked')).map(cb => cb.value);
- if (trainees.length === 0 || fields.length === 0) { 
-     showToast("Select at least 1 trainee and 1 field.", true); 
-     return; 
- }
- runGeneration(trainees, fields, 'AppV1');
-}
-
-function handleGenerateV2() {
- const trainees = Array.from(document.querySelectorAll('#traineeSelectionContainerV2 input:checked')).map(cb => cb.value);
- if (trainees.length === 0) { 
-     showToast("Select at least 1 trainee.", true); 
-     return; 
- }
- runGeneration(trainees, defaultFieldHeadersForAppV2Values, 'AppV2');
-}
-
-function runGeneration(trainees, fields, fromView) {
- previousAppView = fromView;
- setLoadingState(true, 'Compiling Info Card(s)...');
- 
- callBackend('generateCueCardBatch', {
-   selectedTrainees: trainees,
-   selectedFieldHeaders: fields,
-   profile: currentProfile
- })
- .then(displayBatchResults)
- .catch(err => {
-     setLoadingState(false);
-     displayBatchResults([{ status: 'error', name: 'System Error', message: err.message }]);
- });
-}
-
-function displayBatchResults(results) {
- const resultDiv = document.getElementById('resultMessage');
- const successIcon = `<i class="ph-bold ph-check-circle text-green-500 text-2xl mt-0.5 flex-shrink-0"></i>`;
- const errorIcon = `<i class="ph-bold ph-warning-circle text-red-500 text-2xl mt-0.5 flex-shrink-0"></i>`;
- 
- const resultsHtml = results.map(item => {
-   const icon = item.status === 'success' ? successIcon : errorIcon;
-   let content;
-   if (item.status === 'success') {
-     content = `<div class="flex-grow"><strong class="text-base">${item.name}</strong><br><a href="#" class="open-link text-sm mt-1 inline-block" data-name="${item.name}">Open Info Card <i class="ph-bold ph-arrow-square-out"></i></a></div>`;
-   } else {
-     content = `<div class="flex-grow"><strong class="text-base">${item.name}</strong><br><span class="text-sm opacity-70">Failed. ${item.message || "Unknown"}</span></div>`;
-   }
-   return `<div class="result-item ${item.status} shadow-sm">${icon}${content}</div>`;
- }).join('');
- 
- resultDiv.innerHTML = resultsHtml;
- 
- resultDiv.querySelectorAll('.open-link').forEach(link => {
-   link.onclick = (e) => {
-     e.preventDefault();
-     const resultData = results.find(r => r.name === e.currentTarget.dataset.name); // use currentTarget
-     if (resultData && resultData.htmlContent) {
-       const newWindow = window.open('', '_blank');
-       if (newWindow) {
-         newWindow.document.write(resultData.htmlContent);
-         newWindow.document.close();
-       } else {
-         showToast('Popup blocked! Allow popups to view.', true);
-       }
+     // --- UPDATED CREATE FUNCTION WITH OVERLAY ---
+     function handleCreate(e) { 
+        e.preventDefault(); 
+        showOverlay('loading', 'Creating Outing...');
+        
+        const form = document.getElementById('outingForm'); 
+        const formData = { eventName: document.getElementById('eventName').value, eventDate: document.getElementById('eventDate').value, meetingLocs: Array.from(document.getElementsByName('meetingLoc')).map(i=>i.value), meetingTimes: Array.from(document.getElementsByName('meetingTime')).map(i=>i.value), dismissalLocs: Array.from(document.getElementsByName('dismissalLoc')).map(i=>i.value), dismissalTimes: Array.from(document.getElementsByName('dismissalTime')).map(i=>i.value), }; 
+        
+        apiCall('createOuting', formData).then(res => { 
+            if(res.success) { 
+                showOverlay('success', 'Outing Created Successfully!');
+                closeModal(); 
+                loadSheets('comm'); 
+            } else { 
+                showOverlay('error', res.message);
+            } 
+        }); 
      }
-   };
- });
- 
- setLoadingState(false);
- switchView('app-results-view');
-}
 
-function showError(message) {
- setLoadingState(false);
- showToast(message, true);
-}
-
-function backToSelections() {
- switchView('main-app-content');
- document.getElementById(previousAppView === 'AppV1' ? 'app-v1-content' : 'app-v2-content').style.display = 'flex';
-}
-
-function goToLandingPage() {
- setLoadingState(true, 'Returning...');
- location.reload();
-}
-</script>
+     function handlePair() { const url = document.getElementById('commSheetSelector').value; const btn = document.getElementById('scrubBtn'); const status = document.getElementById('scrubStatus'); if(!url || url.includes("Select")) return alert("Select a sheet first"); btn.disabled = true; btn.innerText = "Pairing..."; status.classList.add('hidden'); apiCall('runAutoPairing', url).then(res => { btn.disabled = false; btn.innerText = "Pair Now"; showFlashMessage('scrubStatus', res.message, res.success ? 'success' : 'error'); }); }
+     function handleGroup() { const url = document.getElementById('commSheetSelector').value; const btn = document.getElementById('groupBtn'); if(!url || url.includes("Select")) return alert("Select a sheet first"); btn.disabled = true; btn.innerText = "Grouping..."; apiCall('runAutoGrouping', url).then(res => { btn.disabled = false; btn.innerText = "Group Now"; showFlashMessage('scrubStatus', res.message, res.success ? 'success' : 'error'); }); }
+     function loadSettings() { const loader = document.getElementById('settingsLoader'); const content = document.getElementById('settingsContent'); loader.classList.remove('hidden'); content.classList.add('hidden'); apiCall('getAppSettings', null).then(savedSettings => { apiCall('getTemplateHeaders', null).then(res => { document.getElementById('settingsLoader').classList.add('hidden'); document.getElementById('settingsContent').classList.remove('hidden'); if(res.success) { renderSettingsCheckboxes(res.tHeaders, res.vHeaders, savedSettings); } else { alert("Error loading template headers: " + res.message); } }).getTemplateHeaders(); }).getAppSettings(); }
+     function renderSettingsCheckboxes(tHeaders, vHeaders, saved) { const tContainer = document.getElementById('traineeColsContainer'); const vContainer = document.getElementById('volColsContainer'); tContainer.innerHTML = ''; vContainer.innerHTML = ''; tHeaders.forEach(h => { let checked = (saved.traineeCols.includes(h) || saved.traineeCols.length === 0) ? 'checked' : ''; tContainer.innerHTML += `<label class="flex items-center gap-2"><input type="checkbox" class="t-col-check accent-purple-500" value="${h}" ${checked}> <span class="text-slate-300">${h}</span></label>`; }); vHeaders.forEach(h => { let checked = (saved.volCols.includes(h) || saved.volCols.length === 0) ? 'checked' : ''; vContainer.innerHTML += `<label class="flex items-center gap-2"><input type="checkbox" class="v-col-check accent-purple-500" value="${h}" ${checked}> <span class="text-slate-300">${h}</span></label>`; }); }
+     function saveSettings() { const tCols = Array.from(document.querySelectorAll('.t-col-check:checked')).map(cb => cb.value); const vCols = Array.from(document.querySelectorAll('.v-col-check:checked')).map(cb => cb.value); const settings = { traineeCols: tCols, volCols: vCols }; showFlashMessage('settingsStatus', "Saving...", 'success'); apiCall('saveAppSettings', settings).then(res => { showFlashMessage('settingsStatus', res.message, 'success'); }).saveAppSettings(settings); }
+     const modal = document.getElementById('createModal'); const modalPanel = document.getElementById('modalPanel'); function openModal() { modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); modalPanel.classList.remove('scale-95'); modalPanel.classList.add('scale-100'); }, 10); } function closeModal() { modal.classList.add('opacity-0'); modalPanel.classList.remove('scale-100'); modalPanel.classList.add('scale-95'); setTimeout(() => { modal.classList.add('hidden'); }, 300); } function handleCreate(e) { e.preventDefault(); const btn = document.getElementById('submitCreateBtn'); const stat = document.getElementById('createStatusArea'); btn.disabled = true; btn.innerText = "Processing..."; showFlashMessage('createStatusArea', "Creating...", 'success'); const form = document.getElementById('outingForm'); const formData = { eventName: document.getElementById('eventName').value, eventDate: document.getElementById('eventDate').value, meetingLocs: Array.from(document.getElementsByName('meetingLoc')).map(i=>i.value), meetingTimes: Array.from(document.getElementsByName('meetingTime')).map(i=>i.value), dismissalLocs: Array.from(document.getElementsByName('dismissalLoc')).map(i=>i.value), dismissalTimes: Array.from(document.getElementsByName('dismissalTime')).map(i=>i.value), }; apiCall('createOuting', formData).then(res => { btn.disabled = false; btn.innerText = "Generate"; if(res.success) { showFlashMessage('createStatusArea', "Success! Folder Created.", 'success'); closeModal(); loadSheets('comm'); showFlashMessage('commGlobalStatus', "Outing Created Successfully!", 'success'); } else { showFlashMessage('createStatusArea', res.message, 'error'); } }); }
+   </script>
 </body>
 </html>
