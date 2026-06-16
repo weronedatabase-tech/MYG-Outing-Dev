@@ -8,72 +8,31 @@
     <meta http-equiv="Expires" content="0">
     <title>MINDS MYG Outings Organiser</title>
     <base target="_blank">
+    <link rel="manifest" href="manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .search-results { max-height: 250px; overflow-y: auto; }
-        .modal-content { max-height: 80vh; }
-        body { -webkit-tap-highlight-color: transparent; }
-    </style>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="frontend/css/style.css">
+
+    <!-- Config & Scripts -->
+    <script src="backend/config.js"></script>
+    <script src="frontend/js/state.js"></script>
+    <script src="frontend/js/api.js"></script>
+    <script src="frontend/js/ui.js"></script>
+    <script src="frontend/js/auth.js"></script>
+    <script src="frontend/js/comm.js"></script>
+    <script src="frontend/js/volunteer.js"></script>
+    <script src="frontend/js/settings.js"></script>
+    <script src="frontend/js/main.js"></script>
 </head>
 <body class="bg-slate-900 min-h-screen font-sans text-slate-200 pb-20 selection:bg-blue-500 selection:text-white">
-
-    <!-- CONFIGURATION & API HANDLER -->
-    <script>
-        // --- FRONTEND CONFIGURATION ---
-        // Change this to 'DEV' or 'PROD'
-        const FRONTEND_DEFAULT_ENV = 'DEV'; 
-
-        // --- API ENDPOINTS ---
-        const APIS = {
-            DEV: 'https://script.google.com/macros/s/AKfycbywS4uXR4G_S-Xqvqrkohckp76SEzp78dIyOLwBp6a5pLtHjUxwGjDyo4grEsHxerta/exec',
-            PROD: 'https://script.google.com/macros/s/AKfycbwOQHiPXoVB10_T81K1mfWPZyahHFXHnrbR7KuM4GI0tQjnsaGjQMunDJWcXRP5g0aENQ/exec'
-        };
-
-        // --- SET ENVIRONMENT ---
-        const currentEnv = FRONTEND_DEFAULT_ENV;
-        const ACTIVE_API_URL = APIS[currentEnv];
-
-        console.log(`Running in ${currentEnv} mode connected to: ${ACTIVE_API_URL}`);
-
-        // --- API CALLER ---
-        async function apiCall(action, data = {}) {
-            try {
-                const response = await fetch(ACTIVE_API_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: action, data: data }),
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' } 
-                });
-                
-                const json = await response.json();
-                return json;
-            } catch (error) {
-                console.error("API Error:", error);
-                return { success: false, message: "Connection Error. Please check internet." };
-            }
-        }
-    </script>
 
     <!-- STICKY HEADER -->
     <div class="sticky top-0 z-50 shadow-lg">
         
-        <!-- DEV MODE BAR (Default Hidden, JS unhides if DEV) -->
-        <div id="devBar" class="hidden bg-red-600 text-white text-center text-xs font-bold py-1 border-b border-red-800">
-            DEV MODE
-        </div>
-        <script>
-            // This ensures the bar only shows if the variable above is truly 'DEV'
-            if (currentEnv === 'DEV') {
-                document.getElementById('devBar').classList.remove('hidden');
-            }
-        </script>
+        <!-- ENVIRONMENT BAR -->
+        <div id="envBar" class="hidden text-white text-center text-xs font-bold py-1 border-b"></div>
 
         <nav class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700">
             <div class="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -235,7 +194,7 @@
         </div>
     </main>
 
-    <!-- === FULL PAGE STATUS OVERLAY === -->
+    <!-- FULL PAGE STATUS OVERLAY -->
     <div id="fullPageOverlay" class="fixed inset-0 z-[100] bg-slate-900/95 backdrop-blur-sm hidden flex flex-col items-center justify-center p-4 transition-opacity duration-300">
         <!-- LOADING STATE -->
         <div id="overlayLoading" class="flex flex-col items-center">
@@ -292,267 +251,5 @@
     <div id="createModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-2 opacity-0 transition-opacity duration-300">
         <div class="bg-slate-800 w-full max-w-2xl rounded-2xl border border-slate-700 flex flex-col max-h-[95vh] transform scale-95 transition-transform" id="modalPanel"><div class="p-4 border-b border-slate-700 flex justify-between items-center"><h3 class="text-white font-bold">New Outing</h3><button onclick="closeModal()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button></div><div class="p-6 overflow-y-auto"><form id="outingForm" onsubmit="handleCreate(event)" class="space-y-4"><input class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white" id="eventName" placeholder="Event Name" required><input type="text" id="eventDate" class="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white placeholder-slate-400 [color-scheme:dark]" placeholder="Event Date" onfocus="(this.type='date')" onblur="formatDateDisplay(this)" required><div class="text-xs text-slate-400 uppercase font-bold">Meeting (Loc & Time)</div><div class="grid grid-cols-3 gap-2"><input name="meetingLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 1"><input name="meetingTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="meetingLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 2"><input name="meetingTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="meetingLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 3"><input name="meetingTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="meetingLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 4"><input name="meetingTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="text-xs text-slate-400 uppercase font-bold">Dismissal (Loc & Time)</div><div class="grid grid-cols-3 gap-2"><input name="dismissalLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 1"><input name="dismissalTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="dismissalLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 2"><input name="dismissalTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="dismissalLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 3"><input name="dismissalTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div class="grid grid-cols-3 gap-2"><input name="dismissalLoc" class="col-span-2 bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs" placeholder="Loc 4"><input name="dismissalTime" type="time" class="bg-slate-900 border border-slate-600 rounded p-2 text-white text-xs [color-scheme:dark]"></div><div id="createStatusArea" class="hidden text-center text-xs p-2"></div><button id="submitCreateBtn" type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded">Generate</button></form></div></div>
     </div>
-
-   <!-- JAVASCRIPT -->
-   <script>
-    let currentSheetList = [];
-    let selectedVolType = null;
-    let allNames = [];
-    let allProjects = []; 
-    let currentVolTypeRequest = null;
-    let isAdminAuthenticated = false;
-    let pendingView = "";
-    let currentActiveView = 'landing';
-    let outingReminders = {};
-
-    function showView(viewId) { currentActiveView = viewId; document.querySelectorAll('main > div').forEach(div => div.classList.add('hidden')); document.getElementById('view-' + viewId).classList.remove('hidden'); document.getElementById('volFormStatus').classList.add('hidden'); document.getElementById('scrubStatus').classList.add('hidden'); document.getElementById('createStatusArea').classList.add('hidden'); document.getElementById('settingsStatus').classList.add('hidden'); if (viewId === 'comm' || viewId === 'volunteer') loadSheets(viewId); if (viewId === 'settings') loadSettings(); }
-    
-    function refreshApp() { 
-        const icon = document.getElementById('refreshIcon'); 
-        icon.classList.add('fa-spin'); 
-        
-        // Clear caches to force UI update
-        if ('caches' in window) {
-            caches.keys().then(names => {
-                for (let name of names) caches.delete(name);
-            });
-        }
-        
-        // Hard reload the window to bypass local storage/cache and fetch the newest HTML
-        setTimeout(() => {
-            window.location.reload(true);
-        }, 300);
-    }
-    
-    function requestAccess(viewId) { if (isAdminAuthenticated) { showView(viewId); } else { pendingView = viewId; document.getElementById('authModal').classList.remove('hidden'); document.getElementById('adminPassword').value = ""; document.getElementById('authError').classList.add('hidden'); document.getElementById('adminPassword').focus(); } }
-    function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); pendingView = ""; }
-    function handleAuth(e) { e.preventDefault(); const pwd = document.getElementById('adminPassword').value; const btn = document.getElementById('authBtn'); btn.disabled = true; btn.innerText = "Checking..."; apiCall('verifyAdminPassword', pwd).then(isValid => { btn.disabled = false; btn.innerText = "Access"; if (isValid) { isAdminAuthenticated = true; const target = pendingView; closeAuthModal(); if(target) showView(target); } else { document.getElementById('authError').classList.remove('hidden'); document.getElementById('adminPassword').value = ""; } }); }
-    
-    // --- OVERLAY LOGIC ---
-    function showOverlay(type, msg) {
-        document.getElementById('fullPageOverlay').classList.remove('hidden');
-        document.getElementById('overlayLoading').classList.add('hidden');
-        document.getElementById('overlaySuccess').classList.add('hidden');
-        document.getElementById('overlayError').classList.add('hidden');
-        
-        if (type === 'loading') {
-            document.getElementById('overlayLoading').classList.remove('hidden');
-            document.getElementById('overlayLoadingText').innerText = msg || "Processing...";
-        } else if (type === 'success') {
-            document.getElementById('overlaySuccess').classList.remove('hidden');
-            document.getElementById('overlaySuccessText').innerText = msg;
-        } else {
-            document.getElementById('overlayError').classList.remove('hidden');
-            document.getElementById('overlayErrorText').innerText = msg;
-        }
-    }
-
-    function closeOverlay() {
-        document.getElementById('fullPageOverlay').classList.add('hidden');
-    }
-
-    function showFlashMessage(elementId, message, type) { const el = document.getElementById(elementId); el.innerText = message; el.classList.remove('hidden', 'bg-green-900/20', 'text-green-400', 'border-green-500/30', 'bg-red-900/20', 'text-red-400', 'border-red-500/30'); if (type === 'success') { el.classList.add('bg-green-900/20', 'text-green-400', 'border', 'border-green-500/30'); } else { el.classList.add('bg-red-900/20', 'text-red-400', 'border', 'border-red-500/30'); } el.classList.remove('hidden'); setTimeout(() => { el.classList.add('hidden'); }, 5000); }
-    function formatDateDisplay(input) { const val = input.value; if(!val) { input.type='text'; return; } const date = new Date(val); if(isNaN(date.getTime())) { input.type='text'; return; } const day = date.getDate().toString().padStart(2, '0'); const month = date.toLocaleString('default', { month: 'short' }); const year = date.getFullYear(); input.type = 'text'; input.value = `${day} ${month} ${year}`; }
-
-    // --- LOAD SHEETS ---
-    function loadSheets(viewId) {
-        const selectorId = viewId === 'comm' ? 'commSheetSelector' : 'volSheetSelector';
-        const loadingId = viewId === 'comm' ? 'commSheetSpinner' : 'volSheetSpinner';
-        const selector = document.getElementById(selectorId);
-        const spinner = document.getElementById(loadingId);
-        const listContainer = document.getElementById('upcomingList');
-        selector.innerHTML = '<option disabled selected>↻ Searching events...</option>';
-        selector.disabled = true;
-        if(spinner) spinner.classList.remove('hidden');
-        if(viewId === 'comm' && listContainer) listContainer.innerHTML = '<p class="text-xs italic"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading events...</p>';
-
-        apiCall('getRecentOutingSheets', null).then(res => {
-            if(spinner) spinner.classList.add('hidden');
-            selector.disabled = false;
-            selector.innerHTML = '';
-            
-            if(viewId === 'comm' && listContainer) {
-                listContainer.innerHTML = '';
-                outingReminders = {}; 
-                if(res.success && res.data.length > 0) {
-                    let allCards = '';
-                    res.data.forEach((item, index) => {
-                        allCards += `
-                        <div class="flex flex-col gap-2 p-4 bg-slate-700/50 rounded-xl border border-slate-600 shadow-md relative">
-                           <div class="flex justify-between items-start">
-                             <div><div class="font-bold text-white text-sm">${item.displayName}</div><div class="text-slate-400 text-xs">${item.formattedDate}</div></div>
-                             <div class="flex gap-2 text-xs"><a href="${item.folderUrl}" target="_blank" class="text-blue-400 hover:text-blue-300"><i class="fa-regular fa-folder-open"></i></a><a href="${item.sheetUrl}" target="_blank" class="text-green-400 hover:text-green-300"><i class="fa-regular fa-file-excel"></i></a></div>
-                           </div>
-                           <div id="stats-${index}" class="text-xs text-slate-500 animate-pulse mt-2">Loading stats...</div>
-                           <div id="btn-group-${index}" class="hidden flex gap-2 mt-2 pt-2 border-t border-slate-600/50">
-                               <button onclick="openReminderModal('${index}')" class="flex-1 bg-slate-800 hover:bg-slate-600 text-slate-300 text-xs py-2 px-3 rounded border border-slate-600 transition-colors"><i class="fa-regular fa-message mr-1"></i> Reminder Message</button>
-                               <button onclick="copyReminderDirect('${index}', this)" class="bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white text-xs py-2 px-3 rounded border border-slate-600 transition-colors"><i class="fa-regular fa-copy"></i></button>
-                           </div>
-                        </div>`;
-                    });
-                    listContainer.innerHTML = allCards;
-                    res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
-                } else {
-                    listContainer.innerHTML = '<p class="text-xs text-slate-500 italic">No upcoming outings found.</p>';
-                }
-            }
-            if(res.success && res.data.length > 0) {
-                currentSheetList = res.data;
-                res.data.forEach(item => {
-                    let opt = document.createElement('option');
-                    opt.value = item.sheetUrl;
-                    opt.text = item.displayName;
-                    selector.appendChild(opt);
-                });
-                selector.selectedIndex = 0;
-                if(viewId === 'volunteer') resetVolForm();
-            } else {
-                selector.innerHTML = '<option disabled selected>No upcoming events</option>';
-            }
-        });
-    }
-
-    function fetchOutingStats(url, index) {
-        apiCall('getOutingDetails', url).then(res => {
-            const container = document.getElementById(`stats-${index}`);
-            const btnGroup = document.getElementById(`btn-group-${index}`);
-            if(res.success) {
-                let html = '<table class="w-full text-[10px] text-left border-collapse"><tr class="text-slate-400 border-b border-slate-600"><th>Proj</th><th class="text-center">Trainees</th><th class="text-center">CG</th><th class="text-center">Vols</th></tr>';
-                const sortedKeys = Object.keys(res.stats).sort();
-                if(sortedKeys.length === 0) {
-                    html += '<tr><td colspan="4" class="text-center py-2 text-slate-500 italic">No data yet</td></tr>';
-                } else {
-                    for(const proj of sortedKeys) {
-                        const d = res.stats[proj];
-                        html += `<tr class="border-b border-slate-600/50 last:border-0"><td class="py-1 font-bold text-slate-300">${proj}</td><td class="text-center text-slate-400"><span class="text-white">${d.tY}</span>/${d.tTot}</td><td class="text-center text-slate-400 text-white">${d.cY}</td><td class="text-center text-slate-400"><span class="text-white">${d.vY}</span>/${d.vTot}</td></tr>`;
-                    }
-                }
-                html += '</table>';
-                container.innerHTML = html;
-                container.classList.remove('animate-pulse');
-                
-                let msg = "";
-                if(res.pending && res.pending.length > 0) {
-                    const list = res.pending.join('\n');
-                    msg = `Hello👋, gentle reminder for volunteers of these trainees to update their attendance by tomorrow:\n${list}\n\nVolunteers please update your own attendance as well, Thank You!!🙏`;
-                } else {
-                    msg = "Great news! All trainees have updated their attendance.\n\nVolunteers please ensure your own attendance is updated too, Thank You!!🙏";
-                }
-                outingReminders[index] = msg;
-                if(btnGroup) btnGroup.classList.remove('hidden');
-            } else {
-                container.innerHTML = '<span class="text-red-400">Error loading stats</span>';
-            }
-        });
-    }
-
-    function openReminderModal(index) {
-        const msg = outingReminders[index];
-        if(!msg) return;
-        document.getElementById('modalReminderText').value = msg;
-        document.getElementById('reminderModal').classList.remove('hidden');
-    }
-    function closeReminderModal() { document.getElementById('reminderModal').classList.add('hidden'); }
-    function copyFromModal(btn) { performCopy(document.getElementById('modalReminderText').value, btn); }
-    function copyReminderDirect(index, btn) { performCopy(outingReminders[index], btn); }
-    function performCopy(text, btn) {
-        navigator.clipboard.writeText(text).then(() => {
-            const original = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-check"></i>';
-            btn.classList.add('text-green-400', 'border-green-500');
-            setTimeout(() => {
-                btn.innerHTML = original;
-                btn.classList.remove('text-green-400', 'border-green-500');
-            }, 2000);
-        });
-    }
-
-     function autoScrollAndFocus(input) { toggleSearchList(true); setTimeout(() => { input.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); }
-     function setVolType(type, btn) { selectedVolType = type; currentVolTypeRequest = type; allNames = []; document.getElementById('volNameList').innerHTML = ""; resetSearch(); document.querySelectorAll('.vol-type-btn').forEach(b => { b.classList.remove('bg-green-600', 'text-white', 'border-transparent'); b.classList.add('bg-slate-900', 'text-slate-300', 'border-slate-600'); }); btn.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-600'); btn.classList.add('bg-green-600', 'text-white', 'border-transparent'); document.getElementById('volNameSection').classList.remove('hidden'); document.getElementById('volFormContainer').classList.add('hidden'); if (type === 'volunteer') { document.getElementById('addNewVolContainer').classList.remove('hidden'); } else { document.getElementById('addNewVolContainer').classList.add('hidden'); } loadVolNames(type); }
-     function resetVolForm() { document.getElementById('volNameSection').classList.add('hidden'); document.getElementById('volFormContainer').classList.add('hidden'); document.getElementById('volSubmitBtn').innerText = "Update Attendance"; selectedVolType = null; currentVolTypeRequest = null; allNames = []; document.querySelectorAll('.vol-type-btn').forEach(b => { b.classList.remove('bg-green-600', 'text-white', 'border-transparent'); b.classList.add('bg-slate-900', 'text-slate-300', 'border-slate-600'); }); resetSearch(); }
-     function resetSearch() { const input = document.getElementById('volNameSearch'); input.value = ""; toggleSearchList(false); document.getElementById('clearSearchBtn').classList.add('hidden'); }
-     function loadVolNames(requestedType) { const url = document.getElementById('volSheetSelector').value; const loader = document.getElementById('nameLoader'); const input = document.getElementById('volNameSearch'); if(!url || !requestedType || url === "Select an Event") return; input.placeholder = "Loading names..."; input.disabled = true; loader.classList.remove('hidden'); apiCall('getNamesList', { url: url, type: requestedType }).then(res => { if (currentVolTypeRequest !== requestedType) return; loader.classList.add('hidden'); input.disabled = false; input.placeholder = "Type to search..."; if(res.success) allNames = res.names; }); }
-     function toggleSearchList(show) { const list = document.getElementById('volNameList'); if(show) { list.classList.remove('hidden'); if(document.getElementById('volNameSearch').value.length > 0) filterNames(); } else { setTimeout(() => list.classList.add('hidden'), 200); } }
-     function clearSearch() { document.getElementById('volNameSearch').value = ""; filterNames(); document.getElementById('volFormContainer').classList.add('hidden'); document.getElementById('clearSearchBtn').classList.add('hidden'); }
-     function filterNames() { const input = document.getElementById('volNameSearch'); const filter = input.value.toLowerCase(); const list = document.getElementById('volNameList'); const clearBtn = document.getElementById('clearSearchBtn'); if(filter.length > 0) { list.classList.remove('hidden'); clearBtn.classList.remove('hidden'); } else { list.classList.add('hidden'); clearBtn.classList.add('hidden'); return; } list.innerHTML = ""; const matches = allNames.filter(n => n.toLowerCase().includes(filter)); matches.forEach(name => { const li = document.createElement('li'); li.className = "px-4 py-3 bg-slate-800 text-slate-200 border-b border-slate-600 hover:bg-cyan-600 hover:text-white cursor-pointer text-sm transition-colors last:border-0"; li.innerText = name; li.onmousedown = () => selectName(name); list.appendChild(li); }); if(matches.length === 0) { const li = document.createElement('li'); li.className = "px-4 py-3 text-sm text-slate-500 italic"; li.innerText = "No matches found."; list.appendChild(li); } }
-     function selectName(name) { document.getElementById('volNameSearch').value = name; document.getElementById('volNameList').classList.add('hidden'); loadVolData(name, false); }
-     function showAddNewForm() { const input = document.getElementById('volNameSearch'); input.value = ""; document.getElementById('volNameList').classList.add('hidden'); loadVolData(null, true); }
-     function getValueFuzzy(dataObj, lookupKey) { if (!dataObj) return ""; if (dataObj[lookupKey] !== undefined) return dataObj[lookupKey]; const cleanLookup = lookupKey.toLowerCase().replace(/[^a-z0-9]/g, ""); for (let key in dataObj) { const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, ""); if (cleanKey === cleanLookup) return dataObj[key]; if (cleanLookup.includes("caregiver") && cleanKey.includes("caregiver")) return dataObj[key]; } return ""; }
-     function toggleDependentFields(el) { const val = el.value; const deps = document.querySelectorAll('.attendance-dependent'); deps.forEach(d => { if(val === 'N') d.classList.add('hidden'); else d.classList.remove('hidden'); }); }
-     function toggleProjectList(show) { const list = document.getElementById('projectList'); if(show) { list.classList.remove('hidden'); filterProjects(); } else { setTimeout(() => list.classList.add('hidden'), 200); } }
-     function filterProjects() { const input = document.getElementById('newVolProjectSearch'); const filter = input.value.toLowerCase(); const list = document.getElementById('projectList'); list.innerHTML = ""; const matches = allProjects.filter(p => p.toLowerCase().includes(filter)); matches.forEach(proj => { const li = document.createElement('li'); li.className = "px-4 py-3 bg-slate-800 text-slate-200 border-b border-slate-600 hover:bg-cyan-600 hover:text-white cursor-pointer text-sm transition-colors last:border-0"; li.innerText = proj; li.onmousedown = () => selectProject(proj); list.appendChild(li); }); if(matches.length === 0) { const li = document.createElement('li'); li.className = "px-4 py-3 text-sm text-slate-500 italic"; li.innerText = "No matches found."; list.appendChild(li); } }
-     function selectProject(proj) { document.getElementById('newVolProjectSearch').value = proj; document.getElementById('projectList').classList.add('hidden'); }
-     function loadVolData(name, isManualNew) { const url = document.getElementById('volSheetSelector').value; const container = document.getElementById('volFormContainer'); const fieldsDiv = document.getElementById('dynamicFields'); const title = document.getElementById('formTitle'); const submitBtn = document.getElementById('volSubmitBtn'); const projectContainer = document.getElementById('newVolProjectContainer'); container.classList.remove('hidden'); fieldsDiv.innerHTML = '<div class="text-center"><div class="loader inline-block"></div></div>'; if (isManualNew) { title.innerText = "Add New Volunteer"; submitBtn.innerText = "Add New Volunteer & Update Attendance"; projectContainer.classList.remove('hidden'); document.getElementById('newVolProjectSearch').value = ""; document.getElementById('newVolProjectSearch').required = true; } else { title.innerText = "Loading..."; submitBtn.innerText = "Update Attendance"; projectContainer.classList.add('hidden'); document.getElementById('newVolProjectSearch').required = false; } apiCall('getPersonData', { url: url, type: selectedVolType, name: name }).then(res => { fieldsDiv.innerHTML = ''; if(res.success) { const data = res.data; const config = res.config; const meetingOpts = res.meetingOpts || []; const dismissalOpts = res.dismissalOpts || []; const isNew = res.isNew || isManualNew; allProjects = res.projectOpts || []; title.innerHTML = isNew ? `Add New: <span class="text-green-400">Volunteer</span>` : `Update: <span class="text-blue-400">${name}</span>`; if(isNew) submitBtn.innerText = "Add New Volunteer & Update Attendance"; else submitBtn.innerText = "Update Attendance"; let fieldsToShow = (config && config.length > 0) ? config : res.headers.map(h => h.replace(/\[.*?\]/g,"").trim()); if (isNew) { const nameFieldExists = fieldsToShow.some(f => f.toLowerCase().includes("name")); if (!nameFieldExists) { const rawNameHeader = res.headers.find(h => h.toLowerCase().includes("name")) || "Volunteer Name"; fieldsToShow.unshift(rawNameHeader.replace(/\[.*?\]/g,"").trim()); } } fieldsToShow.forEach(header => { let val = isNew ? "" : (getValueFuzzy(data, header)); let cleanH = header.toLowerCase(); let isNameField = cleanH.includes("name"); if(isNew && cleanH.includes("project")) return; let isReadOnly = isNameField && !isNew; if(isNew && isNameField) val = ""; if(!isNew && isNameField) val = name; let inputHtml = ""; let wrapperClass = "mb-1"; if (!isNameField && !cleanH.includes("attending")) { wrapperClass += " attendance-dependent"; } if (cleanH.includes("attending")) { inputHtml = ` <select name="${header}" onchange="toggleDependentFields(this)" class="w-full bg-slate-900 border border-slate-600 text-white rounded p-2 text-sm focus:border-green-500"> <option value="" ${val===""?"selected":""}>Select...</option> <option value="Y" ${val.toLowerCase()==="y"?"selected":""}>Y (Yes)</option> <option value="N" ${val.toLowerCase()==="n"?"selected":""}>N (No)</option> </select>`; } else if (cleanH.includes("meeting location") || cleanH.includes("dismissal location")) { const isDismissal = cleanH.includes("dismissal"); const optionsList = isDismissal ? dismissalOpts : meetingOpts; const placeholder = isDismissal ? "Select Dismissal..." : "Select Meeting..."; let optionsHtml = optionsList.map(opt => { const isSelected = val.toString().trim().toLowerCase() === opt.toString().trim().toLowerCase(); return `<option value="${opt}" ${isSelected ? "selected" : ""}>${opt}</option>`; }).join(""); const valTrimmed = val.toString().trim(); if (valTrimmed !== "") { const listHasValue = optionsList.some(opt => opt.toString().trim().toLowerCase() === valTrimmed.toLowerCase()); if (!listHasValue) { optionsHtml += `<option value="${val}" selected>${val} (Current)</option>`; } } inputHtml = ` <select name="${header}" class="w-full bg-slate-900 border border-slate-600 text-white rounded p-2 text-sm focus:border-green-500"> <option value="">${placeholder}</option> ${optionsHtml} </select>`; } else if (cleanH.includes("remark")) { inputHtml = `<textarea name="${header}" rows="8" ${isReadOnly ? 'readonly' : ''} class="w-full bg-slate-900 border ${isReadOnly ? 'border-slate-700 text-slate-500' : 'border-slate-600 text-white focus:border-green-500'} rounded p-2 text-sm resize-y [color-scheme:dark]">${val}</textarea>`; } else { let type = "text"; if(cleanH.includes("date")) type = "date"; if(cleanH.includes("time")) type = "time"; inputHtml = `<input name="${header}" type="${type}" value="${val}" ${isReadOnly ? 'readonly' : ''} class="w-full bg-slate-900 border ${isReadOnly ? 'border-slate-700 text-slate-500' : 'border-slate-600 text-white focus:border-green-500'} rounded p-2 text-sm [color-scheme:dark]">`; } fieldsDiv.innerHTML += `<div class="${wrapperClass}"><label class="block text-xs font-bold text-slate-400 mb-1">${header}</label>${inputHtml}</div>`; }); const attSelect = document.querySelector('select[name*="Attending"], select[name*="attending"]'); if(attSelect) toggleDependentFields(attSelect); } else { fieldsDiv.innerHTML = '<div class="text-red-400">Error: ' + res.message + '</div>'; } }).getPersonData(url, selectedVolType, name); }
-     
-     // --- UPDATED SUBMIT FUNCTION WITH OVERLAY ---
-     function submitAttendance(e) { 
-        e.preventDefault(); 
-        const btn = document.getElementById('volSubmitBtn'); 
-        
-        // Show Loading Overlay
-        showOverlay('loading', 'Saving Attendance...');
-        
-        const formEl = document.getElementById('attendanceForm'); 
-        const formData = new FormData(formEl); 
-        let dataObj = {}; 
-        formData.forEach((value, key) => dataObj[key] = value); 
-        let target = document.getElementById('volNameSearch').value; 
-        if (!target || target === "") { for (let k in dataObj) { if (k.toLowerCase().includes("name")) { target = dataObj[k]; break; } } } 
-        const payload = { sheetUrl: document.getElementById('volSheetSelector').value, type: selectedVolType, data: dataObj, targetName: target }; 
-        
-        apiCall('submitAttendanceData', payload).then(res => { 
-            if(res.success) {
-                showOverlay('success', res.message);
-                if(selectedVolType === 'volunteer') { 
-                    if(res.message.includes("added")) { 
-                        resetVolForm(); 
-                        document.getElementById('volNameSearch').value = ""; 
-                    } 
-                    const url = document.getElementById('volSheetSelector').value; 
-                    apiCall('getNamesList', { url: url, type: 'volunteer' }).then(r => { if(r.success) allNames = r.names; }); 
-                } 
-            } else {
-                showOverlay('error', res.message);
-            }
-        }); 
-     }
-
-     // --- UPDATED CREATE FUNCTION WITH OVERLAY ---
-     function handleCreate(e) { 
-        e.preventDefault(); 
-        showOverlay('loading', 'Creating Outing...');
-        
-        const form = document.getElementById('outingForm'); 
-        const formData = { eventName: document.getElementById('eventName').value, eventDate: document.getElementById('eventDate').value, meetingLocs: Array.from(document.getElementsByName('meetingLoc')).map(i=>i.value), meetingTimes: Array.from(document.getElementsByName('meetingTime')).map(i=>i.value), dismissalLocs: Array.from(document.getElementsByName('dismissalLoc')).map(i=>i.value), dismissalTimes: Array.from(document.getElementsByName('dismissalTime')).map(i=>i.value), }; 
-        
-        apiCall('createOuting', formData).then(res => { 
-            if(res.success) { 
-                showOverlay('success', 'Outing Created Successfully!');
-                closeModal(); 
-                loadSheets('comm'); 
-            } else { 
-                showOverlay('error', res.message);
-            } 
-        }); 
-     }
-
-     function handlePair() { const url = document.getElementById('commSheetSelector').value; const btn = document.getElementById('scrubBtn'); const status = document.getElementById('scrubStatus'); if(!url || url.includes("Select")) return alert("Select a sheet first"); btn.disabled = true; btn.innerText = "Pairing..."; status.classList.add('hidden'); apiCall('runAutoPairing', url).then(res => { btn.disabled = false; btn.innerText = "Pair Now"; showFlashMessage('scrubStatus', res.message, res.success ? 'success' : 'error'); }); }
-     function handleGroup() { const url = document.getElementById('commSheetSelector').value; const btn = document.getElementById('groupBtn'); if(!url || url.includes("Select")) return alert("Select a sheet first"); btn.disabled = true; btn.innerText = "Grouping..."; apiCall('runAutoGrouping', url).then(res => { btn.disabled = false; btn.innerText = "Group Now"; showFlashMessage('scrubStatus', res.message, res.success ? 'success' : 'error'); }); }
-     function loadSettings() { const loader = document.getElementById('settingsLoader'); const content = document.getElementById('settingsContent'); loader.classList.remove('hidden'); content.classList.add('hidden'); apiCall('getAppSettings', null).then(savedSettings => { apiCall('getTemplateHeaders', null).then(res => { document.getElementById('settingsLoader').classList.add('hidden'); document.getElementById('settingsContent').classList.remove('hidden'); if(res.success) { renderSettingsCheckboxes(res.tHeaders, res.vHeaders, savedSettings); } else { alert("Error loading template headers: " + res.message); } }).getTemplateHeaders(); }).getAppSettings(); }
-     function renderSettingsCheckboxes(tHeaders, vHeaders, saved) { const tContainer = document.getElementById('traineeColsContainer'); const vContainer = document.getElementById('volColsContainer'); tContainer.innerHTML = ''; vContainer.innerHTML = ''; tHeaders.forEach(h => { let checked = (saved.traineeCols.includes(h) || saved.traineeCols.length === 0) ? 'checked' : ''; tContainer.innerHTML += `<label class="flex items-center gap-2"><input type="checkbox" class="t-col-check accent-purple-500" value="${h}" ${checked}> <span class="text-slate-300">${h}</span></label>`; }); vHeaders.forEach(h => { let checked = (saved.volCols.includes(h) || saved.volCols.length === 0) ? 'checked' : ''; vContainer.innerHTML += `<label class="flex items-center gap-2"><input type="checkbox" class="v-col-check accent-purple-500" value="${h}" ${checked}> <span class="text-slate-300">${h}</span></label>`; }); }
-     function saveSettings() { const tCols = Array.from(document.querySelectorAll('.t-col-check:checked')).map(cb => cb.value); const vCols = Array.from(document.querySelectorAll('.v-col-check:checked')).map(cb => cb.value); const settings = { traineeCols: tCols, volCols: vCols }; showFlashMessage('settingsStatus', "Saving...", 'success'); apiCall('saveAppSettings', settings).then(res => { showFlashMessage('settingsStatus', res.message, 'success'); }).saveAppSettings(settings); }
-     const modal = document.getElementById('createModal'); const modalPanel = document.getElementById('modalPanel'); function openModal() { modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); modalPanel.classList.remove('scale-95'); modalPanel.classList.add('scale-100'); }, 10); } function closeModal() { modal.classList.add('opacity-0'); modalPanel.classList.remove('scale-100'); modalPanel.classList.add('scale-95'); setTimeout(() => { modal.classList.add('hidden'); }, 300); } function handleCreate(e) { e.preventDefault(); const btn = document.getElementById('submitCreateBtn'); const stat = document.getElementById('createStatusArea'); btn.disabled = true; btn.innerText = "Processing..."; showFlashMessage('createStatusArea', "Creating...", 'success'); const form = document.getElementById('outingForm'); const formData = { eventName: document.getElementById('eventName').value, eventDate: document.getElementById('eventDate').value, meetingLocs: Array.from(document.getElementsByName('meetingLoc')).map(i=>i.value), meetingTimes: Array.from(document.getElementsByName('meetingTime')).map(i=>i.value), dismissalLocs: Array.from(document.getElementsByName('dismissalLoc')).map(i=>i.value), dismissalTimes: Array.from(document.getElementsByName('dismissalTime')).map(i=>i.value), }; apiCall('createOuting', formData).then(res => { btn.disabled = false; btn.innerText = "Generate"; if(res.success) { showFlashMessage('createStatusArea', "Success! Folder Created.", 'success'); closeModal(); loadSheets('comm'); showFlashMessage('commGlobalStatus', "Outing Created Successfully!", 'success'); } else { showFlashMessage('createStatusArea', res.message, 'error'); } }); }
-
-     // --- SERVICE WORKER REGISTRATION ---
-     if ('serviceWorker' in navigator) {
-         window.addEventListener('load', () => {
-             navigator.serviceWorker.register('sw.js').then(reg => {
-                 console.log('Service Worker Registered successfully');
-             }).catch(err => {
-                 console.warn('Service Worker registration failed:', err);
-             });
-         });
-     }
-   </script>
 </body>
 </html>

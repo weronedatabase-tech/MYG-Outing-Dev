@@ -1,43 +1,52 @@
-const CACHE_NAME = 'myg-outing-cache-v2';
+const CACHE_NAME = 'minds-myg-cache-v2';
+const urlsToCache = [
+  './',
+  './index.html',
+  './manifest.json',
+  './frontend/css/style.css',
+  './backend/config.js',
+  './frontend/js/state.js',
+  './frontend/js/api.js',
+  './frontend/js/ui.js',
+  './frontend/js/auth.js',
+  './frontend/js/comm.js',
+  './frontend/js/volunteer.js',
+  './frontend/js/settings.js',
+  './frontend/js/main.js'
+];
 
 self.addEventListener('install', event => {
-    // Force the waiting service worker to become the active service worker immediately
-    self.skipWaiting(); 
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => {
+        return cache.addAll(urlsToCache);
+      })
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request);
+      })
+  );
 });
 
 self.addEventListener('activate', event => {
-    // Clean up old caches when the new version activates
-    event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (cacheName !== CACHE_NAME) {
-                        return caches.delete(cacheName);
-                    }
-                })
-            );
-        }).then(() => self.clients.claim()) 
-    );
-});
-
-// Network-first strategy to ensure the newest code is fetched, falling back to cache if offline
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        fetch(event.request)
-            .then(response => {
-                // If network fetch succeeds, clone and store it in cache
-                const responseClone = response.clone();
-                caches.open(CACHE_NAME).then(cache => {
-                    // Only cache successful GET requests over http/https
-                    if (event.request.method === 'GET' && event.request.url.startsWith('http')) {
-                        cache.put(event.request, responseClone);
-                    }
-                });
-                return response;
-            })
-            .catch(() => {
-                // If network fails (e.g. offline), try to serve the resource from cache
-                return caches.match(event.request);
-            })
-    );
+  const cacheWhitelist = [CACHE_NAME];
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
 });
