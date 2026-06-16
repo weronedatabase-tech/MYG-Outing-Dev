@@ -622,9 +622,11 @@ function fetchCommAttendance(sheetUrl) {
        const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
        
        const groupIdx = getColIndex(headers, "group");
-       const nameIdx = getColIndex(headers, "trainee");
        
-       if (nameIdx === -1) return { success: false, message: "Could not find 'Trainee' column in Groupings tab." };
+       // Relaxed search for name column to ensure we find it. Search "trainee", then "name", then default to Col A.
+       let nameIdx = getColIndex(headers, "trainee");
+       if (nameIdx === -1) nameIdx = getColIndex(headers, "name");
+       if (nameIdx === -1) nameIdx = 0; // Fallback to first column
        
        const junctures = [];
        const junctureColMap = {}; // name -> index
@@ -732,10 +734,15 @@ function syncCommAttendance(sheetUrl, junctureName, updates) {
        if (lastRow < 2) return { success: true };
        
        const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
-       const nameIdx = getColIndex(headers, "trainee");
+       
+       // Relaxed search for name column. Search "trainee", then "name", then default to Col A.
+       let nameIdx = getColIndex(headers, "trainee");
+       if (nameIdx === -1) nameIdx = getColIndex(headers, "name");
+       if (nameIdx === -1) nameIdx = 0;
+       
        const juncIdx = headers.indexOf(headerName);
        
-       if (nameIdx === -1 || juncIdx === -1) return { success: false, message: "Required columns not found." };
+       if (juncIdx === -1) return { success: false, message: "Juncture column not found." };
        
        const namesData = sheet.getRange(2, nameIdx + 1, lastRow - 1).getValues();
        const juncRange = sheet.getRange(2, juncIdx + 1, lastRow - 1);
