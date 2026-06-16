@@ -115,8 +115,11 @@ return str.toString().toLowerCase().replace(/[^a-z0-9]/g, "");
 // --- SHARED HELPER: KEYWORD COLUMN FINDER ---
 function getColIndex(headers, keyword) {
 if (!headers || !keyword) return -1;
-const key = keyword.toString().toLowerCase();
-return headers.findIndex(h => h.toString().toLowerCase().includes(key));
+const key = keyword.toString().toLowerCase().replace(/[^a-z0-9]/g, "");
+return headers.findIndex(h => {
+  if (h == null) return false;
+  return h.toString().toLowerCase().replace(/[^a-z0-9]/g, "").includes(key);
+});
 }
 
 function getGroupingSheet(ss) {
@@ -623,8 +626,8 @@ function fetchCommAttendance(sheetUrl) {
        
        const groupIdx = getColIndex(headers, "group");
        
-       // Relaxed search for name column to ensure we find it. Search "trainee name", then "trainee", then "name", then default to Col A.
-       let nameIdx = getColIndex(headers, "trainee name");
+       // Relaxed search for name column to ensure we find it. Search "traineename", then "trainee", then "name", then default to Col A.
+       let nameIdx = getColIndex(headers, "traineename");
        if (nameIdx === -1) nameIdx = getColIndex(headers, "trainee");
        if (nameIdx === -1) nameIdx = getColIndex(headers, "name");
        if (nameIdx === -1) nameIdx = 0; // Fallback to first column
@@ -736,8 +739,8 @@ function syncCommAttendance(sheetUrl, junctureName, updates) {
        
        const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
        
-       // Relaxed search for name column. Search "trainee name", then "trainee", then "name", then default to Col A.
-       let nameIdx = getColIndex(headers, "trainee name");
+       // Relaxed search for name column. Search "traineename", then "trainee", then "name", then default to Col A.
+       let nameIdx = getColIndex(headers, "traineename");
        if (nameIdx === -1) nameIdx = getColIndex(headers, "trainee");
        if (nameIdx === -1) nameIdx = getColIndex(headers, "name");
        if (nameIdx === -1) nameIdx = 0;
