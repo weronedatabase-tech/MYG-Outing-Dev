@@ -623,8 +623,9 @@ function fetchCommAttendance(sheetUrl) {
        
        const groupIdx = getColIndex(headers, "group");
        
-       // Relaxed search for name column to ensure we find it. Search "trainee", then "name", then default to Col A.
-       let nameIdx = getColIndex(headers, "trainee");
+       // Relaxed search for name column to ensure we find it. Search "trainee name", then "trainee", then "name", then default to Col A.
+       let nameIdx = getColIndex(headers, "trainee name");
+       if (nameIdx === -1) nameIdx = getColIndex(headers, "trainee");
        if (nameIdx === -1) nameIdx = getColIndex(headers, "name");
        if (nameIdx === -1) nameIdx = 0; // Fallback to first column
        
@@ -735,8 +736,9 @@ function syncCommAttendance(sheetUrl, junctureName, updates) {
        
        const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
        
-       // Relaxed search for name column. Search "trainee", then "name", then default to Col A.
-       let nameIdx = getColIndex(headers, "trainee");
+       // Relaxed search for name column. Search "trainee name", then "trainee", then "name", then default to Col A.
+       let nameIdx = getColIndex(headers, "trainee name");
+       if (nameIdx === -1) nameIdx = getColIndex(headers, "trainee");
        if (nameIdx === -1) nameIdx = getColIndex(headers, "name");
        if (nameIdx === -1) nameIdx = 0;
        
