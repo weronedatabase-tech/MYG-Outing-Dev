@@ -23,43 +23,50 @@ function loadSheets(viewId) {
        selector.disabled = false;
        selector.innerHTML = '';
        
-       if(viewId === 'comm' && listContainer) {
-           listContainer.innerHTML = '';
-           outingReminders = {}; 
-           if(res.success && res.data.length > 0) {
-               let allCards = '';
-               res.data.forEach((item, index) => {
-                   allCards += `
-                   <div class="flex flex-col gap-2 p-4 bg-slate-700/50 rounded-xl border border-slate-600 shadow-md relative">
-                      <div class="flex justify-between items-start">
-                        <div><div class="font-bold text-white text-sm">${item.displayName}</div><div class="text-slate-400 text-xs">${item.formattedDate}</div></div>
-                        <div class="flex gap-2 text-xs"><a href="${item.folderUrl}" target="_blank" class="text-blue-400 hover:text-blue-300"><i class="fa-regular fa-folder-open"></i></a><a href="${item.sheetUrl}" target="_blank" class="text-green-400 hover:text-green-300"><i class="fa-regular fa-file-excel"></i></a></div>
-                      </div>
-                      <div id="stats-${index}" class="text-xs text-slate-500 animate-pulse mt-2">Loading stats...</div>
-                      <div id="btn-group-${index}" class="hidden flex gap-2 mt-2 pt-2 border-t border-slate-600/50">
-                          <button onclick="openReminderModal('${index}')" class="flex-1 bg-slate-800 hover:bg-slate-600 text-slate-300 text-xs py-2 px-3 rounded border border-slate-600 transition-colors"><i class="fa-regular fa-message mr-1"></i> Reminder Message</button>
-                          <button onclick="copyReminderDirect('${index}', this)" class="bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white text-xs py-2 px-3 rounded border border-slate-600 transition-colors"><i class="fa-regular fa-copy"></i></button>
-                      </div>
-                   </div>`;
-               });
-               listContainer.innerHTML = allCards;
-               res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
-           } else {
-               listContainer.innerHTML = '<p class="text-xs text-slate-500 italic">No upcoming outings found.</p>';
+       if (res.success) {
+           if(viewId === 'comm' && listContainer) {
+               listContainer.innerHTML = '';
+               outingReminders = {}; 
+               if(res.data.length > 0) {
+                   let allCards = '';
+                   res.data.forEach((item, index) => {
+                       allCards += `
+                       <div class="flex flex-col gap-2 p-4 bg-slate-700/50 rounded-xl border border-slate-600 shadow-md relative">
+                          <div class="flex justify-between items-start">
+                            <div><div class="font-bold text-white text-sm">${item.displayName}</div><div class="text-slate-400 text-xs">${item.formattedDate}</div></div>
+                            <div class="flex gap-2 text-xs"><a href="${item.folderUrl}" target="_blank" class="text-blue-400 hover:text-blue-300"><i class="fa-regular fa-folder-open"></i></a><a href="${item.sheetUrl}" target="_blank" class="text-green-400 hover:text-green-300"><i class="fa-regular fa-file-excel"></i></a></div>
+                          </div>
+                          <div id="stats-${index}" class="text-xs text-slate-500 animate-pulse mt-2">Loading stats...</div>
+                          <div id="btn-group-${index}" class="hidden flex gap-2 mt-2 pt-2 border-t border-slate-600/50">
+                              <button onclick="openReminderModal('${index}')" class="flex-1 bg-slate-800 hover:bg-slate-600 text-slate-300 text-xs py-2 px-3 rounded border border-slate-600 transition-colors"><i class="fa-regular fa-message mr-1"></i> Reminder Message</button>
+                              <button onclick="copyReminderDirect('${index}', this)" class="bg-slate-800 hover:bg-blue-600 text-slate-300 hover:text-white text-xs py-2 px-3 rounded border border-slate-600 transition-colors"><i class="fa-regular fa-copy"></i></button>
+                          </div>
+                       </div>`;
+                   });
+                   listContainer.innerHTML = allCards;
+                   res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
+               } else {
+                   listContainer.innerHTML = '<p class="text-xs text-slate-500 italic">No upcoming outings found.</p>';
+               }
            }
-       }
-       if(res.success && res.data.length > 0) {
-           currentSheetList = res.data;
-           res.data.forEach(item => {
-               let opt = document.createElement('option');
-               opt.value = item.sheetUrl;
-               opt.text = item.displayName;
-               selector.appendChild(opt);
-           });
-           selector.selectedIndex = 0;
-           if(viewId === 'volunteer') resetVolForm();
+           if(res.data.length > 0) {
+               currentSheetList = res.data;
+               res.data.forEach(item => {
+                   let opt = document.createElement('option');
+                   opt.value = item.sheetUrl;
+                   opt.text = item.displayName;
+                   selector.appendChild(opt);
+               });
+               selector.selectedIndex = 0;
+               if(viewId === 'volunteer') resetVolForm();
+           } else {
+               selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+           }
        } else {
-           selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+           selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
+           if(viewId === 'comm' && listContainer) {
+               listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
+           }
        }
    });
 }
@@ -125,7 +132,7 @@ function handlePair() {
    const url = document.getElementById('commSheetSelector').value; 
    const btn = document.getElementById('scrubBtn'); 
    const status = document.getElementById('scrubStatus'); 
-   if(!url || url.includes("Select") || url.includes("Loading")) return alert("Select an event first"); 
+   if(!url || url.includes("Select") || url.includes("Loading") || url.includes("Error")) return alert("Select an event first"); 
    btn.disabled = true; 
    btn.innerText = "Pairing..."; 
    status.classList.add('hidden'); 
@@ -139,7 +146,7 @@ function handlePair() {
 function handleGroup() { 
    const url = document.getElementById('commSheetSelector').value; 
    const btn = document.getElementById('groupBtn'); 
-   if(!url || url.includes("Select") || url.includes("Loading")) return alert("Select an event first"); 
+   if(!url || url.includes("Select") || url.includes("Loading") || url.includes("Error")) return alert("Select an event first"); 
    btn.disabled = true; 
    btn.innerText = "Grouping..."; 
    apiCall('runAutoGrouping', url).then(res => { 
@@ -200,7 +207,7 @@ function handleCreate(e) {
 function openLiveAttendance() {
     const selector = document.getElementById('commSheetSelector');
     const url = selector.value;
-    if(!url || url.includes("Select") || url.includes("Loading")) return alert("Select an event first");
+    if(!url || url.includes("Select") || url.includes("Loading") || url.includes("Error")) return alert("Select an event first");
     
     currentCommAttSheetUrl = url;
     document.getElementById('commAttEventName').innerText = "Attendance: " + selector.options[selector.selectedIndex].text;

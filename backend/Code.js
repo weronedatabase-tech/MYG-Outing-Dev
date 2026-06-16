@@ -230,10 +230,14 @@ function getRecentOutingSheets() {
    const parentFolder = DriveApp.getFolderById(PARENT_FOLDER_ID);
    const subfolders = parentFolder.getFolders();
    const folderList = [];
-   const todayString = Utilities.formatDate(new Date(), "GMT+8", "yyyyMMdd");
-   const todayNum = parseInt(todayString);
+   
+   // Expanded lookback window: past 90 days
+   const cutoffDate = new Date();
+   cutoffDate.setDate(cutoffDate.getDate() - 90);
+   const cutoffString = Utilities.formatDate(cutoffDate, "GMT+8", "yyyyMMdd");
+   const cutoffNum = parseInt(cutoffString);
   
-   const regex = /^(\d{8})[ _-](.*)$/;
+   const regex = /(\d{8})/;
    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
    let count = 0;
@@ -247,30 +251,52 @@ function getRecentOutingSheets() {
      let name = folder.getName();
      let match = name.match(regex);
 
-     if (match) {
-       let folderDateNum = parseInt(match[1]);
-       let cleanName = match[2];
+     let folderDateNum;
+     let cleanName = name;
+     let prettyDate = "";
 
-       if (folderDateNum >= todayNum) {
-         let dStr = match[1];
-         let y = dStr.substring(0, 4);
-         let mIndex = parseInt(dStr.substring(4, 6), 10) - 1;
-         let d = parseInt(dStr.substring(6, 8), 10);
-         let prettyDate = `${d} ${monthNames[mIndex]} ${y}`;
-        
-         folderList.push({
-           id: folder.getId(),
-           fullName: name,
-           displayName: cleanName,
-           formattedDate: prettyDate,
-           folderUrl: folder.getUrl(),
-           sheetUrl: ""
-         });
+     if (match) {
+       let dStr = match[1];
+       folderDateNum = parseInt(dStr);
+       cleanName = name.replace(dStr, "").replace(/^[_-\s]+|[_-\s]+$/g, "").trim();
+
+       let y = dStr.substring(0, 4);
+       let mIndex = parseInt(dStr.substring(4, 6), 10) - 1;
+       let d = parseInt(dStr.substring(6, 8), 10);
+
+       if (mIndex >= 0 && mIndex < 12 && d > 0 && d <= 31) {
+          prettyDate = `${d} ${monthNames[mIndex]} ${y}`;
+       } else {
+          let creationDate = folder.getDateCreated();
+          folderDateNum = parseInt(Utilities.formatDate(creationDate, "GMT+8", "yyyyMMdd"));
+          prettyDate = `${creationDate.getDate()} ${monthNames[creationDate.getMonth()]} ${creationDate.getFullYear()}`;
        }
+     } else {
+       let creationDate = folder.getDateCreated();
+       folderDateNum = parseInt(Utilities.formatDate(creationDate, "GMT+8", "yyyyMMdd"));
+       prettyDate = `${creationDate.getDate()} ${monthNames[creationDate.getMonth()]} ${creationDate.getFullYear()}`;
+     }
+
+     if (folderDateNum >= cutoffNum) {
+       folderList.push({
+         id: folder.getId(),
+         fullName: name,
+         displayName: cleanName || name,
+         formattedDate: prettyDate,
+         folderDateNum: folderDateNum,
+         folderUrl: folder.getUrl(),
+         sheetUrl: ""
+       });
      }
    }
   
-   folderList.sort((a, b) => a.fullName.localeCompare(b.fullName));
+   // Sort by date descending
+   folderList.sort((a, b) => {
+       if (b.folderDateNum !== a.folderDateNum) {
+           return b.folderDateNum - a.folderDateNum;
+       }
+       return a.fullName.localeCompare(b.fullName);
+   });
 
    const result = [];
    const limit = Math.min(folderList.length, 20);
@@ -288,7 +314,9 @@ function getRecentOutingSheets() {
      }
    }
    return { success: true, data: result };
- } catch (e) { return { success: false, message: e.toString() }; }
+ } catch (e) { 
+   return { success: false, message: e.toString() }; 
+ }
 }
 
 /* =========================================
