@@ -89,7 +89,7 @@ try {
      result = deleteCommJuncture(payload.sheetUrl, payload.junctureName);
      break;
    case 'syncCommAttendance':
-     result = syncCommAttendance(payload.sheetUrl, payload.junctureName, payload.updates);
+     result = syncCommAttendance(payload.sheetUrl, payload.multipleUpdates);
      break;
    default:
      result = { success: false, message: "Unknown Action: " + action };
@@ -620,11 +620,13 @@ function fetchCommAttendance(sheetUrl) {
       
       const lastRow = sheet.getLastRow();
       const lastCol = sheet.getLastColumn();
-      if (lastRow < 2) return { success: true, participants: [], junctures: [], attendance: {} };
+      if (lastRow < 2) return { success: true, participants: [], junctures: [], attendance: { '__GONE_HOME__': {} } };
       
       const headers = sheet.getRange(2, 1, 1, lastCol).getValues()[0];
       
-      const groupIdx = getColIndex(headers, "group");
+      const cgIdx = getColIndex(headers, "caregiversfollowing");
+      const volIdx = getColIndex(headers, "volunteerpaired");
+      const goneHomeIdx = headers.indexOf("[Sys] Gone Home");
       
       let nameIdx = getColIndex(headers, "traineename");
       if (nameIdx === -1) nameIdx = getColIndex(headers, "trainee");
@@ -632,7 +634,7 @@ function fetchCommAttendance(sheetUrl) {
       if (nameIdx === -1) nameIdx = 0; // Fallback to first column
       
       const junctures = [];
-      const junctureColMap = {}; // name -> index
+      const junctureColMap = {}; 
       headers.forEach((h, i) => {
           const str = String(h);
           if (str.startsWith("[Att] ")) {
@@ -644,15 +646,24 @@ function fetchCommAttendance(sheetUrl) {
       
       const data = lastRow > 2 ? sheet.getRange(3, 1, lastRow - 2, lastCol).getValues() : [];
       const participants = [];
-      const attendance = {};
+      const attendance = { '__GONE_HOME__': {} };
       
       junctures.forEach(j => attendance[j] = {});
       
       data.forEach(row => {
           const name = String(row[nameIdx]).trim();
           if (name) {
-              const group = groupIdx > -1 ? String(row[groupIdx]).trim() : "";
-              participants.push({ name: name, group: group });
+              const group = String(row[0]).trim(); // Column A contains the group number
+              const caregivers = cgIdx > -1 ? parseInt(row[cgIdx]) || 0 : 0;
+              const volPaired = volIdx > -1 ? String(row[volIdx]).trim() : "";
+              
+              participants.push({ name: name, group: group, caregivers: caregivers, volPaired: volPaired });
+              
+              if (goneHomeIdx > -1) {
+                  attendance['__GONE_HOME__'][name] = (row[goneHomeIdx] === true || String(row[goneHomeIdx]).toLowerCase() === 'true');
+              } else {
+                  attendance['__GONE_HOME__'][name] = false;
+              }
               
               junctures.forEach(j => {
                   const val = row[junctureColMap[j]];
@@ -722,7 +733,7 @@ function deleteCommJuncture(sheetUrl, junctureName) {
   }
 }
 
-function syncCommAttendance(sheetUrl, junctureName, updates) {
+function syncCommAttendance(sheetUrl, multipleUpdates) {
   const lock = LockService.getScriptLock();
   try {
       lock.waitLock(10000);
@@ -730,43 +741,59 @@ function syncCommAttendance(sheetUrl, junctureName, updates) {
       const sheet = getGroupingSheet(ss);
       if (!sheet) return { success: false, message: "Groupings tab not found." };
       
-      const headerName = `[Att] ${junctureName}`;
-      const lastRow = sheet.getLastRow();
-      const lastCol = sheet.getLastColumn();
+      let lastRow = sheet.getLastRow();
+      let lastCol = sheet.getLastColumn();
       
       if (lastRow < 3) return { success: true };
       
-      const headers = sheet.getRange(2, 1, 1, lastCol).getValues()[0];
+      let headers = sheet.getRange(2, 1, 1, lastCol).getValues()[0];
       
       let nameIdx = getColIndex(headers, "traineename");
       if (nameIdx === -1) nameIdx = getColIndex(headers, "trainee");
       if (nameIdx === -1) nameIdx = getColIndex(headers, "name");
       if (nameIdx === -1) nameIdx = 0;
       
-      const juncIdx = headers.indexOf(headerName);
-      
-      if (juncIdx === -1) return { success: false, message: "Juncture column not found." };
-      
       const namesData = sheet.getRange(3, nameIdx + 1, lastRow - 2).getValues();
-      const juncRange = sheet.getRange(3, juncIdx + 1, lastRow - 2);
-      const juncData = juncRange.getValues();
+      let changedGlobal = false;
       
-      const updateMap = {};
-      updates.forEach(u => updateMap[u.name.toLowerCase()] = u.status);
-      
-      let changed = false;
-      for (let i = 0; i < namesData.length; i++) {
-          const name = String(namesData[i][0]).trim().toLowerCase();
-          if (name && updateMap.hasOwnProperty(name)) {
-              if (juncData[i][0] !== updateMap[name]) {
-                  juncData[i][0] = updateMap[name];
-                  changed = true;
+      for (const [junctureName, updates] of Object.entries(multipleUpdates)) {
+          let targetHeader = junctureName === '__GONE_HOME__' ? "[Sys] Gone Home" : `[Att] ${junctureName}`;
+          let juncIdx = headers.indexOf(targetHeader);
+          
+          if (juncIdx === -1 && junctureName === '__GONE_HOME__') {
+              const newColIdx = lastCol + 1;
+              sheet.insertColumnAfter(lastCol);
+              sheet.getRange(2, newColIdx).setValue(targetHeader);
+              sheet.getRange(3, newColIdx, lastRow - 2).insertCheckboxes();
+              SpreadsheetApp.flush();
+              headers = sheet.getRange(2, 1, 1, newColIdx).getValues()[0];
+              lastCol = newColIdx;
+              juncIdx = newColIdx - 1;
+          } else if (juncIdx === -1) {
+              continue; 
+          }
+          
+          const juncRange = sheet.getRange(3, juncIdx + 1, lastRow - 2);
+          const juncData = juncRange.getValues();
+          
+          const updateMap = {};
+          updates.forEach(u => updateMap[u.name.toLowerCase()] = u.status);
+          
+          let changed = false;
+          for (let i = 0; i < namesData.length; i++) {
+              const name = String(namesData[i][0]).trim().toLowerCase();
+              if (name && updateMap.hasOwnProperty(name)) {
+                  if (juncData[i][0] !== updateMap[name]) {
+                      juncData[i][0] = updateMap[name];
+                      changed = true;
+                  }
               }
           }
-      }
-      
-      if (changed) {
-          juncRange.setValues(juncData);
+          
+          if (changed) {
+              juncRange.setValues(juncData);
+              changedGlobal = true;
+          }
       }
       
       return { success: true };
