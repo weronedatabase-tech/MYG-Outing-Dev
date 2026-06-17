@@ -350,41 +350,42 @@ function renderCommAttLists() {
 }
 
 function generateCommAttCard(p, isChecked, isGoneHome) {
-  const groupBadge = p.group ? `<span class="text-[8px] bg-slate-700 text-slate-300 px-1 py-0.5 rounded border border-slate-600 truncate max-w-[80px]">Grp ${p.group}</span>` : '';
   const safeName = p.name.replace(/'/g, "\\'");
   
-  const caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
+  const caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm mt-px" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
   
   let volHtml = '';
   if (p.volPaired) {
       const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
       if (vols.length > 0) {
-          volHtml = `<div class="flex flex-wrap gap-1 mt-0.5">` + 
-                    vols.map(v => `<span class="text-[9px] text-teal-400 leading-tight font-bold bg-teal-900/30 px-1 py-0.5 rounded border border-teal-800/50"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('') +
-                    `</div>`;
+          volHtml = vols.map(v => `<span class="text-[9px] text-teal-400 leading-tight font-bold bg-teal-900/30 px-1 py-0.5 rounded border border-teal-800/50 whitespace-nowrap"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
       }
   }
+  
+  const groupBadge = p.group ? `<span class="text-[9px] bg-slate-700 text-slate-300 px-1 py-0.5 rounded border border-slate-600 whitespace-nowrap">Grp ${p.group}</span>` : '';
   
   const homeBtnClass = isGoneHome ? 'bg-blue-500 text-white border-blue-600 shadow-inner' : 'bg-slate-700 text-slate-400 border-slate-600 hover:text-blue-400 hover:border-blue-500';
   const checkBtnClass = isChecked ? 'bg-green-500 border-green-600 text-white shadow-inner' : 'bg-slate-900 border-slate-600 text-transparent';
 
   return `
-  <div id="comm-att-card-${p.name.replace(/[^a-zA-Z0-9]/g, '')}" class="relative bg-slate-800 p-2 rounded border border-slate-700 shadow-sm transition-all duration-300 flex items-center justify-between gap-1 select-none active:scale-95 cursor-pointer hover:border-teal-500" onclick="toggleCommAttStatus('${safeName}', ${!isChecked}, event)">
-      <div class="flex flex-col min-w-0 flex-1 gap-0.5">
-          <div class="flex items-center flex-wrap gap-x-1.5 gap-y-0.5">
-              <span class="font-extrabold text-xs text-white max-w-full break-words whitespace-normal leading-tight">${p.name}</span>
+  <div id="comm-att-card-${p.name.replace(/[^a-zA-Z0-9]/g, '')}" class="relative bg-slate-800 p-2 rounded border border-slate-700 shadow-sm transition-all duration-300 flex flex-col gap-1.5 select-none active:scale-95 cursor-pointer hover:border-teal-500" onclick="toggleCommAttStatus('${safeName}', ${!isChecked}, event)">
+      <div class="flex justify-between items-start gap-2 w-full">
+          <div class="flex items-start gap-1.5 flex-1 min-w-0">
+              <span class="font-extrabold text-xs text-white leading-tight break-words">${p.name}</span>
               ${caregiverBadge}
           </div>
-          ${volHtml}
-          ${p.group ? `<div class="mt-0.5">${groupBadge}</div>` : ''}
-      </div>
-      <div class="shrink-0 flex items-center justify-center gap-1.5 pl-1">
-          <button onclick="toggleGoneHomeStatus('${safeName}', ${!isGoneHome}, event)" class="w-6 h-6 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
-              <i class="fa-solid fa-house-user text-[10px]"></i>
-          </button>
-          <div class="w-6 h-6 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
-              <i class="fa-solid fa-check text-xs"></i>
+          <div class="shrink-0 flex items-center gap-1.5">
+              <button onclick="toggleGoneHomeStatus('${safeName}', ${!isGoneHome}, event)" class="w-6 h-6 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
+                  <i class="fa-solid fa-house-user text-[10px]"></i>
+              </button>
+              <div class="w-6 h-6 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
+                  <i class="fa-solid fa-check text-xs"></i>
+              </div>
           </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-1 mt-0.5">
+          ${groupBadge}
+          ${volHtml}
       </div>
   </div>`;
 }
@@ -658,21 +659,26 @@ function handleCommAttSearch() {
       if (p.volPaired) {
           const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
           if (vols.length > 0) {
-              volHtml = `<div class="flex flex-wrap gap-1 mt-1">` + 
-                        vols.map(v => `<span class="text-[9px] text-teal-400 leading-tight font-bold bg-teal-900/30 px-1 py-0.5 rounded border border-teal-800/50"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('') +
-                        `</div>`;
+              volHtml = vols.map(v => `<span class="text-[9px] text-teal-400 leading-tight font-bold bg-teal-900/30 px-1 py-0.5 rounded border border-teal-800/50 whitespace-nowrap"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
           }
       }
       
-      let caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm ml-1" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
+      const caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm mt-px" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
+      const groupBadge = p.group ? `<span class="text-[9px] bg-slate-700 text-slate-300 px-1 py-0.5 rounded border border-slate-600 whitespace-nowrap">Grp ${p.group}</span>` : '';
       
       html += `
-      <li class="px-3 py-2 hover:bg-slate-700 cursor-pointer flex justify-between items-start border-b border-slate-700 last:border-0 transition" onclick="selectFromCommAttSearch('${safeName}')">
-          <div class="flex flex-col min-w-0 max-w-[70%]">
-              <span class="font-bold text-xs text-white break-words">${p.name}${caregiverBadge}</span>
+      <li class="px-3 py-2 hover:bg-slate-700 cursor-pointer flex flex-col gap-1 border-b border-slate-700 last:border-0 transition" onclick="selectFromCommAttSearch('${safeName}')">
+          <div class="flex justify-between items-start w-full gap-2">
+              <div class="flex items-start gap-1.5 flex-1 min-w-0">
+                  <span class="font-bold text-xs text-white break-words leading-tight">${p.name}</span>
+                  ${caregiverBadge}
+              </div>
+              <div class="shrink-0">${statusBadge}</div>
+          </div>
+          <div class="flex flex-wrap items-center gap-1 mt-0.5">
+              ${groupBadge}
               ${volHtml}
           </div>
-          <div class="mt-0.5">${statusBadge}</div>
       </li>`;
   });
   
