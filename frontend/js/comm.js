@@ -1,10 +1,17 @@
 let currentCommAttSheetUrl = null;
-let commAttData = { participants: [], junctures: [], attendance: {} };
+let commAttData = { participants: [], junctures: [], attendance: { '__GONE_HOME__': {} } };
 let commAttState = {}; 
-let pendingCommAttUpdates = new Set();
+let pendingCommAttUpdates = {};
 let isCommAttSyncing = false;
 let commAttSyncTimeout = null;
 let commAttPollInterval = null;
+
+function hasPendingUpdates() {
+    for(let junc in pendingCommAttUpdates) {
+        if(Object.keys(pendingCommAttUpdates[junc]).length > 0) return true;
+    }
+    return false;
+}
 
 function loadSheets(viewId) {
   let selectorId, loadingId;
@@ -68,7 +75,12 @@ function loadSheets(viewId) {
                   selector.appendChild(opt);
               });
               selector.selectedIndex = 0;
-              if(viewId === 'volunteer') resetVolForm();
+              
+              if(viewId === 'volunteer') {
+                  resetVolForm();
+              } else if (viewId === 'actual-attendance' && res.data.length === 1) {
+                  setTimeout(() => openLiveAttendance(), 100);
+              }
           } else {
               selector.innerHTML = '<option disabled selected>No upcoming events</option>';
           }
@@ -234,6 +246,8 @@ function loadCommAttendanceData() {
        overlay.classList.add('hidden');
        if (res.success) {
            commAttData = res;
+           if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
+           renderCommAttGroups();
            renderCommAttJunctures();
            startCommAttPolling();
        } else {
@@ -241,6 +255,22 @@ function loadCommAttendanceData() {
            showView('actual-attendance');
        }
    });
+}
+
+function renderCommAttGroups() {
+    const select = document.getElementById('commAttGroupSelect');
+    const currentVal = select.value || 'ALL';
+    let groups = new Set();
+    (commAttData.participants || []).forEach(p => {
+        if (p.group) groups.add(p.group);
+    });
+    let html = '<option value="ALL">All Groups</option>';
+    Array.from(groups).sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true})).forEach(g => {
+        html += `<option value="${g}">Group ${g}</option>`;
+    });
+    select.innerHTML = html;
+    select.value = currentVal;
+    if(!select.value) select.value = 'ALL';
 }
 
 function renderCommAttJunctures() {
@@ -265,43 +295,43 @@ function changeCommAttContext() {
    const juncture = document.getElementById('commAttJunctureSelect').value;
    commAttState.currentJuncture = juncture;
    
-   if (!juncture) {
-       renderCommAttLists();
-       return;
-   }
-   
    renderCommAttLists();
 }
 
 function renderCommAttLists() {
    const notCheckedList = document.getElementById('commAttNotCheckedList');
    const checkedList = document.getElementById('commAttCheckedList');
+   const goneHomeList = document.getElementById('commAttGoneHomeList');
    
-   if (!notCheckedList || !checkedList) return;
+   if (!notCheckedList || !checkedList || !goneHomeList) return;
    
    const juncture = commAttState.currentJuncture;
-   if (!juncture || !commAttData.attendance[juncture]) {
-       notCheckedList.innerHTML = '<p class="text-[10px] text-slate-500 font-bold p-2 text-center mt-2">Empty</p>';
-       checkedList.innerHTML = '<p class="text-[10px] text-slate-500 font-bold p-2 text-center mt-2">Empty</p>';
-       document.getElementById('commAttNotCheckedCount').textContent = '0';
-       document.getElementById('commAttCheckedCount').textContent = '0';
-       return;
-   }
+   const groupFilter = document.getElementById('commAttGroupSelect').value;
    
    let notCheckedHtml = '';
    let checkedHtml = '';
+   let goneHomeHtml = '';
    let notCheckedCount = 0;
    let checkedCount = 0;
+   let goneHomeCount = 0;
    
-   const participants = commAttData.participants || [];
-   
+   let participants = commAttData.participants || [];
    participants.sort((a, b) => a.name.localeCompare(b.name));
    
+   if (groupFilter !== 'ALL') {
+       participants = participants.filter(p => String(p.group) === groupFilter);
+   }
+   
    participants.forEach(p => {
-       const isChecked = commAttData.attendance[juncture][p.name] === true;
-       const cardHtml = generateCommAttCard(p, isChecked);
+       const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
+       const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
        
-       if (isChecked) {
+       const cardHtml = generateCommAttCard(p, isChecked, isGoneHome);
+       
+       if (isGoneHome) {
+           goneHomeHtml += cardHtml;
+           goneHomeCount++;
+       } else if (isChecked) {
            checkedHtml += cardHtml;
            checkedCount++;
        } else {
@@ -312,54 +342,92 @@ function renderCommAttLists() {
    
    notCheckedList.innerHTML = notCheckedHtml || '<p class="text-[10px] text-slate-500 font-bold p-2 text-center mt-2">Empty</p>';
    checkedList.innerHTML = checkedHtml || '<p class="text-[10px] text-slate-500 font-bold p-2 text-center mt-2">Empty</p>';
+   goneHomeList.innerHTML = goneHomeHtml || '<p class="text-[10px] text-slate-500 font-bold p-2 text-center mt-2">Empty</p>';
    
    document.getElementById('commAttNotCheckedCount').textContent = notCheckedCount;
    document.getElementById('commAttCheckedCount').textContent = checkedCount;
+   document.getElementById('commAttGoneHomeCount').textContent = goneHomeCount;
 }
 
-function generateCommAttCard(p, isChecked) {
-   const groupBadge = p.group ? `<span class="text-[8px] bg-slate-700 text-slate-300 px-1 py-0.5 rounded border border-slate-600 truncate max-w-[80px]">${p.group}</span>` : '';
+function generateCommAttCard(p, isChecked, isGoneHome) {
+   const groupBadge = p.group ? `<span class="text-[8px] bg-slate-700 text-slate-300 px-1 py-0.5 rounded border border-slate-600 truncate max-w-[80px]">Grp ${p.group}</span>` : '';
    const safeName = p.name.replace(/'/g, "\\'");
+   const caregiverBadge = p.caregivers > 0 ? `<div class="absolute -top-2 -left-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center border-2 border-slate-800 text-[10px] font-black text-white z-20 shadow-md" title="${p.caregivers} Caregiver(s)">C</div>` : '';
+   const volText = p.volPaired ? `<span class="text-[9px] text-teal-400 mt-0.5 truncate max-w-full leading-tight font-bold"><i class="fa-solid fa-handshake-angle mr-1"></i>${p.volPaired}</span>` : '';
    
+   const homeBtnClass = isGoneHome ? 'bg-blue-500 text-white border-blue-600 shadow-inner' : 'bg-slate-700 text-slate-400 border-slate-600 hover:text-blue-400 hover:border-blue-500';
+   const checkBtnClass = isChecked ? 'bg-green-500 border-green-600 text-white shadow-inner' : 'bg-slate-900 border-slate-600 text-transparent';
+
    return `
-   <div id="comm-att-card-${p.name.replace(/[^a-zA-Z0-9]/g, '')}" class="relative bg-slate-800 p-2 rounded border border-slate-700 shadow-sm transition-all duration-300 flex items-center justify-between gap-1 select-none active:scale-95 cursor-pointer hover:border-teal-500" onclick="toggleCommAttStatus('${safeName}', ${!isChecked})">
-       <div class="flex flex-col min-w-0 flex-1 gap-1">
+   <div id="comm-att-card-${p.name.replace(/[^a-zA-Z0-9]/g, '')}" class="relative bg-slate-800 p-2 rounded border border-slate-700 shadow-sm transition-all duration-300 flex items-center justify-between gap-1 select-none active:scale-95 cursor-pointer hover:border-teal-500" onclick="toggleCommAttStatus('${safeName}', ${!isChecked}, event)">
+       ${caregiverBadge}
+       <div class="flex flex-col min-w-0 flex-1 gap-0.5">
            <span class="font-extrabold text-xs text-white max-w-full break-words whitespace-normal leading-tight text-left inline-block self-start">${p.name}</span>
+           ${volText}
            ${groupBadge}
        </div>
-       <div class="shrink-0 flex items-center justify-center pl-1">
-           <div class="w-5 h-5 rounded flex items-center justify-center border transition-colors ${isChecked ? 'bg-green-500 border-green-600 text-white shadow-inner' : 'bg-slate-900 border-slate-600 text-transparent'}">
+       <div class="shrink-0 flex items-center justify-center gap-1.5 pl-1">
+           <button onclick="toggleGoneHomeStatus('${safeName}', ${!isGoneHome}, event)" class="w-6 h-6 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
+               <i class="fa-solid fa-house-user text-[10px]"></i>
+           </button>
+           <div class="w-6 h-6 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
                <i class="fa-solid fa-check text-xs"></i>
            </div>
        </div>
    </div>`;
 }
 
-function toggleCommAttStatus(name, forceState) {
-   const juncture = commAttState.currentJuncture;
-   if (!juncture) return;
-   
-   commAttData.attendance[juncture][name] = forceState;
-   pendingCommAttUpdates.add(name);
-   
-   renderCommAttLists();
-   triggerCommAttPulse(name, forceState);
-   
+function triggerSync() {
    if (commAttSyncTimeout) clearTimeout(commAttSyncTimeout);
    commAttSyncTimeout = setTimeout(() => {
        executeCommAttSync();
    }, 800);
 }
 
-function triggerCommAttPulse(name, isChecked) {
+function toggleCommAttStatus(name, forceState, e) {
+   if(e) e.stopPropagation();
+   const juncture = commAttState.currentJuncture;
+   if (!juncture) return;
+   
+   commAttData.attendance[juncture][name] = forceState;
+   if (!pendingCommAttUpdates[juncture]) pendingCommAttUpdates[juncture] = {};
+   pendingCommAttUpdates[juncture][name] = forceState;
+   
+   renderCommAttLists();
+   triggerCommAttPulse(name, forceState ? 'checked' : 'unchecked');
+   triggerSync();
+}
+
+function toggleGoneHomeStatus(name, forceState, e) {
+   if(e) e.stopPropagation();
+   if (!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
+   
+   commAttData.attendance['__GONE_HOME__'][name] = forceState;
+   if (!pendingCommAttUpdates['__GONE_HOME__']) pendingCommAttUpdates['__GONE_HOME__'] = {};
+   pendingCommAttUpdates['__GONE_HOME__'][name] = forceState;
+   
+   renderCommAttLists();
+   triggerCommAttPulse(name, forceState ? 'gonehome' : 'unchecked');
+   triggerSync();
+}
+
+function triggerCommAttPulse(name, stateType) {
    setTimeout(() => {
        const id = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
        const card = document.getElementById(id);
        if (card) {
            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
            
-           const ringColor = isChecked ? 'ring-green-500' : 'ring-red-500';
-           const bgColor = isChecked ? 'bg-green-900/30' : 'bg-red-900/30';
+           let ringColor = 'ring-red-500';
+           let bgColor = 'bg-red-900/30';
+           
+           if (stateType === 'checked') {
+               ringColor = 'ring-green-500';
+               bgColor = 'bg-green-900/30';
+           } else if (stateType === 'gonehome') {
+               ringColor = 'ring-blue-500';
+               bgColor = 'bg-blue-900/30';
+           }
            
            card.classList.add('ring-1', ringColor, 'scale-[1.02]', bgColor, 'z-10');
            setTimeout(() => {
@@ -370,23 +438,24 @@ function triggerCommAttPulse(name, isChecked) {
 }
 
 async function executeCommAttSync() {
-   if (pendingCommAttUpdates.size === 0) return;
-   const juncture = commAttState.currentJuncture;
-   if (!juncture) return;
+   if (!hasPendingUpdates()) return;
    
    isCommAttSyncing = true;
    setCommAttBtnState('saving');
    
-   const batch = Array.from(pendingCommAttUpdates);
-   pendingCommAttUpdates.clear();
+   const payloadUpdates = {};
+   for (let junc in pendingCommAttUpdates) {
+       payloadUpdates[junc] = [];
+       for (let name in pendingCommAttUpdates[junc]) {
+           payloadUpdates[junc].push({ name: name, status: pendingCommAttUpdates[junc][name] });
+       }
+   }
    
-   const updates = batch.map(name => ({
-       name: name,
-       status: commAttData.attendance[juncture][name]
-   }));
+   const batchBackup = JSON.parse(JSON.stringify(pendingCommAttUpdates));
+   pendingCommAttUpdates = {};
    
    try {
-       const res = await apiCall('syncCommAttendance', { sheetUrl: currentCommAttSheetUrl, junctureName: juncture, updates: updates });
+       const res = await apiCall('syncCommAttendance', { sheetUrl: currentCommAttSheetUrl, multipleUpdates: payloadUpdates });
        if (res.success) {
            setCommAttBtnState('saved');
        } else {
@@ -395,7 +464,12 @@ async function executeCommAttSync() {
    } catch (e) {
        console.error(e);
        setCommAttBtnState('error');
-       batch.forEach(name => pendingCommAttUpdates.add(name));
+       for (let junc in batchBackup) {
+           if(!pendingCommAttUpdates[junc]) pendingCommAttUpdates[junc] = {};
+           for (let name in batchBackup[junc]) {
+               pendingCommAttUpdates[junc][name] = batchBackup[junc][name];
+           }
+       }
    } finally {
        isCommAttSyncing = false;
    }
@@ -419,7 +493,7 @@ function setCommAttBtnState(state) {
        btn.classList.add('bg-green-900/50', 'text-green-400', 'border-green-600');
        textSpan.textContent = "Saved";
        setTimeout(() => {
-           if (pendingCommAttUpdates.size === 0) {
+           if (!hasPendingUpdates()) {
                btn.classList.remove('bg-green-900/50', 'text-green-400', 'border-green-600');
                btn.classList.add('bg-slate-700', 'text-slate-300');
                textSpan.textContent = "Saved";
@@ -442,7 +516,9 @@ function promptNewCommJuncture() {
        overlay.classList.add('hidden');
        if (res.success) {
            commAttData = res;
+           if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
            commAttState.currentJuncture = name.trim();
+           renderCommAttGroups();
            renderCommAttJunctures();
            showFlashMessage('commGlobalStatus', "Juncture added.", 'success');
        } else {
@@ -464,7 +540,9 @@ function promptDeleteCommJuncture() {
        overlay.classList.add('hidden');
        if (res.success) {
            commAttData = res;
+           if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
            commAttState.currentJuncture = null;
+           renderCommAttGroups();
            renderCommAttJunctures();
            showFlashMessage('commGlobalStatus', "Juncture deleted.", 'success');
        } else {
@@ -474,7 +552,7 @@ function promptDeleteCommJuncture() {
 }
 
 async function manualSyncCommAttendance() {
-   if (pendingCommAttUpdates.size > 0) {
+   if (hasPendingUpdates()) {
        await executeCommAttSync();
    }
    
@@ -486,6 +564,8 @@ async function manualSyncCommAttendance() {
        overlay.classList.add('hidden');
        if (res.success) {
            commAttData = res;
+           if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
+           renderCommAttGroups();
            renderCommAttLists();
            setCommAttBtnState('saved');
        } else {
@@ -501,15 +581,19 @@ function startCommAttPolling() {
        const view = document.getElementById('view-comm-attendance');
        if (view && view.classList.contains('hidden')) return;
        
-       if (isCommAttSyncing || pendingCommAttUpdates.size > 0) return;
+       if (isCommAttSyncing || hasPendingUpdates()) return;
        
        apiCall('fetchCommAttendance', { sheetUrl: currentCommAttSheetUrl }).then(res => {
-           if (res.success && !isCommAttSyncing && pendingCommAttUpdates.size === 0) {
+           if (res.success && !isCommAttSyncing && !hasPendingUpdates()) {
                const oldJunctures = JSON.stringify(commAttData.junctures);
                commAttData = res;
+               if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
+               
                if (oldJunctures !== JSON.stringify(commAttData.junctures)) {
+                   renderCommAttGroups();
                    renderCommAttJunctures();
                } else {
+                   renderCommAttGroups();
                    renderCommAttLists();
                }
            }
@@ -527,20 +611,43 @@ function handleCommAttSearch() {
    }
    
    const juncture = commAttState.currentJuncture;
-   if (!juncture) return;
+   const groupFilter = document.getElementById('commAttGroupSelect').value;
+   let participants = commAttData.participants || [];
    
-   const participants = commAttData.participants || [];
-   const matches = participants.filter(p => p.name.toLowerCase().includes(query) || (p.group && p.group.toLowerCase().includes(query)));
+   if (groupFilter !== 'ALL') {
+       participants = participants.filter(p => String(p.group) === groupFilter);
+   }
+   
+   const matches = participants.filter(p => 
+       p.name.toLowerCase().includes(query) || 
+       (p.group && String(p.group).toLowerCase().includes(query)) ||
+       (p.volPaired && p.volPaired.toLowerCase().includes(query))
+   );
    
    let html = '';
    matches.forEach(p => {
-       const isChecked = commAttData.attendance[juncture][p.name] === true;
+       let isChecked = false;
+       if (juncture && commAttData.attendance[juncture]) {
+           isChecked = commAttData.attendance[juncture][p.name] === true;
+       }
+       const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
        const safeName = p.name.replace(/'/g, "\\'");
+       
+       let statusBadge = '';
+       if (isGoneHome) {
+           statusBadge = '<span class="text-[9px] bg-blue-900/50 text-blue-400 px-1 py-0.5 rounded font-black uppercase border border-blue-700">Gone Home</span>';
+       } else if (isChecked) {
+           statusBadge = '<span class="text-[9px] bg-green-900/50 text-green-400 px-1 py-0.5 rounded font-black uppercase border border-green-700">Checked</span>';
+       } else {
+           statusBadge = '<span class="text-[9px] bg-red-900/50 text-red-400 px-1 py-0.5 rounded font-black uppercase border border-red-700">NOT Checked</span>';
+       }
+       
+       let volHtml = p.volPaired ? `<br><span class="text-[9px] text-teal-400">Vol: ${p.volPaired}</span>` : '';
        
        html += `
        <li class="px-3 py-2 hover:bg-slate-700 cursor-pointer flex justify-between items-center border-b border-slate-700 last:border-0 transition" onclick="selectFromCommAttSearch('${safeName}')">
-           <span class="font-bold text-xs text-white max-w-[70%] break-words">${p.name}</span>
-           ${isChecked ? '<span class="text-[9px] bg-green-900/50 text-green-400 px-1 py-0.5 rounded font-black uppercase border border-green-700">Checked</span>' : '<span class="text-[9px] bg-red-900/50 text-red-400 px-1 py-0.5 rounded font-black uppercase border border-red-700">NOT Checked</span>'}
+           <span class="font-bold text-xs text-white max-w-[70%] break-words">${p.name}${volHtml}</span>
+           ${statusBadge}
        </li>`;
    });
    
@@ -551,7 +658,13 @@ function handleCommAttSearch() {
 function selectFromCommAttSearch(name) {
    document.getElementById('commAttSearchInput').value = '';
    document.getElementById('commAttSearchResults').classList.add('hidden');
-   toggleCommAttStatus(name, true);
+   
+   const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][name] === true;
+   if (!isGoneHome) {
+       toggleCommAttStatus(name, true, null);
+   } else {
+       triggerCommAttPulse(name, 'gonehome');
+   }
 }
 
 document.addEventListener('click', (e) => {
