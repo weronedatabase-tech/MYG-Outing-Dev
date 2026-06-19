@@ -247,7 +247,7 @@ apiCall('fetchCommAttendance', { sheetUrl: currentCommAttSheetUrl }).then(res =>
     if (res.success) {
         commAttData = res;
         if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
-        renderCommAttGroups();
+        renderCommAttFilters();
         renderCommAttJunctures();
         startCommAttPolling();
     } else {
@@ -257,20 +257,48 @@ apiCall('fetchCommAttendance', { sheetUrl: currentCommAttSheetUrl }).then(res =>
 });
 }
 
-function renderCommAttGroups() {
- const select = document.getElementById('commAttGroupSelect');
- const currentVal = select.value || 'ALL';
+function renderCommAttFilters() {
+ const grpSelect = document.getElementById('commAttGroupSelect');
+ const meetSelect = document.getElementById('commAttMeetingSelect');
+ const dismissSelect = document.getElementById('commAttDismissalSelect');
+ 
+ const currentGrp = grpSelect.value || 'ALL';
+ const currentMeet = meetSelect.value || 'ALL';
+ const currentDismiss = dismissSelect.value || 'ALL';
+ 
  let groups = new Set();
+ let meets = new Set();
+ let dismissals = new Set();
+ 
  (commAttData.participants || []).forEach(p => {
      if (p.group) groups.add(p.group);
+     if (p.meetingLoc) meets.add(p.meetingLoc);
+     if (p.dismissalLoc) dismissals.add(p.dismissalLoc);
  });
- let html = '<option value="ALL">All Groups</option>';
+ 
+ let grpHtml = '<option value="ALL">Group: All</option>';
  Array.from(groups).sort((a,b) => String(a).localeCompare(String(b), undefined, {numeric: true})).forEach(g => {
-     html += `<option value="${g}">Group ${g}</option>`;
+     grpHtml += `<option value="${g}">Grp ${g}</option>`;
  });
- select.innerHTML = html;
- select.value = currentVal;
- if(!select.value) select.value = 'ALL';
+ grpSelect.innerHTML = grpHtml;
+ grpSelect.value = currentGrp;
+ if(!grpSelect.value) grpSelect.value = 'ALL';
+ 
+ let meetHtml = '<option value="ALL">Meet: All</option>';
+ Array.from(meets).sort().forEach(m => {
+     meetHtml += `<option value="${m}">${m}</option>`;
+ });
+ meetSelect.innerHTML = meetHtml;
+ meetSelect.value = currentMeet;
+ if(!meetSelect.value) meetSelect.value = 'ALL';
+ 
+ let dismissHtml = '<option value="ALL">Dismiss: All</option>';
+ Array.from(dismissals).sort().forEach(d => {
+     dismissHtml += `<option value="${d}">${d}</option>`;
+ });
+ dismissSelect.innerHTML = dismissHtml;
+ dismissSelect.value = currentDismiss;
+ if(!dismissSelect.value) dismissSelect.value = 'ALL';
 }
 
 function renderCommAttJunctures() {
@@ -307,6 +335,8 @@ if (!notCheckedList || !checkedList || !goneHomeList) return;
 
 const juncture = commAttState.currentJuncture;
 const groupFilter = document.getElementById('commAttGroupSelect').value;
+const meetFilter = document.getElementById('commAttMeetingSelect').value;
+const dismissFilter = document.getElementById('commAttDismissalSelect').value;
 
 let notCheckedHtml = '';
 let checkedHtml = '';
@@ -320,6 +350,12 @@ participants.sort((a, b) => a.name.localeCompare(b.name));
 
 if (groupFilter !== 'ALL') {
     participants = participants.filter(p => String(p.group) === groupFilter);
+}
+if (meetFilter !== 'ALL') {
+    participants = participants.filter(p => String(p.meetingLoc) === meetFilter);
+}
+if (dismissFilter !== 'ALL') {
+    participants = participants.filter(p => String(p.dismissalLoc) === dismissFilter);
 }
 
 participants.forEach(p => {
@@ -508,7 +544,7 @@ if (!btn) return;
 const textSpan = btn.querySelector('.btn-text');
 const spinner = btn.querySelector('.btn-spinner');
 
-btn.className = "text-xs px-2 py-1 rounded-md font-bold transition flex items-center border border-slate-600 focus:outline-none";
+btn.className = "text-[10px] px-2 py-0.5 rounded font-bold transition flex items-center border border-slate-600 focus:outline-none";
 spinner.classList.add('hidden');
 
 if (state === 'saving') {
@@ -544,7 +580,7 @@ apiCall('addCommJuncture', { sheetUrl: currentCommAttSheetUrl, junctureName: nam
         commAttData = res;
         if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
         commAttState.currentJuncture = name.trim();
-        renderCommAttGroups();
+        renderCommAttFilters();
         renderCommAttJunctures();
         showFlashMessage('commGlobalStatus', "Juncture added.", 'success');
     } else {
@@ -568,7 +604,7 @@ apiCall('deleteCommJuncture', { sheetUrl: currentCommAttSheetUrl, junctureName: 
         commAttData = res;
         if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
         commAttState.currentJuncture = null;
-        renderCommAttGroups();
+        renderCommAttFilters();
         renderCommAttJunctures();
         showFlashMessage('commGlobalStatus', "Juncture deleted.", 'success');
     } else {
@@ -591,7 +627,7 @@ apiCall('fetchCommAttendance', { sheetUrl: currentCommAttSheetUrl }).then(res =>
     if (res.success) {
         commAttData = res;
         if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
-        renderCommAttGroups();
+        renderCommAttFilters();
         renderCommAttLists();
         setCommAttBtnState('saved');
     } else {
@@ -616,10 +652,10 @@ commAttPollInterval = setInterval(() => {
             if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
             
             if (oldJunctures !== JSON.stringify(commAttData.junctures)) {
-                renderCommAttGroups();
+                renderCommAttFilters();
                 renderCommAttJunctures();
             } else {
-                renderCommAttGroups();
+                renderCommAttFilters();
                 renderCommAttLists();
             }
         }
@@ -638,10 +674,19 @@ if (!query) {
 
 const juncture = commAttState.currentJuncture;
 const groupFilter = document.getElementById('commAttGroupSelect').value;
+const meetFilter = document.getElementById('commAttMeetingSelect').value;
+const dismissFilter = document.getElementById('commAttDismissalSelect').value;
+
 let participants = commAttData.participants || [];
 
 if (groupFilter !== 'ALL') {
     participants = participants.filter(p => String(p.group) === groupFilter);
+}
+if (meetFilter !== 'ALL') {
+    participants = participants.filter(p => String(p.meetingLoc) === meetFilter);
+}
+if (dismissFilter !== 'ALL') {
+    participants = participants.filter(p => String(p.dismissalLoc) === dismissFilter);
 }
 
 const matches = participants.filter(p => 
