@@ -184,18 +184,21 @@ function filterActiveVols() {
     const input = document.getElementById('volPairedInput');
     const list = document.getElementById('activeVolsList');
     if(!input || !list) return;
-    const filter = input.value.toLowerCase();
+    
+    const filter = input.value.toLowerCase().trim();
     list.innerHTML = "";
+    
+    // Only show list if there is active typing
+    if (filter.length === 0) {
+        list.classList.add('hidden');
+        return;
+    }
     
     const matches = (currentActiveVols || []).filter(v => 
         v.toLowerCase().includes(filter) && !currentVolPairedValue.includes(v)
     );
     
-    if (matches.length > 0 || filter.length > 0) {
-        list.classList.remove('hidden');
-    } else {
-        list.classList.add('hidden');
-    }
+    list.classList.remove('hidden');
     
     matches.forEach(match => {
         const li = document.createElement('li');
@@ -205,10 +208,10 @@ function filterActiveVols() {
         list.appendChild(li);
     });
     
-    if (matches.length === 0 && filter.length > 0) {
+    if (matches.length === 0) {
         const li = document.createElement('li');
         li.className = "px-3 py-2 text-xs text-slate-500 italic";
-        li.innerText = `Press Enter to add "${input.value}"`;
+        li.innerText = `Press Enter to add "${input.value.trim()}"`;
         li.onmousedown = (e) => { e.preventDefault(); addVolPaired(input.value.trim()); };
         list.appendChild(li);
     }
@@ -223,7 +226,7 @@ function addVolPaired(name) {
     const input = document.getElementById('volPairedInput');
     input.value = "";
     input.focus();
-    filterActiveVols();
+    filterActiveVols(); // Since input is now empty, this will gracefully hide the list
 }
 
 function removeVolPaired(name) {
