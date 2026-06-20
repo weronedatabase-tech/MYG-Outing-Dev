@@ -26,17 +26,18 @@
 <script src="frontend/js/settings.js"></script>
 <script src="frontend/js/main.js"></script>
 </head>
-<body class="bg-slate-900 min-h-screen font-sans text-slate-200 pb-20 selection:bg-blue-500 selection:text-white">
+<body class="bg-slate-900 min-h-screen font-sans text-slate-200 selection:bg-blue-500 selection:text-white">
 
 <!-- STICKY HEADER -->
-<div class="sticky top-0 z-50 shadow-lg">
-    
+<div class="sticky top-0 z-50 shadow-lg shrink-0 h-[60px]">
     <!-- ENVIRONMENT BAR -->
     <div id="envBar" class="hidden text-white text-center text-[10px] uppercase tracking-wider font-bold py-0.5 border-b"></div>
 
-    <nav class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700">
-        <div class="container mx-auto px-4 py-2 flex items-center justify-between">
-            <div class="flex items-center gap-2 cursor-pointer" onclick="showView('landing')">
+    <nav class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700 h-full flex flex-col justify-center">
+        <div class="container mx-auto px-4 flex items-center justify-between">
+            
+            <!-- Default Landing Logo -->
+            <div id="navDefault" class="flex items-center gap-2 cursor-pointer" onclick="showView('landing')">
                 <div class="bg-blue-600 p-1.5 rounded-lg shadow-lg shadow-blue-500/20 flex items-center justify-center">
                     <i class="fa-solid fa-calendar-days text-white text-lg"></i>
                 </div>
@@ -45,28 +46,39 @@
                     <p class="text-[10px] text-slate-400 leading-none">Outings Organiser</p>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-3">
+
+            <!-- Contextual App Title (Hidden on Landing) -->
+            <div id="navContext" class="hidden flex items-center gap-2 min-w-0 max-w-[70%]">
+                <button onclick="handleNavBack()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 p-2 rounded shadow-sm flex items-center justify-center shrink-0 transition-colors">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                </button>
+                <div class="flex flex-col justify-center min-w-0">
+                    <h1 id="navContextTitle" class="text-sm font-extrabold text-white leading-none mb-0.5 truncate">Context</h1>
+                    <p class="text-[10px] text-slate-400 leading-none">MINDS MYG</p>
+                </div>
+            </div>
+
+            <!-- Global Actions -->
+            <div class="flex items-center gap-3 shrink-0">
                 <button onclick="refreshApp()" class="text-slate-400 hover:text-white text-xs transition-colors group flex items-center" title="Force Refresh Data & App">
                     <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm group-hover:text-blue-400 transition-transform"></i>
-                    <span class="hidden sm:inline ml-1 font-bold">Refresh</span>
                 </button>
-                <div class="h-3 w-px bg-slate-700"></div>
+                <div class="h-4 w-px bg-slate-700"></div>
                 <button onclick="showView('landing')" class="text-slate-400 hover:text-white text-xs transition-colors flex items-center">
                     <i class="fa-solid fa-house text-sm"></i>
-                    <span class="hidden sm:inline ml-1 font-bold">Home</span>
                 </button>
             </div>
+
         </div>
     </nav>
 </div>
 
 <!-- MAIN CONTENT -->
-<main class="container mx-auto p-4 mt-2 max-w-xl">
+<main id="mainContainer" class="container mx-auto p-4 mt-2 max-w-xl">
     
     <!-- LANDING PAGE -->
     <div id="view-landing" class="fade-in space-y-4">
-        <h2 class="text-xl font-bold text-center text-white mb-6">Select Profile</h2>
+        <h2 class="text-xl font-bold text-center text-white mb-6 mt-4">Select Profile</h2>
         <div onclick="requestAccess('comm')" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-blue-500/50 rounded-2xl p-6 cursor-pointer transition-all shadow-lg flex items-center gap-4 group">
             <div class="bg-blue-900/50 p-4 rounded-xl text-blue-400 group-hover:scale-110 transition-transform"><i class="fa-solid fa-user-tie text-2xl"></i></div>
             <div><h3 class="text-lg font-bold text-white">Comm Profile</h3><p class="text-sm text-slate-400">Create outings & manage events <i class="fa-solid fa-lock text-xs ml-1 opacity-50"></i></p></div>
@@ -103,9 +115,8 @@
 
     <!-- COMM VIEW -->
     <div id="view-comm" class="hidden fade-in space-y-6">
-        <div class="flex items-center gap-2 mb-2"><button onclick="showView('landing')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-arrow-left"></i> Back</button><h2 class="text-xl font-bold text-blue-400">Comm Dashboard</h2></div>
-        <div id="commGlobalStatus" class="hidden mb-4 p-3 rounded-lg text-sm text-center"></div>
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div id="commGlobalStatus" class="hidden mb-4 p-3 rounded-lg text-sm text-center mt-2"></div>
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl mt-2">
             <h3 class="font-bold text-white mb-2"><i class="fa-solid fa-folder-plus text-blue-500 mr-2"></i>Create New Outing</h3>
             <button onclick="openModal()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm">Create Outing</button>
         </div>
@@ -125,12 +136,12 @@
             <h3 class="font-bold text-white mb-3"><i class="fa-solid fa-list-ul text-purple-500 mr-2"></i>Upcoming Outings</h3>
             <div id="upcomingList" class="space-y-4 text-sm text-slate-400"><p class="text-xs italic"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading events...</p></div>
         </div>
+        <div class="h-6"></div>
     </div>
 
     <!-- ACTUAL DAY ATTENDANCE SELECTOR -->
     <div id="view-actual-attendance" class="hidden fade-in space-y-6">
-        <div class="flex items-center gap-2 mb-2"><button onclick="showView('landing')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-arrow-left"></i> Back</button><h2 class="text-xl font-bold text-teal-400">Actual Day Attendance Tracker</h2></div>
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl mt-2">
             <h3 class="font-bold text-white mb-2"><i class="fa-solid fa-list-check text-teal-500 mr-2"></i>Select Event</h3>
             <div class="relative mb-3">
                 <label class="text-[10px] text-slate-400 uppercase font-bold mb-1 block flex items-center gap-1">Select Event <span id="actualSheetSpinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin text-teal-500"></i></span></label>
@@ -140,28 +151,25 @@
         </div>
     </div>
 
-    <!-- COMM ATTENDANCE VIEW -->
-    <div id="view-comm-attendance" class="hidden fade-in space-y-2">
-        <div class="flex items-center gap-2">
-            <button onclick="showView('actual-attendance')" class="text-slate-500 hover:text-white text-xs font-bold uppercase"><i class="fa-solid fa-arrow-left"></i> Back</button>
-            <h2 id="commAttEventName" class="text-base font-bold text-teal-400 truncate">Attendance</h2>
-        </div>
-        
-        <div class="flex flex-col h-[calc(100vh-130px)] w-full relative bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
-           <div class="p-2 border-b border-slate-700 shrink-0 z-10 flex flex-col gap-1.5">
-              <div class="flex justify-between items-center">
-                 <h3 class="font-black text-white tracking-tight flex items-center gap-2 text-sm">Live Attendance</h3>
-                 <button id="btn-sync-comm-att" onclick="manualSyncCommAttendance()" class="text-[10px] px-2 py-0.5 rounded font-bold transition flex items-center border border-slate-600 bg-slate-700 text-slate-300 focus:outline-none">
-                    <span class="btn-text">Saved</span><i class="fa-solid fa-circle-notch fa-spin btn-spinner hidden ml-1"></i>
-                 </button>
-              </div>
+    <!-- COMM ATTENDANCE VIEW (MAXIMIZED VERTICAL HEIGHT) -->
+    <div id="view-comm-attendance" class="hidden fade-in">
+        <div class="flex flex-col h-[calc(100dvh-75px)] w-full relative bg-slate-800 border border-slate-700 rounded-xl shadow-xl overflow-hidden">
+           <div class="px-2 py-2 border-b border-slate-700 shrink-0 z-10 flex flex-col gap-1.5">
               
-              <div class="flex gap-1 w-full">
+              <!-- Top Row: Juncture Select + Save + Add + Delete -->
+              <div class="flex gap-1 w-full justify-between items-center">
                  <select id="commAttJunctureSelect" onchange="changeCommAttContext()" class="flex-1 py-1 px-1.5 border border-slate-600 rounded font-bold text-xs bg-slate-900 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-sm appearance-none truncate"></select>
-                 <button onclick="promptNewCommJuncture()" class="py-1 px-2 bg-slate-700 text-teal-400 hover:bg-slate-600 rounded shadow-sm border border-slate-600 transition" title="Add Juncture"><i class="fa-solid fa-plus text-[10px]"></i></button>
-                 <button onclick="promptDeleteCommJuncture()" class="py-1 px-2 bg-slate-700 text-red-400 hover:bg-slate-600 rounded shadow-sm border border-slate-600 transition" title="Delete Juncture"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                 
+                 <div class="flex items-center gap-1 shrink-0">
+                     <button onclick="promptNewCommJuncture()" class="py-1 px-2.5 bg-slate-700 text-teal-400 hover:bg-slate-600 rounded shadow-sm border border-slate-600 transition" title="Add Juncture"><i class="fa-solid fa-plus text-xs"></i></button>
+                     <button onclick="promptDeleteCommJuncture()" class="py-1 px-2.5 bg-slate-700 text-red-400 hover:bg-slate-600 rounded shadow-sm border border-slate-600 transition" title="Delete Juncture"><i class="fa-solid fa-trash text-xs"></i></button>
+                     <button id="btn-sync-comm-att" onclick="manualSyncCommAttendance()" class="py-1 px-2 rounded font-bold transition flex items-center border border-slate-600 bg-slate-700 text-slate-300 focus:outline-none h-[26px]">
+                        <span class="btn-text text-[10px]">Saved</span><i class="fa-solid fa-circle-notch fa-spin btn-spinner hidden ml-1 text-[10px]"></i>
+                     </button>
+                 </div>
               </div>
 
+              <!-- Mid Row: Group, Meet, Dismiss Filters -->
               <div class="flex gap-1 w-full">
                  <select id="commAttGroupSelect" onchange="changeCommAttContext()" class="flex-1 min-w-[60px] py-1 px-1 border border-slate-600 rounded font-bold text-[10px] bg-slate-900 text-teal-400 focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-sm appearance-none truncate">
                      <option value="ALL">Group: All</option>
@@ -174,29 +182,33 @@
                  </select>
               </div>
 
+              <!-- Bottom Row: Search Box -->
               <div class="relative">
                  <input type="text" id="commAttSearchInput" oninput="handleCommAttSearch()" placeholder="Search trainee or volunteer..." class="w-full py-1 pl-6 pr-2 border border-slate-600 rounded bg-slate-900 font-bold text-xs focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 text-white shadow-sm transition">
                  <i class="fa-solid fa-search absolute left-2 top-1.5 text-slate-500 text-[10px]"></i>
-                 <ul id="commAttSearchResults" class="absolute z-20 w-full bg-slate-800 border border-slate-600 rounded shadow-2xl mt-1 max-h-56 overflow-y-auto hidden custom-scrollbar"></ul>
+                 <ul id="commAttSearchResults" class="absolute z-20 w-full bg-slate-800 border border-slate-600 rounded shadow-2xl mt-1 max-h-[35vh] overflow-y-auto hidden custom-scrollbar"></ul>
               </div>
            </div>
 
-           <!-- Columns -->
+           <!-- Tracker Main Data Columns -->
            <div class="flex flex-row flex-1 min-h-0 w-full overflow-hidden relative overflow-x-auto custom-scrollbar">
               <div id="commAttLoadingOverlay" class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-10 hidden flex flex-col justify-center items-center">
                  <i class="fa-solid fa-circle-notch fa-spin text-teal-500 text-3xl mb-2"></i>
                  <span class="text-teal-400 font-bold text-xs mt-2">Loading...</span>
               </div>
+              
               <!-- Not Checked -->
               <div class="flex-none w-[45%] min-w-[150px] flex flex-col border-r border-slate-700 bg-red-900/10">
                  <h4 class="font-black text-[10px] py-1 shrink-0 text-center uppercase tracking-widest bg-red-900/40 text-red-400 shadow-sm border-b border-red-900/50">Not Checked (<span id="commAttNotCheckedCount">0</span>)</h4>
                  <div id="commAttNotCheckedList" class="flex-grow overflow-y-auto p-1 custom-scrollbar pb-6 space-y-1.5"></div>
               </div>
+              
               <!-- Checked -->
               <div class="flex-none w-[45%] min-w-[150px] flex flex-col border-r border-slate-700 bg-green-900/10">
                  <h4 class="font-black text-[10px] py-1 shrink-0 text-center uppercase tracking-widest bg-green-900/40 text-green-400 shadow-sm border-b border-green-900/50">Checked (<span id="commAttCheckedCount">0</span>)</h4>
                  <div id="commAttCheckedList" class="flex-grow overflow-y-auto p-1 custom-scrollbar pb-6 space-y-1.5"></div>
               </div>
+              
               <!-- Gone Home -->
               <div class="flex-none w-[45%] min-w-[150px] flex flex-col bg-blue-900/10">
                  <h4 class="font-black text-[10px] py-1 shrink-0 text-center uppercase tracking-widest bg-blue-900/40 text-blue-400 shadow-sm border-b border-blue-900/50">Gone Home (<span id="commAttGoneHomeCount">0</span>)</h4>
@@ -208,8 +220,7 @@
 
     <!-- VOLUNTEER VIEW -->
     <div id="view-volunteer" class="hidden fade-in space-y-6">
-        <div class="flex items-center gap-2 mb-2"><button onclick="showView('landing')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-arrow-left"></i> Back</button><h2 class="text-xl font-bold text-green-400">Attendance Update</h2></div>
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-4 mt-2">
             <div class="relative">
                 <label class="text-xs font-bold text-green-400 uppercase flex items-center gap-2">1. Select Upcoming Event <span id="volSheetLoading" class="hidden"><i class="fa-solid fa-spinner fa-spin"></i></span></label>
                 <div class="relative mt-1">
@@ -258,12 +269,12 @@
                 <button id="volSubmitBtn" type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg mt-4">Update Attendance</button>
             </form>
         </div>
+        <div class="h-6"></div>
     </div>
 
     <!-- SETTINGS VIEW -->
     <div id="view-settings" class="hidden fade-in space-y-6">
-        <div class="flex items-center gap-2 mb-2"><button onclick="showView('landing')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-arrow-left"></i> Back</button><h2 class="text-xl font-bold text-purple-400">Field Configuration</h2></div>
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl mt-2">
             <p class="text-xs text-slate-400 mb-4">Select columns visible to volunteers (from Template).</p>
             <div class="mb-2 text-right"><button onclick="loadSettings()" class="text-xs text-blue-400 hover:text-blue-300 underline">Refresh Configuration</button></div>
             <div id="settingsLoader" class="hidden flex justify-center py-4"><div class="loader"></div></div>

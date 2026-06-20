@@ -7,9 +7,55 @@ function showView(viewId) {
   document.getElementById('createStatusArea').classList.add('hidden'); 
   document.getElementById('settingsStatus').classList.add('hidden'); 
   
+  const mainContainer = document.getElementById('mainContainer');
+  if (viewId === 'comm-attendance') {
+      mainContainer.classList.remove('p-4', 'mt-2');
+      mainContainer.classList.add('p-1', 'mt-1');
+  } else {
+      mainContainer.classList.remove('p-1', 'mt-1');
+      mainContainer.classList.add('p-4', 'mt-2');
+  }
+
+  // Handle Dynamic Navbar
+  const navDefault = document.getElementById('navDefault');
+  const navContext = document.getElementById('navContext');
+  const titleEl = document.getElementById('navContextTitle');
+  
+  navDefault.classList.add('hidden');
+  navContext.classList.remove('hidden');
+  
+  if (viewId === 'comm') {
+      titleEl.innerText = 'Comm Dashboard';
+      titleEl.className = 'text-sm font-extrabold text-blue-400 leading-none mb-0.5 truncate';
+  } else if (viewId === 'actual-attendance') {
+      titleEl.innerText = 'Select Event for Tracker';
+      titleEl.className = 'text-sm font-extrabold text-teal-400 leading-none mb-0.5 truncate';
+  } else if (viewId === 'comm-attendance') {
+      // Title is updated dynamically in loadCommAttendanceData
+      titleEl.className = 'text-sm font-extrabold text-teal-400 leading-none mb-0.5 truncate';
+  } else if (viewId === 'volunteer') {
+      titleEl.innerText = 'Attendance Update';
+      titleEl.className = 'text-sm font-extrabold text-green-400 leading-none mb-0.5 truncate';
+  } else if (viewId === 'settings') {
+      titleEl.innerText = 'Field Configuration';
+      titleEl.className = 'text-sm font-extrabold text-purple-400 leading-none mb-0.5 truncate';
+  } else {
+      // Landing page shows default logo
+      navDefault.classList.remove('hidden');
+      navContext.classList.add('hidden');
+  }
+
   if (viewId === 'comm' || viewId === 'volunteer' || viewId === 'actual-attendance') loadSheets(viewId); 
   if (viewId === 'settings') loadSettings(); 
 }
+
+window.handleNavBack = function() {
+  if (currentActiveView === 'comm-attendance') {
+      showView('actual-attendance');
+  } else {
+      showView('landing');
+  }
+};
 
 function refreshApp() { 
   const icon = document.getElementById('refreshIcon'); 
