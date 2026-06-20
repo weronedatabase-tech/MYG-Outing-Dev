@@ -9,9 +9,13 @@ function showView(viewId) {
   
   const mainContainer = document.getElementById('mainContainer');
   if (viewId === 'comm-attendance') {
+      document.body.classList.add('overflow-hidden', 'overscroll-none');
+      document.body.classList.remove('pb-20');
       mainContainer.classList.remove('p-4', 'mt-2');
       mainContainer.classList.add('p-1', 'mt-1');
   } else {
+      document.body.classList.remove('overflow-hidden', 'overscroll-none');
+      document.body.classList.add('pb-20');
       mainContainer.classList.remove('p-1', 'mt-1');
       mainContainer.classList.add('p-4', 'mt-2');
   }

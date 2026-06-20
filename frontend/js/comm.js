@@ -333,6 +333,11 @@ const goneHomeList = document.getElementById('commAttGoneHomeList');
 
 if (!notCheckedList || !checkedList || !goneHomeList) return;
 
+// Save current scroll positions to prevent jumping
+const scrollNC = notCheckedList.scrollTop;
+const scrollC = checkedList.scrollTop;
+const scrollGH = goneHomeList.scrollTop;
+
 const juncture = commAttState.currentJuncture;
 const groupFilter = document.getElementById('commAttGroupSelect').value;
 const meetFilter = document.getElementById('commAttMeetingSelect').value;
@@ -383,6 +388,11 @@ goneHomeList.innerHTML = goneHomeHtml || '<p class="text-[10px] text-slate-500 f
 document.getElementById('commAttNotCheckedCount').textContent = notCheckedCount;
 document.getElementById('commAttCheckedCount').textContent = checkedCount;
 document.getElementById('commAttGoneHomeCount').textContent = goneHomeCount;
+
+// Restore scroll positions
+notCheckedList.scrollTop = scrollNC;
+checkedList.scrollTop = scrollC;
+goneHomeList.scrollTop = scrollGH;
 }
 
 function generateCommAttCard(p, isChecked, isGoneHome) {
@@ -544,7 +554,7 @@ if (!btn) return;
 const textSpan = btn.querySelector('.btn-text');
 const spinner = btn.querySelector('.btn-spinner');
 
-btn.className = "text-[10px] px-2 py-1 rounded font-bold transition flex items-center border border-slate-600 focus:outline-none";
+btn.className = "text-[10px] px-2 py-0.5 rounded font-bold transition flex items-center border border-slate-600 focus:outline-none";
 spinner.classList.add('hidden');
 
 if (state === 'saving') {
@@ -648,14 +658,21 @@ commAttPollInterval = setInterval(() => {
     apiCall('fetchCommAttendance', { sheetUrl: currentCommAttSheetUrl }).then(res => {
         if (res.success && !isCommAttSyncing && !hasPendingUpdates()) {
             const oldJunctures = JSON.stringify(commAttData.junctures);
+            const oldParticipants = JSON.stringify(commAttData.participants);
+            const oldAttendance = JSON.stringify(commAttData.attendance);
+
             commAttData = res;
             if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
             
-            if (oldJunctures !== JSON.stringify(commAttData.junctures)) {
+            const newJunctures = JSON.stringify(commAttData.junctures);
+            const newParticipants = JSON.stringify(commAttData.participants);
+            const newAttendance = JSON.stringify(commAttData.attendance);
+
+            // ONLY re-render elements if actual data differences exist to prevent jerking/jumping
+            if (oldJunctures !== newJunctures || oldParticipants !== newParticipants) {
                 renderCommAttFilters();
                 renderCommAttJunctures();
-            } else {
-                renderCommAttFilters();
+            } else if (oldAttendance !== newAttendance) {
                 renderCommAttLists();
             }
         }
