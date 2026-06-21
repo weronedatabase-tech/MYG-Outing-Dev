@@ -307,8 +307,8 @@ function updateCommAttFilterUI(type, availableItems, selectedArray) {
     btn.innerText = btnText;
 
     let html = `<div class="p-1.5 flex justify-between border-b border-slate-700 bg-slate-900 sticky top-0 z-10">
-        <button onclick="event.stopPropagation(); clearCommAttFilter('${type}')" class="text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1 rounded transition">Clear</button>
-        <button onclick="event.stopPropagation(); closeAllCommAttFilters()" class="text-[10px] bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded transition">Done</button>
+        <button onclick="clearCommAttFilter('${type}')" class="text-[10px] bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1 rounded transition">Clear</button>
+        <button onclick="closeAllCommAttFilters()" class="text-[10px] bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded transition">Done</button>
     </div>`;
 
     if (availableItems.length === 0) {
@@ -317,9 +317,9 @@ function updateCommAttFilterUI(type, availableItems, selectedArray) {
         availableItems.forEach(item => {
             const isChecked = selectedArray.includes(item);
             html += `
-            <div class="px-3 py-2 border-b border-slate-700 last:border-0 hover:bg-slate-700 cursor-pointer flex items-center justify-between transition-colors" onclick="event.stopPropagation(); toggleCommAttFilterItem('${type}', '${item.replace(/'/g, "\\'")}')">
-                <span class="text-xs text-slate-300 font-bold break-words pr-2 pointer-events-none">${type === 'group' ? 'Grp ' + item : item}</span>
-                <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 pointer-events-none ${isChecked ? 'bg-blue-500 border-blue-600 text-white' : 'bg-slate-900 border-slate-600 text-transparent'}">
+            <div class="px-3 py-2 border-b border-slate-700 last:border-0 hover:bg-slate-700 cursor-pointer flex items-center justify-between transition-colors" onclick="toggleCommAttFilterItem('${type}', '${item.replace(/'/g, "\\'")}')">
+                <span class="text-xs text-slate-300 font-bold break-words pr-2">${type === 'group' ? 'Grp ' + item : item}</span>
+                <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-blue-500 border-blue-600 text-white' : 'bg-slate-900 border-slate-600 text-transparent'}">
                     <i class="fa-solid fa-check text-[10px]"></i>
                 </div>
             </div>`;
