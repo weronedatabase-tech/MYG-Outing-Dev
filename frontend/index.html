@@ -158,12 +158,12 @@
            
            <!-- Top Row: Juncture Select + Save + Add + Delete -->
            <div class="flex gap-1 w-full justify-between items-center">
-              <select id="commAttJunctureSelect" onchange="changeCommAttContext()" class="flex-1 py-1 px-1.5 border border-slate-600 rounded font-bold text-xs bg-slate-900 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-sm appearance-none truncate"></select>
+              <select id="commAttJunctureSelect" onchange="changeCommAttContext()" class="flex-1 px-1.5 h-[26px] border border-slate-600 rounded font-bold text-xs bg-slate-900 text-white focus:outline-none focus:ring-1 focus:ring-teal-500 shadow-sm appearance-none truncate"></select>
               
               <div class="flex items-center gap-1 shrink-0">
-                  <button onclick="promptNewCommJuncture()" class="py-1 px-2.5 bg-slate-700 text-teal-400 hover:bg-slate-600 rounded shadow-sm border border-slate-600 transition" title="Add Juncture"><i class="fa-solid fa-plus text-xs"></i></button>
-                  <button onclick="promptDeleteCommJuncture()" class="py-1 px-2.5 bg-slate-700 text-red-400 hover:bg-slate-600 rounded shadow-sm border border-slate-600 transition" title="Delete Juncture"><i class="fa-solid fa-trash text-xs"></i></button>
-                  <button id="btn-sync-comm-att" onclick="manualSyncCommAttendance()" class="py-1 px-2 rounded font-bold transition flex items-center border border-slate-600 bg-slate-700 text-slate-300 focus:outline-none h-[26px]">
+                  <button onclick="promptNewCommJuncture()" class="h-[26px] px-2.5 flex items-center justify-center bg-slate-700 text-teal-400 hover:bg-slate-600 rounded shadow-sm border border-slate-600 transition" title="Add Juncture"><i class="fa-solid fa-plus text-xs"></i></button>
+                  <button onclick="promptDeleteCommJuncture()" class="h-[26px] px-2.5 flex items-center justify-center bg-slate-700 text-red-400 hover:bg-slate-600 rounded shadow-sm border border-slate-600 transition" title="Delete Juncture"><i class="fa-solid fa-trash text-xs"></i></button>
+                  <button id="btn-sync-comm-att" onclick="manualSyncCommAttendance()" class="h-[26px] px-2 flex items-center justify-center rounded font-bold transition border border-slate-600 bg-slate-700 text-slate-300 focus:outline-none">
                      <span class="btn-text text-[10px]">Saved</span><i class="fa-solid fa-circle-notch fa-spin btn-spinner hidden ml-1 text-[10px]"></i>
                   </button>
               </div>
