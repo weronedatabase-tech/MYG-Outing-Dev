@@ -295,7 +295,7 @@ function updateCommAttFilterUI(type, availableItems, selectedArray) {
   
   if(!btn || !dropdown) return;
 
-  let btnText = type === 'group' ? 'Grp: ' : (type === 'meet' ? 'Meet: ' : 'Dis: ');
+  let btnText = type === 'group' ? 'Grp: ' : (type === 'meet' ? 'Meeting: ' : 'Dismissal: ');
   
   if (selectedArray.length === 0) {
       btnText += 'All';
@@ -558,10 +558,10 @@ let locHtml = '';
 if (p.meetingLoc || p.dismissalLoc) {
 locHtml = '<div class="flex flex-col gap-1 w-full mt-1 border-t border-slate-700/60 pt-1.5">';
 if (p.meetingLoc) {
-    locHtml += `<span class="text-[9px] text-blue-300 leading-tight bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-400"></i>Meet: ${p.meetingLoc}</span>`;
+    locHtml += `<span class="text-[9px] text-blue-300 leading-tight bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
 }
 if (p.dismissalLoc) {
-    locHtml += `<span class="text-[9px] text-purple-300 leading-tight bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-400"></i>Dismiss: ${p.dismissalLoc}</span>`;
+    locHtml += `<span class="text-[9px] text-purple-300 leading-tight bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
 }
 locHtml += '</div>';
 }
@@ -676,8 +676,8 @@ function shareColumnData(columnType) {
   let participants = commAttData.participants || [];
   let listTitle = "";
 
-  if (columnType === 'notChecked') listTitle = "NOT CHECKED";
-  if (columnType === 'checked') listTitle = "CHECKED";
+  if (columnType === 'notChecked') listTitle = "NOT PRESENT";
+  if (columnType === 'checked') listTitle = "PRESENT";
   if (columnType === 'goneHome') listTitle = "GONE HOME";
 
   if (commAttState.selectedGroups.length > 0) {
@@ -701,14 +701,14 @@ function shareColumnData(columnType) {
   });
 
   const groupsStr = commAttState.selectedGroups.length > 0 ? "Grp: " + commAttState.selectedGroups.join(", ") : "All Groups";
-  const meetsStr = commAttState.selectedMeets.length > 0 ? "Meet: " + commAttState.selectedMeets.join(", ") : "All Meet";
-  const dismissStr = commAttState.selectedDismissals.length > 0 ? "Dis: " + commAttState.selectedDismissals.join(", ") : "All Dis";
+  const meetsStr = commAttState.selectedMeets.length > 0 ? "Meeting: " + commAttState.selectedMeets.join(", ") : "All Meetings";
+  const dismissStr = commAttState.selectedDismissals.length > 0 ? "Dismissal: " + commAttState.selectedDismissals.join(", ") : "All Dismissals";
 
   let format = (window.appSettings && window.appSettings.shareFormat) ? window.appSettings.shareFormat : DEF_SHARE_FORMAT;
 
   const formattedText = format
       .replace(/\{\{Groups\}\}/gi, groupsStr)
-      .replace(/\{\{Meets\}\}/gi, meetsStr)
+      .replace(/\{\{Meetings\}\}/gi, meetsStr)
       .replace(/\{\{Dismissals\}\}/gi, dismissStr)
       .replace(/\{\{Count\}\}/gi, targetNames.length)
       .replace(/\{\{List\}\}/gi, targetNames.join('\n'));
@@ -963,10 +963,10 @@ let locHtml = '';
 if (p.meetingLoc || p.dismissalLoc) {
     locHtml = '<div class="flex flex-col gap-1 w-full mt-1 border-t border-slate-700/60 pt-1.5">';
     if (p.meetingLoc) {
-        locHtml += `<span class="text-[9px] text-blue-300 leading-tight bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-400"></i>Meet: ${p.meetingLoc}</span>`;
+        locHtml += `<span class="text-[9px] text-blue-300 leading-tight bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
     }
     if (p.dismissalLoc) {
-        locHtml += `<span class="text-[9px] text-purple-300 leading-tight bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-400"></i>Dismiss: ${p.dismissalLoc}</span>`;
+        locHtml += `<span class="text-[9px] text-purple-300 leading-tight bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
     }
     locHtml += '</div>';
 }
