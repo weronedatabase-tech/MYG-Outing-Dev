@@ -12,10 +12,6 @@ let commAttSyncTimeout = null;
 let commAttPollInterval = null;
 let commAttFiltersChanged = false;
 
-// Variables for handling robust long presses
-let longPressTimer = null;
-let isLongPressTriggered = false;
-
 function hasPendingUpdates() {
 for(let junc in pendingCommAttUpdates) {
  if(Object.keys(pendingCommAttUpdates[junc]).length > 0) return true;
@@ -499,22 +495,11 @@ checkedList.scrollTop = scrollC;
 goneHomeList.scrollTop = scrollGH;
 }
 
-// ----- LONG PRESS HANDLING LOGIC -----
-function handleTraineePointerDown(e, name) {
-  if (e.button !== 0 && e.pointerType === 'mouse') return; // Only process main touch/click
-  isLongPressTriggered = false;
-  longPressTimer = setTimeout(() => {
-      isLongPressTriggered = true;
-      showTraineeInfo(name);
-  }, 500); 
-}
-
-function handleTraineePointerUp(e) {
-  if (longPressTimer) clearTimeout(longPressTimer);
-  // Delay clearing the flag so the immediate click event can read it and abort the toggle
-  setTimeout(() => {
-      isLongPressTriggered = false;
-  }, 100);
+// ----- LONG PRESS (CONTEXT MENU) HANDLING LOGIC -----
+function handleTraineeLongPress(e, name) {
+  e.preventDefault(); // Prevents the native context menu from appearing
+  e.stopPropagation();
+  showTraineeInfo(name);
 }
 
 function showTraineeInfo(name) {
@@ -589,13 +574,8 @@ const checkBtnClass = isChecked ? 'bg-green-500 border-green-600 text-white shad
 return `
 <div id="comm-att-card-${p.name.replace(/[^a-zA-Z0-9]/g, '')}" 
 class="relative bg-slate-800 p-2 rounded border border-slate-700 shadow-sm transition-all duration-300 flex flex-col gap-1.5 select-none active:scale-95 cursor-pointer hover:border-teal-500" 
-style="touch-action: pan-y; -webkit-user-select: none;"
 onclick="toggleCommAttStatus('${safeName}', ${!isChecked}, event)"
-onpointerdown="handleTraineePointerDown(event, '${safeName}')"
-onpointerup="handleTraineePointerUp(event)"
-onpointercancel="handleTraineePointerUp(event)"
-onpointerleave="handleTraineePointerUp(event)"
-oncontextmenu="event.preventDefault();">
+oncontextmenu="handleTraineeLongPress(event, '${safeName}')">
 <div class="flex items-start gap-1.5 w-full">
     <span class="font-extrabold text-xs text-white leading-tight break-words">${p.name}</span>
     ${caregiverBadge}
@@ -627,7 +607,6 @@ executeCommAttSync();
 
 function toggleCommAttStatus(name, forceState, e) {
 if(e) e.stopPropagation();
-if(isLongPressTriggered) return; // Prevent toggle if long press triggered it
 
 const juncture = commAttState.currentJuncture;
 if (!juncture) return;

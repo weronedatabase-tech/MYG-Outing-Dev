@@ -3,13 +3,18 @@ function loadSettings() {
    const content = document.getElementById('settingsContent'); 
    loader.classList.remove('hidden'); 
    content.classList.add('hidden'); 
+   
    apiCall('getAppSettings', null).then(savedSettings => { 
+       if (!savedSettings || savedSettings.success === false) savedSettings = {};
+       
        window.appSettings = savedSettings;
        if (!savedSettings.shareFormat) savedSettings.shareFormat = DEF_SHARE_FORMAT;
        if (!savedSettings.popupFormat) savedSettings.popupFormat = DEF_POPUP_FORMAT;
        
-       document.getElementById('settingShareFormat').value = savedSettings.shareFormat;
-       document.getElementById('settingPopupFormat').value = savedSettings.popupFormat;
+       const shareEl = document.getElementById('settingShareFormat');
+       const popupEl = document.getElementById('settingPopupFormat');
+       if (shareEl) shareEl.value = savedSettings.shareFormat;
+       if (popupEl) popupEl.value = savedSettings.popupFormat;
        
        apiCall('getTemplateHeaders', null).then(res => { 
            document.getElementById('settingsLoader').classList.add('hidden'); 
@@ -41,8 +46,12 @@ function renderSettingsCheckboxes(tHeaders, vHeaders, saved) {
 function saveSettings() { 
    const tCols = Array.from(document.querySelectorAll('.t-col-check:checked')).map(cb => cb.value); 
    const vCols = Array.from(document.querySelectorAll('.v-col-check:checked')).map(cb => cb.value); 
-   const shareFmt = document.getElementById('settingShareFormat').value;
-   const popupFmt = document.getElementById('settingPopupFormat').value;
+   
+   const shareEl = document.getElementById('settingShareFormat');
+   const popupEl = document.getElementById('settingPopupFormat');
+   
+   const shareFmt = shareEl ? shareEl.value : DEF_SHARE_FORMAT;
+   const popupFmt = popupEl ? popupEl.value : DEF_POPUP_FORMAT;
    
    const settings = { 
        traineeCols: tCols, 
