@@ -24,6 +24,15 @@ let selectorId, loadingId;
 if (viewId === 'comm') { 
 selectorId = 'commSheetSelector'; 
 loadingId = 'commSheetSpinner'; 
+
+// Disable action buttons while loading
+document.getElementById('scrubBtn').disabled = true;
+document.getElementById('scrubBtn').classList.add('opacity-50', 'cursor-not-allowed');
+document.getElementById('massPairBtn').disabled = true;
+document.getElementById('massPairBtn').classList.add('opacity-50', 'cursor-not-allowed');
+document.getElementById('groupBtn').disabled = true;
+document.getElementById('groupBtn').classList.add('opacity-50', 'cursor-not-allowed');
+
 } else if (viewId === 'actual-attendance') {
 selectorId = 'actualSheetSelector'; 
 loadingId = 'actualSheetSpinner'; 
@@ -51,6 +60,14 @@ if (res.success) {
       listContainer.innerHTML = '';
       outingReminders = {}; 
       if(res.data.length > 0) {
+          // Re-enable action buttons now that we have data
+          document.getElementById('scrubBtn').disabled = false;
+          document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+          document.getElementById('massPairBtn').disabled = false;
+          document.getElementById('massPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+          document.getElementById('groupBtn').disabled = false;
+          document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+
           let allCards = '';
           res.data.forEach((item, index) => {
               allCards += `
@@ -61,7 +78,7 @@ if (res.success) {
                        <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
                        <div id="pending-badge-${index}" class="mt-1 hidden"></div>
                    </div>
-                   <div class="flex gap-2 text-xs"><a href="${item.folderUrl}" target="_blank" class="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open"></i></a><a href="${item.sheetUrl}" target="_blank" class="text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel"></i></a></div>
+                   <div class="flex gap-2 text-xs"><a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a><a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a></div>
                  </div>
                  <div id="stats-${index}" class="text-xs text-gray-400 dark:text-gray-500 animate-pulse mt-2">Loading stats...</div>
                  <div id="btn-group-${index}" class="hidden flex gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
