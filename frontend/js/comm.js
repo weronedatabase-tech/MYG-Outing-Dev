@@ -568,59 +568,59 @@ document.getElementById('traineeInfoModal').classList.add('hidden');
 function generateCommAttCard(p, isChecked, isGoneHome) {
 const safeName = p.name.replace(/'/g, "\\'");
 
-const caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm mt-px" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
+const caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] md:min-w-[20px] h-4 md:h-5 px-1 bg-red-500 rounded-full text-[9px] md:text-[11px] font-black text-white shadow-sm mt-px" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
 
 let volHtml = '';
 if (p.volPaired) {
 const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
 if (vols.length > 0) {
-  volHtml = vols.map(v => `<span class="text-[9px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
+  volHtml = vols.map(v => `<span class="text-[9px] md:text-[11px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 md:px-2 py-0.5 md:py-1 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
 }
 } else if (!isGoneHome) {
 // Highlight unpaired explicitly
-  volHtml = `<span class="text-[9px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
+  volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 md:px-2 py-0.5 md:py-1 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
 }
 
 let locHtml = '';
 if (p.meetingLoc || p.dismissalLoc) {
 locHtml = '<div class="flex flex-col gap-1 w-full mt-1 border-t border-gray-100 dark:border-zinc-700/60 pt-1.5">';
 if (p.meetingLoc) {
-  locHtml += `<span class="text-[9px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
+  locHtml += `<span class="text-[9px] md:text-[11px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 md:px-2 py-1 md:py-1.5 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
 }
 if (p.dismissalLoc) {
-  locHtml += `<span class="text-[9px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
+  locHtml += `<span class="text-[9px] md:text-[11px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 md:px-2 py-1 md:py-1.5 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
 }
 locHtml += '</div>';
 }
 
-const groupBadge = p.group ? `<span class="text-[9px] bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 px-1 py-0.5 rounded border border-gray-200 dark:border-zinc-700 whitespace-nowrap">Grp ${p.group}</span>` : '';
+const groupBadge = p.group ? `<span class="text-[9px] md:text-[11px] bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 px-1.5 md:px-2 py-0.5 md:py-1 rounded border border-gray-200 dark:border-zinc-700 whitespace-nowrap">Grp ${p.group}</span>` : '';
 
 const homeBtnClass = isGoneHome ? 'bg-blue-500 text-white border-blue-600 shadow-inner' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 hover:border-blue-500';
 const checkBtnClass = isChecked ? 'bg-green-500 border-green-600 text-white shadow-inner' : 'bg-gray-50 dark:bg-black border-gray-300 dark:border-zinc-600 text-transparent';
 
 return `
 <div id="comm-att-card-${p.name.replace(/[^a-zA-Z0-9]/g, '')}" 
-class="relative bg-white dark:bg-zinc-900 p-2 rounded border border-gray-200 dark:border-zinc-700 shadow-sm transition-all duration-300 flex flex-col gap-1.5 select-none active:scale-95 cursor-pointer hover:border-teal-500" 
+class="relative bg-white dark:bg-zinc-900 p-2 md:p-3 rounded border border-gray-200 dark:border-zinc-700 shadow-sm transition-all duration-300 flex flex-col gap-1.5 md:gap-2 select-none active:scale-95 cursor-pointer hover:border-teal-500" 
 onclick="toggleCommAttStatus('${safeName}', ${!isChecked}, event)"
 oncontextmenu="handleTraineeLongPress(event, '${safeName}')">
-<div class="flex items-start gap-1.5 w-full">
-  <span class="font-extrabold text-xs text-gray-900 dark:text-white leading-tight break-words">${p.name}</span>
+<div class="flex items-start gap-1.5 md:gap-2 w-full">
+  <span class="font-extrabold text-xs md:text-sm text-gray-900 dark:text-white leading-tight break-words">${p.name}</span>
   ${caregiverBadge}
 </div>
 <div class="flex justify-between items-center w-full">
   <div class="shrink-0 flex items-center">
       ${groupBadge}
   </div>
-  <div class="shrink-0 flex items-center gap-1.5">
-      <button onclick="toggleGoneHomeStatus('${safeName}', ${!isGoneHome}, event)" class="w-6 h-6 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
-          <i class="fa-solid fa-house-user text-[10px]"></i>
+  <div class="shrink-0 flex items-center gap-1.5 md:gap-2">
+      <button onclick="toggleGoneHomeStatus('${safeName}', ${!isGoneHome}, event)" class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
+          <i class="fa-solid fa-house-user text-[10px] md:text-xs"></i>
       </button>
-      <div class="w-6 h-6 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
-          <i class="fa-solid fa-check text-xs"></i>
+      <div class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
+          <i class="fa-solid fa-check text-xs md:text-sm"></i>
       </div>
   </div>
 </div>
-${volHtml ? `<div class="flex flex-col gap-1 w-full">${volHtml}</div>` : ''}
+${volHtml ? `<div class="flex flex-col gap-1 md:gap-1.5 w-full">${volHtml}</div>` : ''}
 ${locHtml}
 </div>`;
 }
@@ -750,6 +750,15 @@ function generateColumnText(columnType) {
     return `[${listTitle}]\n${formattedText}`;
 }
 
+function copyColumnData(columnType) {
+    const finalMessage = generateColumnText(columnType);
+    navigator.clipboard.writeText(finalMessage).then(() => {
+        showFlashMessage('commGlobalStatus', "List copied to clipboard!", 'success');
+    }).catch(() => {
+        alert("Failed to copy list. Clipboard access denied.");
+    });
+}
+
 function shareColumnData(columnType) {
     const finalMessage = generateColumnText(columnType);
     const listTitle = finalMessage.split('\n')[0].replace(/\[|\]/g, '');
@@ -764,15 +773,6 @@ function shareColumnData(columnType) {
     } else {
         copyColumnData(columnType);
     }
-}
-
-function copyColumnData(columnType) {
-    const finalMessage = generateColumnText(columnType);
-    navigator.clipboard.writeText(finalMessage).then(() => {
-        showFlashMessage('commGlobalStatus', "List copied to clipboard!", 'success');
-    }).catch(() => {
-        alert("Failed to copy list. Clipboard access denied.");
-    });
 }
 
 async function executeCommAttSync() {
@@ -987,42 +987,42 @@ const safeName = p.name.replace(/'/g, "\\'");
 
 let statusBadge = '';
 if (isGoneHome) {
-  statusBadge = '<span class="text-[9px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1 py-0.5 rounded font-black uppercase border border-blue-200 dark:border-blue-800">Gone Home</span>';
+  statusBadge = '<span class="text-[9px] md:text-[11px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1 py-0.5 rounded font-black uppercase border border-blue-200 dark:border-blue-800">Gone Home</span>';
 } else if (isChecked) {
-  statusBadge = '<span class="text-[9px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1 py-0.5 rounded font-black uppercase border border-green-200 dark:border-green-800">Checked</span>';
+  statusBadge = '<span class="text-[9px] md:text-[11px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1 py-0.5 rounded font-black uppercase border border-green-200 dark:border-green-800">Checked</span>';
 } else {
-  statusBadge = '<span class="text-[9px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1 py-0.5 rounded font-black uppercase border border-red-200 dark:border-red-800">NOT Checked</span>';
+  statusBadge = '<span class="text-[9px] md:text-[11px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1 py-0.5 rounded font-black uppercase border border-red-200 dark:border-red-800">NOT Checked</span>';
 }
 
 let volHtml = '';
 if (p.volPaired) {
   const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
   if (vols.length > 0) {
-      volHtml = vols.map(v => `<span class="text-[9px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
+      volHtml = vols.map(v => `<span class="text-[9px] md:text-[11px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
   }
 } else if (!isGoneHome) {
-  volHtml = `<span class="text-[9px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
+  volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
 }
 
 let locHtml = '';
 if (p.meetingLoc || p.dismissalLoc) {
   locHtml = '<div class="flex flex-col gap-1 w-full mt-1 border-t border-gray-100 dark:border-zinc-700/60 pt-1.5">';
   if (p.meetingLoc) {
-      locHtml += `<span class="text-[9px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
+      locHtml += `<span class="text-[9px] md:text-[11px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
   }
   if (p.dismissalLoc) {
-      locHtml += `<span class="text-[9px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
+      locHtml += `<span class="text-[9px] md:text-[11px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
   }
   locHtml += '</div>';
 }
 
-const caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm mt-px" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
-const groupBadge = p.group ? `<span class="text-[9px] bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 px-1 py-0.5 rounded border border-gray-200 dark:border-zinc-700 whitespace-nowrap">Grp ${p.group}</span>` : '';
+const caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] md:min-w-[20px] h-4 md:h-5 px-1 bg-red-500 rounded-full text-[9px] md:text-[11px] font-black text-white shadow-sm mt-px" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
+const groupBadge = p.group ? `<span class="text-[9px] md:text-[11px] bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 whitespace-nowrap">Grp ${p.group}</span>` : '';
 
 html += `
 <li class="px-3 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex flex-col gap-1.5 border-b border-gray-200 dark:border-zinc-800 last:border-0 transition" onclick="selectFromCommAttSearch('${safeName}')">
   <div class="flex items-start gap-1.5 w-full">
-      <span class="font-bold text-xs text-gray-900 dark:text-white break-words leading-tight">${p.name}</span>
+      <span class="font-bold text-xs md:text-sm text-gray-900 dark:text-white break-words leading-tight">${p.name}</span>
       ${caregiverBadge}
   </div>
   <div class="flex justify-between items-center w-full">
