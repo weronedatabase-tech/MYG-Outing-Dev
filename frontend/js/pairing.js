@@ -196,27 +196,24 @@ function loadMassPairingData() {
     });
 }
 
-function generatePillHtml(targetName, traineeName) {
+function generatePillHtml(pillName, traineeName, volName) {
     return `<div class="relative flex w-full align-top pointer-events-auto">
     <div class="bg-gray-100 dark:bg-zinc-800 border-gray-300 dark:border-zinc-600 text-gray-900 dark:text-gray-100 text-[10px] md:text-[11px] pl-2 pr-6 py-1 rounded shadow-sm border font-bold opacity-90 leading-tight break-words whitespace-normal text-left w-full">
-    ${targetName}
+    ${pillName}
     </div>
-    <div class="remove-x" onclick="unpairTrainee('${traineeName.replace(/'/g, "\\'")}', '${targetName.replace(/'/g, "\\'")}')">×</div>
+    <div class="remove-x" onclick="unpairTrainee('${traineeName.replace(/'/g, "\\'")}', '${volName.replace(/'/g, "\\'")}')">×</div>
     </div>`;
 }
 
-function generateCardHtml(item, isSourceVol) {
+function generateCardHtml(item, pairedNames) {
+    const isVol = item.role === 'VOLUNTEER';
     let pairedPills = '';
     
-    if (!isSourceVol) {
-        // Trainee Target Column
-        if (item.volPaired) {
-            const vols = item.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-            vols.forEach(v => {
-                pairedPills += generatePillHtml(v, item.name);
-            });
-        }
-    }
+    pairedNames.forEach(pairedName => {
+        const tName = isVol ? pairedName : item.name;
+        const vName = isVol ? item.name : pairedName;
+        pairedPills += generatePillHtml(pairedName, tName, vName);
+    });
 
     const safeName = item.name.replace(/'/g, "\\'");
     const displayName = item.name;
@@ -228,75 +225,91 @@ function generateCardHtml(item, isSourceVol) {
     if (isGoneHome) {
         sysBadge = `<span class="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800 text-[8px] uppercase font-black tracking-wider px-1 py-0.5 rounded shrink-0 shadow-sm pointer-events-none whitespace-nowrap">GONE HOME</span>`;
         opacityClass = 'opacity-50 grayscale pointer-events-none';
-    } else if (item.isAttendingN) {
-        sysBadge = `<span class="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800 text-[8px] uppercase font-black tracking-wider px-1 py-0.5 rounded shrink-0 shadow-sm pointer-events-none whitespace-nowrap">NOT ATTENDING</span>`;
-        opacityClass = 'opacity-50 grayscale pointer-events-none';
     } else if (item.isAttendingUnknown) {
         sysBadge = `<span class="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 text-[8px] uppercase font-black tracking-wider px-1 py-0.5 rounded shrink-0 shadow-sm pointer-events-none whitespace-nowrap">? ATTENDING</span>`;
     }
 
     return `
-    <div class="dnd-draggable ${isSourceVol ? '' : 'dnd-dropzone'} bg-white dark:bg-zinc-900 p-1.5 md:p-2 rounded-md border border-gray-200 dark:border-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-grab active:cursor-grabbing hover:border-primary transition select-none flex flex-col min-h-[60px] gap-1 ${opacityClass}" data-name="${safeName}" data-role="${item.role}">
+    <div class="dnd-draggable dnd-dropzone bg-white dark:bg-zinc-900 p-1.5 md:p-2 rounded-md border border-gray-200 dark:border-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-grab active:cursor-grabbing hover:border-primary transition select-none flex flex-col min-h-[60px] gap-1 ${opacityClass}" data-name="${safeName}" data-role="${item.role}">
         <div class="flex justify-between items-start w-full gap-1">
             <div class="main-name-pill font-extrabold text-[11px] md:text-[12px] px-1.5 py-0.5 rounded shadow-sm border bg-gray-100 dark:bg-zinc-800 border-gray-300 dark:border-zinc-600 text-gray-900 dark:text-white max-w-full inline-flex flex-wrap items-center gap-1 self-start min-w-0 leading-[1.1]">
                 <span class="break-words whitespace-normal min-w-0 text-left">${displayName}</span>
                 ${sysBadge}
             </div>
         </div>
-        ${!isSourceVol ? `
         <div class="flex flex-col pointer-events-auto bg-gray-50/50 dark:bg-black/50 p-1.5 rounded min-h-[36px] border border-dashed border-gray-200 dark:border-zinc-700 mt-1 w-full gap-1.5">
-            ${pairedPills || '<span class="text-[9px] md:text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-0.5 pointer-events-none text-center w-full py-1">Drop volunteer here</span>'}
+            ${pairedPills || `<span class="text-[9px] md:text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-0.5 pointer-events-none text-center w-full py-1">Drop ${isVol ? 'trainee' : 'volunteer'} here</span>`}
         </div>
-        ` : ''}
     </div>
     `;
 }
 
 function renderMassPairings() {
-    const trainees = massPairingData.trainees || [];
-    const vols = massPairingData.volunteers || [];
+    // Exclude Not Attending trainees and volunteers
+    const trainees = (massPairingData.trainees || []).filter(t => !t.isAttendingN);
+    const vols = massPairingData.volunteers || []; // Volunteers already filtered in backend for 'y'
     
-    // Calculate unpaired trainees (Exclude Gone Home or N Attending)
+    // Calculate unpaired trainees
     let unpairedCount = 0;
     trainees.forEach(t => {
-        if (!t.isGoneHome && !t.isAttendingN && (!t.volPaired || t.volPaired.trim() === '')) {
+        if (!t.isGoneHome && (!t.volPaired || t.volPaired.trim() === '')) {
             unpairedCount++;
         }
     });
     updateUnpairedNotification(unpairedCount);
 
+    // Build Volunteer Pairings Map
+    const volPairingsMap = new Map();
+    trainees.forEach(t => {
+        if (t.volPaired) {
+            const pairedVols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+            pairedVols.forEach(v => {
+                const cleanVol = v.toLowerCase();
+                if (!volPairingsMap.has(cleanVol)) volPairingsMap.set(cleanVol, []);
+                volPairingsMap.get(cleanVol).push(t.name);
+            });
+        }
+    });
+
     let sourceHtml = '';
-    vols.forEach(item => { sourceHtml += generateCardHtml(item, true); });
+    vols.forEach(item => { 
+        const myTrainees = volPairingsMap.get(item.name.toLowerCase()) || [];
+        sourceHtml += generateCardHtml(item, myTrainees); 
+    });
     document.getElementById('dnd-source-pool').innerHTML = sourceHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active volunteers.</p>';
 
     let targetHtml = '';
-    trainees.forEach(item => { targetHtml += generateCardHtml(item, false); });
+    trainees.forEach(item => { 
+        const myVols = item.volPaired ? item.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
+        targetHtml += generateCardHtml(item, myVols); 
+    });
     document.getElementById('dnd-target-list').innerHTML = targetHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active trainees.</p>';
 }
 
 function handleDndDrop(sourceName, sourceRole, targetName) {
-    if (sourceRole !== 'VOLUNTEER') return;
+    let volName = sourceRole === 'VOLUNTEER' ? sourceName : targetName;
+    let traineeName = sourceRole === 'TRAINEE' ? sourceName : targetName;
 
-    let trainee = massPairingData.trainees.find(t => t.name === targetName);
+    let trainee = massPairingData.trainees.find(t => t.name === traineeName);
     if (!trainee) return;
 
     // Check if already paired
     const currentVols = trainee.volPaired ? trainee.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
     
     // Fuzzy matching for exact names
-    const cleanSource = sourceName.toLowerCase();
-    const exists = currentVols.some(v => v.toLowerCase() === cleanSource);
+    const cleanVol = volName.toLowerCase();
+    const exists = currentVols.some(v => v.toLowerCase() === cleanVol);
 
     if (!exists) {
-        currentVols.push(sourceName);
+        currentVols.push(volName);
         trainee.volPaired = currentVols.join(', ');
         
         // Add to pending updates map
-        const updateIndex = pendingPairingUpdates.findIndex(u => u.traineeName === targetName);
+        const updateIndex = pendingPairingUpdates.findIndex(u => u.traineeName === traineeName);
         if (updateIndex > -1) {
             pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
         } else {
-            pendingPairingUpdates.push({ traineeName: targetName, volPaired: trainee.volPaired });
+            pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
         }
 
         renderMassPairings(); 
