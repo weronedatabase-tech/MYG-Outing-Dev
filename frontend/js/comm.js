@@ -686,20 +686,17 @@ if (card) {
       });
   }
   
-  let ringColor = 'ring-red-400';
-  let bgColor = 'bg-red-50 dark:bg-red-900/30';
+  let pulseClass = 'pulse-red';
   
   if (stateType === 'checked') {
-      ringColor = 'ring-green-400';
-      bgColor = 'bg-green-50 dark:bg-green-900/30';
+      pulseClass = 'pulse-green';
   } else if (stateType === 'gonehome') {
-      ringColor = 'ring-blue-400';
-      bgColor = 'bg-blue-50 dark:bg-blue-900/30';
+      pulseClass = 'pulse-blue';
   }
   
-  card.classList.add('ring-2', ringColor, 'scale-[1.02]', bgColor, 'z-10');
+  card.classList.add(pulseClass);
   setTimeout(() => {
-      card.classList.remove('ring-2', ringColor, 'scale-[1.02]', bgColor, 'z-10');
+      card.classList.remove(pulseClass);
   }, 800);
 }
 }, 50);
