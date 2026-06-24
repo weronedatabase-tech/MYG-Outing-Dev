@@ -182,8 +182,8 @@ function openMassPairing() {
   loadMassPairingData();
 }
 
-function openFilteredMassPairing() {
-  const url = currentCommAttSheetUrl;
+function openFilteredMassPairing(overrideUrl = null) {
+  const url = overrideUrl || currentCommAttSheetUrl || currentMassPairingSheetUrl;
   if(!url) return;
 
   isFilteredMassPairingMode = true;
@@ -215,10 +215,11 @@ function loadMassPairingData() {
   });
 }
 
-function generatePillHtml(pillName, traineeName, volName) {
+function generatePillHtml(pillName, traineeName, volName, isTraineeGoneHome = false) {
+  const goneHomeBadge = isTraineeGoneHome ? `<i class="fa-solid fa-house-user text-blue-500 ml-1" title="Gone Home"></i>` : '';
   return `<div class="relative flex w-full align-top pointer-events-auto">
-  <div class="bg-gray-100 dark:bg-zinc-800 border-gray-300 dark:border-zinc-600 text-gray-900 dark:text-gray-100 text-[10px] md:text-[11px] pl-2 pr-6 py-1 rounded shadow-sm border font-bold opacity-90 leading-tight break-words whitespace-normal text-left w-full">
-  ${pillName}
+  <div class="bg-gray-100 dark:bg-zinc-800 border-gray-300 dark:border-zinc-600 text-gray-900 dark:text-gray-100 text-[10px] md:text-[11px] pl-2 pr-6 py-1 rounded shadow-sm border font-bold opacity-90 leading-tight break-words whitespace-normal text-left w-full flex items-center">
+  <span>${pillName}</span>${goneHomeBadge}
   </div>
   <div class="remove-x flex items-center justify-center font-bold text-[10px] bg-transparent text-red-500 shadow-none border-none hover:bg-transparent hover:text-red-700 hover:scale-125 top-0 right-1" onclick="unpairTrainee('${traineeName.replace(/'/g, "\\'")}', '${volName.replace(/'/g, "\\'")}')">✕</div>
   </div>`;
@@ -231,7 +232,16 @@ function generateCardHtml(item, pairedNames) {
   pairedNames.forEach(pairedName => {
       const tName = isVol ? pairedName : item.name;
       const vName = isVol ? item.name : pairedName;
-      pairedPills += generatePillHtml(pairedName, tName, vName);
+      
+      let isTraineeGoneHome = false;
+      if (isVol) {
+          const traineeObj = (massPairingData.trainees || []).find(t => t.name === tName);
+          if (traineeObj && traineeObj.isGoneHome) {
+              isTraineeGoneHome = true;
+          }
+      }
+
+      pairedPills += generatePillHtml(pairedName, tName, vName, isTraineeGoneHome);
   });
 
   const safeName = item.name.replace(/'/g, "\\'");
@@ -280,13 +290,6 @@ function renderMassPairings() {
   });
   
   const vols = massPairingData.volunteers || []; 
-  
-  // Local Safeguard: Detach Gone Home trainees locally before backend sync finalizes them
-  trainees.forEach(t => {
-      if (t.isGoneHome) {
-          t.volPaired = "";
-      }
-  });
 
   // Calculate unpaired trainees
   let unpairedCount = 0;
@@ -311,7 +314,7 @@ function renderMassPairings() {
   });
 
   // If filtered mode is active, exclusively show Unpaired Trainees in the Target list
-  // Also enforce that Gone Home trainees never appear here
+  // Enforce that Gone Home trainees never appear in the Target list during Filtered Mode
   if (isFilteredMassPairingMode) {
       trainees = trainees.filter(t => !t.isGoneHome && (!t.volPaired || t.volPaired.trim() === ''));
   }

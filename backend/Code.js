@@ -1102,56 +1102,6 @@ for (const [junctureName, updates] of Object.entries(multipleUpdates)) {
   if (changed) {
       juncRange.setValues(juncData);
       changedGlobal = true;
-      
-      // --- LOGICAL CASCADE: if Gone Home updated, unpair volunteer locally ---
-      if (junctureName === '__GONE_HOME__') {
-          // Clear Volunteer Paired in Groupings Tab
-          const gVolIdx = getColIndex(headers, "volunteerpaired");
-          if (gVolIdx > -1) {
-              const gVolRange = sheet.getRange(3, gVolIdx + 1, lastRow - 2);
-              const gVolData = gVolRange.getValues();
-              let gVolChanged = false;
-              
-              for (let i = 0; i < namesData.length; i++) {
-                  const name = String(namesData[i][0]).trim().toLowerCase();
-                  if (name && updateMap.hasOwnProperty(name) && updateMap[name] === true) {
-                      if (gVolData[i][0] !== "") {
-                          gVolData[i][0] = "";
-                          gVolChanged = true;
-                      }
-                  }
-              }
-              if (gVolChanged) gVolRange.setValues(gVolData);
-          }
-
-          // Clear Volunteer Paired in Trainee Attendance Tab
-          const tSheet = ss.getSheetByName("Trainee Attendance");
-          if (tSheet) {
-              const tLastRow = tSheet.getLastRow();
-              if (tLastRow > 1) {
-                  const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
-                  const tNameIdx = getColIndex(tHeaders, "name") > -1 ? getColIndex(tHeaders, "name") : 0;
-                  const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
-                  
-                  if (tVolPairedIdx > -1) {
-                      const tRange = tSheet.getRange(2, 1, tLastRow - 1, tSheet.getLastColumn());
-                      const tData = tRange.getValues();
-                      let tChanged = false;
-                      
-                      for(let k=0; k<tData.length; k++){
-                          const tName = tData[k][tNameIdx] ? tData[k][tNameIdx].toString().toLowerCase().trim() : "";
-                          if(tName && updateMap.hasOwnProperty(tName) && updateMap[tName] === true) {
-                              if(tData[k][tVolPairedIdx] !== "") {
-                                  tData[k][tVolPairedIdx] = "";
-                                  tChanged = true;
-                              }
-                          }
-                      }
-                      if (tChanged) tRange.setValues(tData);
-                  }
-              }
-          }
-      }
   }
 }
 
