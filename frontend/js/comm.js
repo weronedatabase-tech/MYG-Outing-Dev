@@ -56,66 +56,66 @@ selector.disabled = false;
 selector.innerHTML = '';
 
 if (res.success) {
- if(viewId === 'comm' && listContainer) {
-     listContainer.innerHTML = '';
-     outingReminders = {}; 
-     if(res.data.length > 0) {
-         // Re-enable action buttons now that we have data
-         document.getElementById('scrubBtn').disabled = false;
-         document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-         document.getElementById('massPairBtn').disabled = false;
-         document.getElementById('massPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-         document.getElementById('groupBtn').disabled = false;
-         document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+if(viewId === 'comm' && listContainer) {
+    listContainer.innerHTML = '';
+    outingReminders = {}; 
+    if(res.data.length > 0) {
+        // Re-enable action buttons now that we have data
+        document.getElementById('scrubBtn').disabled = false;
+        document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+        document.getElementById('massPairBtn').disabled = false;
+        document.getElementById('massPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+        document.getElementById('groupBtn').disabled = false;
+        document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
 
-         let allCards = '';
-         res.data.forEach((item, index) => {
-             allCards += `
-             <div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
-                <div class="flex justify-between items-start">
-                  <div>
-                      <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
-                      <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
-                      <div id="pending-badge-${index}" class="mt-1 hidden"></div>
-                  </div>
-                  <div class="flex gap-2 text-xs"><a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a><a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a></div>
-                </div>
-                <div id="stats-${index}" class="text-xs text-gray-400 dark:text-gray-500 animate-pulse mt-2">Loading stats...</div>
-                <div id="btn-group-${index}" class="hidden flex gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
-                    <button onclick="openReminderModal('${index}')" class="flex-1 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 text-xs py-2 px-3 rounded border border-gray-200 dark:border-zinc-700 transition-colors"><i class="fa-regular fa-message mr-1"></i> Reminder Message</button>
-                    <button onclick="copyReminderDirect('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-xs py-2 px-3 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors"><i class="fa-regular fa-copy"></i></button>
-                </div>
-             </div>`;
-         });
-         listContainer.innerHTML = allCards;
-         res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
-     } else {
-         listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
-     }
- }
- if(res.data.length > 0) {
-     window.currentSheetList = res.data;
-     res.data.forEach(item => {
-         let opt = document.createElement('option');
-         opt.value = item.sheetUrl;
-         opt.text = item.displayName;
-         selector.appendChild(opt);
-     });
-     selector.selectedIndex = 0;
-     
-     if(viewId === 'volunteer') {
-         resetVolForm();
-     } else if (viewId === 'actual-attendance' && res.data.length === 1) {
-         setTimeout(() => openLiveAttendance(), 100);
-     }
- } else {
-     selector.innerHTML = '<option disabled selected>No upcoming events</option>';
- }
+        let allCards = '';
+        res.data.forEach((item, index) => {
+            allCards += `
+            <div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
+               <div class="flex justify-between items-start">
+                 <div>
+                     <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
+                     <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
+                     <div id="pending-badge-${index}" class="mt-1 hidden"></div>
+                 </div>
+                 <div class="flex gap-2 text-xs"><a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a><a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a></div>
+               </div>
+               <div id="stats-${index}" class="text-xs text-gray-400 dark:text-gray-500 animate-pulse mt-2">Loading stats...</div>
+               <div id="btn-group-${index}" class="hidden flex gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+                   <button onclick="openReminderModal('${index}')" class="flex-1 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 text-xs py-2 px-3 rounded border border-gray-200 dark:border-zinc-700 transition-colors"><i class="fa-regular fa-message mr-1"></i> Reminder Message</button>
+                   <button onclick="copyReminderDirect('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-xs py-2 px-3 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors"><i class="fa-regular fa-copy"></i></button>
+               </div>
+            </div>`;
+        });
+        listContainer.innerHTML = allCards;
+        res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
+    } else {
+        listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
+    }
+}
+if(res.data.length > 0) {
+    window.currentSheetList = res.data;
+    res.data.forEach(item => {
+        let opt = document.createElement('option');
+        opt.value = item.sheetUrl;
+        opt.text = item.displayName;
+        selector.appendChild(opt);
+    });
+    selector.selectedIndex = 0;
+    
+    if(viewId === 'volunteer') {
+        resetVolForm();
+    } else if (viewId === 'actual-attendance' && res.data.length === 1) {
+        setTimeout(() => openLiveAttendance(), 100);
+    }
 } else {
- selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
- if(viewId === 'comm' && listContainer) {
-     listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
- }
+    selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+}
+} else {
+selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
+if(viewId === 'comm' && listContainer) {
+    listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
+}
 }
 });
 }
@@ -125,31 +125,31 @@ apiCall('getOutingDetails', url).then(res => {
 const container = document.getElementById(`stats-${index}`);
 const btnGroup = document.getElementById(`btn-group-${index}`);
 if(res.success) {
- let html = '<table class="w-full text-[10px] text-left border-collapse"><tr class="text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-zinc-700"><th>Proj</th><th class="text-center">Trainees</th><th class="text-center">CG</th><th class="text-center">Vols</th></tr>';
- const sortedKeys = Object.keys(res.stats).sort();
- if(sortedKeys.length === 0) {
-     html += '<tr><td colspan="4" class="text-center py-2 text-gray-400 dark:text-gray-500 italic">No data yet</td></tr>';
- } else {
-     for(const proj of sortedKeys) {
-         const d = res.stats[proj];
-         html += `<tr class="border-b border-gray-100 dark:border-zinc-800/50 last:border-0"><td class="py-1 font-bold text-gray-700 dark:text-gray-300">${proj}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.tY}</span>/${d.tTot}</td><td class="text-center text-gray-900 dark:text-white">${d.cY}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.vY}</span>/${d.vTot}</td></tr>`;
-     }
- }
- html += '</table>';
- container.innerHTML = html;
- container.classList.remove('animate-pulse');
- 
- let msg = "";
- if(res.pending && res.pending.length > 0) {
-     const list = res.pending.join('\n');
-     msg = `Hello👋, gentle reminder for volunteers of these trainees to update their attendance by tomorrow:\n${list}\n\nVolunteers please update your own attendance as well, Thank You!!🙏`;
- } else {
-     msg = "Great news! All trainees have updated their attendance.\n\nVolunteers please ensure your own attendance is updated too, Thank You!!🙏";
- }
- outingReminders[index] = msg;
- if(btnGroup) btnGroup.classList.remove('hidden');
+let html = '<table class="w-full text-[10px] text-left border-collapse"><tr class="text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-zinc-700"><th>Proj</th><th class="text-center">Trainees</th><th class="text-center">CG</th><th class="text-center">Vols</th></tr>';
+const sortedKeys = Object.keys(res.stats).sort();
+if(sortedKeys.length === 0) {
+    html += '<tr><td colspan="4" class="text-center py-2 text-gray-400 dark:text-gray-500 italic">No data yet</td></tr>';
 } else {
- container.innerHTML = '<span class="text-red-500 dark:text-red-400">Error loading stats</span>';
+    for(const proj of sortedKeys) {
+        const d = res.stats[proj];
+        html += `<tr class="border-b border-gray-100 dark:border-zinc-800/50 last:border-0"><td class="py-1 font-bold text-gray-700 dark:text-gray-300">${proj}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.tY}</span>/${d.tTot}</td><td class="text-center text-gray-900 dark:text-white">${d.cY}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.vY}</span>/${d.vTot}</td></tr>`;
+    }
+}
+html += '</table>';
+container.innerHTML = html;
+container.classList.remove('animate-pulse');
+
+let msg = "";
+if(res.pending && res.pending.length > 0) {
+    const list = res.pending.join('\n');
+    msg = `Hello👋, gentle reminder for volunteers of these trainees to update their attendance by tomorrow:\n${list}\n\nVolunteers please update your own attendance as well, Thank You!!🙏`;
+} else {
+    msg = "Great news! All trainees have updated their attendance.\n\nVolunteers please ensure your own attendance is updated too, Thank You!!🙏";
+}
+outingReminders[index] = msg;
+if(btnGroup) btnGroup.classList.remove('hidden');
+} else {
+container.innerHTML = '<span class="text-red-500 dark:text-red-400">Error loading stats</span>';
 }
 });
 }
@@ -171,8 +171,8 @@ const original = btn.innerHTML;
 btn.innerHTML = '<i class="fa-solid fa-check"></i>';
 btn.classList.add('text-green-600', 'dark:text-green-400', 'border-green-200', 'dark:border-green-800');
 setTimeout(() => {
- btn.innerHTML = original;
- btn.classList.remove('text-green-600', 'dark:text-green-400', 'border-green-200', 'dark:border-green-800');
+btn.innerHTML = original;
+btn.classList.remove('text-green-600', 'dark:text-green-400', 'border-green-200', 'dark:border-green-800');
 }, 2000);
 });
 }
@@ -243,12 +243,12 @@ dismissalTimes: Array.from(document.getElementsByName('dismissalTime')).map(i=>i
 
 apiCall('createOuting', formData).then(res => { 
 if(res.success) { 
- showOverlay('success', 'Outing Created Successfully!');
- closeModal(); 
- loadSheets('comm'); 
- showFlashMessage('commGlobalStatus', "Outing Created Successfully!", 'success');
+showOverlay('success', 'Outing Created Successfully!');
+closeModal(); 
+loadSheets('comm'); 
+showFlashMessage('commGlobalStatus', "Outing Created Successfully!", 'success');
 } else { 
- showOverlay('error', res.message);
+showOverlay('error', res.message);
 } 
 }); 
 }
@@ -272,14 +272,14 @@ overlay.classList.remove('hidden');
 apiCall('fetchCommAttendance', { sheetUrl: currentCommAttSheetUrl }).then(res => {
 overlay.classList.add('hidden');
 if (res.success) {
-  commAttData = res;
-  if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
-  renderCommAttFilters();
-  renderCommAttJunctures();
-  startCommAttPolling();
+ commAttData = res;
+ if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
+ renderCommAttFilters();
+ renderCommAttJunctures();
+ startCommAttPolling();
 } else {
-  alert("Error: " + res.message);
-  showView('actual-attendance');
+ alert("Error: " + res.message);
+ showView('actual-attendance');
 }
 });
 }
@@ -319,33 +319,33 @@ if(!btn || !dropdown) return;
 let btnText = type === 'group' ? 'Grp: ' : (type === 'meet' ? 'Meeting: ' : 'Dismissal: ');
 
 if (selectedArray.length === 0) {
-    btnText += 'All';
-    btn.classList.remove('ring-1', 'ring-gray-900', 'dark:ring-gray-100');
+   btnText += 'All';
+   btn.classList.remove('ring-1', 'ring-gray-900', 'dark:ring-gray-100');
 } else {
-    btnText += `(${selectedArray.length})`;
-    btn.classList.add('ring-1', 'ring-gray-900', 'dark:ring-gray-100');
+   btnText += `(${selectedArray.length})`;
+   btn.classList.add('ring-1', 'ring-gray-900', 'dark:ring-gray-100');
 }
 
 btn.innerText = btnText;
 
 let html = `<div class="p-1.5 flex justify-between border-b border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-black sticky top-0 z-10">
-    <button onclick="clearCommAttFilter('${type}', event)" class="text-[10px] bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded transition">Clear</button>
-    <button onclick="closeAllCommAttFilters(event)" class="text-[10px] bg-primary hover:bg-blue-600 text-white px-3 py-1 rounded transition">Done</button>
+   <button onclick="clearCommAttFilter('${type}', event)" class="text-[10px] bg-gray-200 dark:bg-zinc-800 hover:bg-gray-300 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded transition">Clear</button>
+   <button onclick="closeAllCommAttFilters(event)" class="text-[10px] bg-primary hover:bg-blue-600 text-white px-3 py-1 rounded transition">Done</button>
 </div>`;
 
 if (availableItems.length === 0) {
-    html += `<div class="p-2 text-center text-xs text-gray-500 dark:text-gray-400 italic">No options</div>`;
+   html += `<div class="p-2 text-center text-xs text-gray-500 dark:text-gray-400 italic">No options</div>`;
 } else {
-    availableItems.forEach(item => {
-        const isChecked = selectedArray.includes(item);
-        html += `
-        <div class="px-3 py-2 border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-between transition-colors" onclick="toggleCommAttFilterItem('${type}', '${item.replace(/'/g, "\\'")}', event)">
-            <span class="text-xs text-gray-700 dark:text-gray-300 font-bold break-words pr-2">${type === 'group' ? 'Grp ' + item : item}</span>
-            <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-blue-500 border-blue-600 text-white' : 'bg-gray-100 border-gray-300 dark:bg-black dark:border-zinc-600 text-transparent'}">
-                <i class="fa-solid fa-check text-[10px]"></i>
-            </div>
-        </div>`;
-    });
+   availableItems.forEach(item => {
+       const isChecked = selectedArray.includes(item);
+       html += `
+       <div class="px-3 py-2 border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-between transition-colors" onclick="toggleCommAttFilterItem('${type}', '${item.replace(/'/g, "\\'")}', event)">
+           <span class="text-xs text-gray-700 dark:text-gray-300 font-bold break-words pr-2">${type === 'group' ? 'Grp ' + item : item}</span>
+           <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-blue-500 border-blue-600 text-white' : 'bg-gray-100 border-gray-300 dark:bg-black dark:border-zinc-600 text-transparent'}">
+               <i class="fa-solid fa-check text-[10px]"></i>
+           </div>
+       </div>`;
+   });
 }
 
 const scrollTop = dropdown.scrollTop;
@@ -362,34 +362,34 @@ const wasHidden = dropdown.classList.contains('hidden');
 closeAllCommAttFilters();
 
 if (wasHidden) {
-    dropdown.classList.remove('hidden');
+   dropdown.classList.remove('hidden');
 }
 }
 
 function closeAllCommAttFilters(e) {
 if (e) e.stopPropagation();
 ['commAttGroupDropdown', 'commAttMeetDropdown', 'commAttDismissDropdown'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.classList.add('hidden');
+   const el = document.getElementById(id);
+   if(el) el.classList.add('hidden');
 });
 
 if (commAttFiltersChanged) {
-    changeCommAttContext();
-    commAttFiltersChanged = false;
+   changeCommAttContext();
+   commAttFiltersChanged = false;
 }
 }
 
 document.addEventListener('click', function(e) {
 const isDropdownClick = e.target.closest('#commAttGroupDropdown') || 
-                        e.target.closest('#commAttMeetDropdown') || 
-                        e.target.closest('#commAttDismissDropdown');
+                       e.target.closest('#commAttMeetDropdown') || 
+                       e.target.closest('#commAttDismissDropdown');
 
 const isBtnClick = e.target.closest('#commAttGroupBtn') || 
-                   e.target.closest('#commAttMeetBtn') || 
-                   e.target.closest('#commAttDismissBtn');
+                  e.target.closest('#commAttMeetBtn') || 
+                  e.target.closest('#commAttDismissBtn');
 
 if (!isDropdownClick && !isBtnClick) {
-    closeAllCommAttFilters();
+   closeAllCommAttFilters();
 }
 });
 
@@ -401,9 +401,9 @@ const available = type === 'group' ? commAttState.availableGroups : (type === 'm
 
 const index = targetArray.indexOf(item);
 if (index > -1) {
-    targetArray.splice(index, 1);
+   targetArray.splice(index, 1);
 } else {
-    targetArray.push(item);
+   targetArray.push(item);
 }
 
 commAttFiltersChanged = true;
@@ -430,7 +430,7 @@ if (commAttData.junctures.length === 0) {
 select.innerHTML = '<option value="">No Junctures Defined</option>';
 } else {
 commAttData.junctures.forEach(j => {
-  select.innerHTML += `<option value="${j}">${j}</option>`;
+ select.innerHTML += `<option value="${j}">${j}</option>`;
 });
 }
 
@@ -488,20 +488,20 @@ const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.att
 
 // Check if Unpaired and not Gone Home
 if (!isGoneHome && (!p.volPaired || p.volPaired.trim() === '')) {
-  unpairedCount++;
+ unpairedCount++;
 }
 
 const cardHtml = generateCommAttCard(p, isChecked, isGoneHome);
 
 if (isGoneHome) {
-  goneHomeHtml += cardHtml;
-  goneHomeCount++;
+ goneHomeHtml += cardHtml;
+ goneHomeCount++;
 } else if (isChecked) {
-  checkedHtml += cardHtml;
-  checkedCount++;
+ checkedHtml += cardHtml;
+ checkedCount++;
 } else {
-  notCheckedHtml += cardHtml;
-  notCheckedCount++;
+ notCheckedHtml += cardHtml;
+ notCheckedCount++;
 }
 });
 
@@ -528,7 +528,7 @@ showTraineeInfo(name);
 
 function showTraineeInfo(name) {
 if (window.navigator && window.navigator.vibrate) {
-    try { window.navigator.vibrate(50); } catch(e){}
+   try { window.navigator.vibrate(50); } catch(e){}
 }
 
 const p = commAttData.participants.find(x => x.name === name);
@@ -545,16 +545,16 @@ dataDict['volpaired'] = p.volPaired || '';
 dataDict['caregivers'] = p.caregivers || '0';
 
 if (p.extra) {
-    for (const [key, val] of Object.entries(p.extra)) {
-        dataDict[key.toLowerCase().replace(/[^a-z0-9]/g, "")] = val || '';
-    }
+   for (const [key, val] of Object.entries(p.extra)) {
+       dataDict[key.toLowerCase().replace(/[^a-z0-9]/g, "")] = val || '';
+   }
 }
 
 const formattedText = format.replace(/\{\{([^}]+)\}\}/g, (match, p1) => {
-    const cleanKey = p1.toLowerCase().replace(/[^a-z0-9]/g, "");
-    return dataDict[cleanKey] !== undefined && dataDict[cleanKey] !== null && dataDict[cleanKey] !== "" 
-        ? dataDict[cleanKey] 
-        : "-";
+   const cleanKey = p1.toLowerCase().replace(/[^a-z0-9]/g, "");
+   return dataDict[cleanKey] !== undefined && dataDict[cleanKey] !== null && dataDict[cleanKey] !== "" 
+       ? dataDict[cleanKey] 
+       : "-";
 });
 
 document.getElementById('traineeInfoContent').textContent = formattedText;
@@ -574,21 +574,21 @@ let volHtml = '';
 if (p.volPaired) {
 const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
 if (vols.length > 0) {
-  volHtml = vols.map(v => `<span class="text-[9px] md:text-[11px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 md:px-2 py-0.5 md:py-1 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
+ volHtml = vols.map(v => `<span class="text-[9px] md:text-[11px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 md:px-2 py-0.5 md:py-1 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
 }
 } else if (!isGoneHome) {
 // Highlight unpaired explicitly
-  volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 md:px-2 py-0.5 md:py-1 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
+ volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 md:px-2 py-0.5 md:py-1 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
 }
 
 let locHtml = '';
 if (p.meetingLoc || p.dismissalLoc) {
 locHtml = '<div class="flex flex-col gap-1 w-full mt-1 border-t border-gray-100 dark:border-zinc-700/60 pt-1.5">';
 if (p.meetingLoc) {
-  locHtml += `<span class="text-[9px] md:text-[11px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 md:px-2 py-1 md:py-1.5 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
+ locHtml += `<span class="text-[9px] md:text-[11px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 md:px-2 py-1 md:py-1.5 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
 }
 if (p.dismissalLoc) {
-  locHtml += `<span class="text-[9px] md:text-[11px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 md:px-2 py-1 md:py-1.5 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
+ locHtml += `<span class="text-[9px] md:text-[11px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 md:px-2 py-1 md:py-1.5 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
 }
 locHtml += '</div>';
 }
@@ -604,21 +604,21 @@ class="relative bg-white dark:bg-zinc-900 p-2 md:p-3 rounded border border-gray-
 onclick="toggleCommAttStatus('${safeName}', ${!isChecked}, event)"
 oncontextmenu="handleTraineeLongPress(event, '${safeName}')">
 <div class="flex items-start gap-1.5 md:gap-2 w-full">
-  <span class="font-extrabold text-xs md:text-sm text-gray-900 dark:text-white leading-tight break-words">${p.name}</span>
-  ${caregiverBadge}
+ <span class="font-extrabold text-xs md:text-sm text-gray-900 dark:text-white leading-tight break-words">${p.name}</span>
+ ${caregiverBadge}
 </div>
 <div class="flex justify-between items-center w-full">
-  <div class="shrink-0 flex items-center">
-      ${groupBadge}
-  </div>
-  <div class="shrink-0 flex items-center gap-1.5 md:gap-2">
-      <button onclick="toggleGoneHomeStatus('${safeName}', ${!isGoneHome}, event)" class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
-          <i class="fa-solid fa-house-user text-[10px] md:text-xs"></i>
-      </button>
-      <div class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
-          <i class="fa-solid fa-check text-xs md:text-sm"></i>
-      </div>
-  </div>
+ <div class="shrink-0 flex items-center">
+     ${groupBadge}
+ </div>
+ <div class="shrink-0 flex items-center gap-1.5 md:gap-2">
+     <button onclick="toggleGoneHomeStatus('${safeName}', ${!isGoneHome}, event)" class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
+         <i class="fa-solid fa-house-user text-[10px] md:text-xs"></i>
+     </button>
+     <div class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
+         <i class="fa-solid fa-check text-xs md:text-sm"></i>
+     </div>
+ </div>
 </div>
 ${volHtml ? `<div class="flex flex-col gap-1 md:gap-1.5 w-full">${volHtml}</div>` : ''}
 ${locHtml}
@@ -655,10 +655,10 @@ commAttData.attendance['__GONE_HOME__'][name] = forceState;
 
 // When gone home is true, clear volunteers paired locally as well
 if (forceState) {
-  const pIndex = commAttData.participants.findIndex(p => p.name === name);
-  if (pIndex > -1) {
-      commAttData.participants[pIndex].volPaired = "";
-  }
+ const pIndex = commAttData.participants.findIndex(p => p.name === name);
+ if (pIndex > -1) {
+     commAttData.participants[pIndex].volPaired = "";
+ }
 }
 
 if (!pendingCommAttUpdates['__GONE_HOME__']) pendingCommAttUpdates['__GONE_HOME__'] = {};
@@ -671,105 +671,110 @@ triggerSync();
 
 function triggerCommAttPulse(name, stateType) {
 setTimeout(() => {
-const id = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
-const card = document.getElementById(id);
-if (card) {
-  const container = card.parentElement;
-  if (container) {
-      const containerRect = container.getBoundingClientRect();
-      const cardRect = card.getBoundingClientRect();
-      const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
-      
-      container.scrollTo({
-          top: scrollTop,
-          behavior: 'smooth'
-      });
-  }
-  
-  let pulseClass = 'pulse-red';
-  
-  if (stateType === 'checked') {
-      pulseClass = 'pulse-green';
-  } else if (stateType === 'gonehome') {
-      pulseClass = 'pulse-blue';
-  }
-  
-  card.classList.add(pulseClass);
-  setTimeout(() => {
-      card.classList.remove(pulseClass);
-  }, 800);
-}
-}, 50);
+   requestAnimationFrame(() => {
+       const id = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
+       const card = document.getElementById(id);
+       if (card) {
+           const container = card.parentElement;
+           if (container) {
+               const containerRect = container.getBoundingClientRect();
+               const cardRect = card.getBoundingClientRect();
+               
+               if (cardRect.height > 0) {
+                   const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
+                   
+                   container.scrollTo({
+                       top: scrollTop,
+                       behavior: 'smooth'
+                   });
+               }
+           }
+           
+           let pulseClass = 'pulse-red';
+           
+           if (stateType === 'checked') {
+               pulseClass = 'pulse-green';
+           } else if (stateType === 'gonehome') {
+               pulseClass = 'pulse-blue';
+           }
+           
+           card.classList.add(pulseClass);
+           setTimeout(() => {
+               card.classList.remove(pulseClass);
+           }, 800);
+       }
+   });
+}, 150);
 }
 
 function generateColumnText(columnType) {
-    const juncture = commAttState.currentJuncture;
-    let participants = commAttData.participants || [];
-    let listTitle = "";
+   const juncture = commAttState.currentJuncture;
+   let participants = commAttData.participants || [];
+   let listTitle = "";
 
-    if (columnType === 'notChecked') listTitle = "NOT PRESENT";
-    if (columnType === 'checked') listTitle = "PRESENT";
-    if (columnType === 'goneHome') listTitle = "GONE HOME";
+   if (columnType === 'notChecked') listTitle = "NOT PRESENT";
+   if (columnType === 'checked') listTitle = "PRESENT";
+   if (columnType === 'goneHome') listTitle = "GONE HOME";
 
-    if (commAttState.selectedGroups.length > 0) {
-        participants = participants.filter(p => commAttState.selectedGroups.includes(String(p.group)));
-    }
-    if (commAttState.selectedMeets.length > 0) {
-        participants = participants.filter(p => commAttState.selectedMeets.includes(String(p.meetingLoc)));
-    }
-    if (commAttState.selectedDismissals.length > 0) {
-        participants = participants.filter(p => commAttState.selectedDismissals.includes(String(p.dismissalLoc)));
-    }
+   if (commAttState.selectedGroups.length > 0) {
+       participants = participants.filter(p => commAttState.selectedGroups.includes(String(p.group)));
+   }
+   if (commAttState.selectedMeets.length > 0) {
+       participants = participants.filter(p => commAttState.selectedMeets.includes(String(p.meetingLoc)));
+   }
+   if (commAttState.selectedDismissals.length > 0) {
+       participants = participants.filter(p => commAttState.selectedDismissals.includes(String(p.dismissalLoc)));
+   }
 
-    const targetNames = [];
-    participants.forEach(p => {
-        const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
-        const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
-        
-        if (columnType === 'goneHome' && isGoneHome) targetNames.push(p.name);
-        else if (columnType === 'checked' && !isGoneHome && isChecked) targetNames.push(p.name);
-        else if (columnType === 'notChecked' && !isGoneHome && !isChecked) targetNames.push(p.name);
-    });
+   const targetNames = [];
+   participants.forEach(p => {
+       const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
+       const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
+       
+       if (columnType === 'goneHome' && isGoneHome) targetNames.push(p.name);
+       else if (columnType === 'checked' && !isGoneHome && isChecked) targetNames.push(p.name);
+       else if (columnType === 'notChecked' && !isGoneHome && !isChecked) targetNames.push(p.name);
+   });
 
-    const groupsStr = commAttState.selectedGroups.length > 0 ? "Grp: " + commAttState.selectedGroups.join(", ") : "All Groups";
-    const meetsStr = commAttState.selectedMeets.length > 0 ? "Meeting: " + commAttState.selectedMeets.join(", ") : "All Meetings";
-    const dismissStr = commAttState.selectedDismissals.length > 0 ? "Dismissal: " + commAttState.selectedDismissals.join(", ") : "All Dismissals";
+   const groupsStr = commAttState.selectedGroups.length > 0 ? "Grp: " + commAttState.selectedGroups.join(", ") : "All Groups";
+   const meetsStr = commAttState.selectedMeets.length > 0 ? "Meeting: " + commAttState.selectedMeets.join(", ") : "All Meetings";
+   const dismissStr = commAttState.selectedDismissals.length > 0 ? "Dismissal: " + commAttState.selectedDismissals.join(", ") : "All Dismissals";
 
-    let format = (window.appSettings && window.appSettings.shareFormat) ? window.appSettings.shareFormat : DEF_SHARE_FORMAT;
+   let format = (window.appSettings && window.appSettings.shareFormat) ? window.appSettings.shareFormat : DEF_SHARE_FORMAT;
 
-    const formattedText = format
-        .replace(/\{\{Groups\}\}/gi, groupsStr)
-        .replace(/\{\{Meetings\}\}/gi, meetsStr)
-        .replace(/\{\{Dismissals\}\}/gi, dismissStr)
-        .replace(/\{\{Count\}\}/gi, targetNames.length)
-        .replace(/\{\{List\}\}/gi, targetNames.join('\n'));
+   const formattedText = format
+       .replace(/\{\{Groups\}\}/gi, groupsStr)
+       .replace(/\{\{Meetings\}\}/gi, meetsStr)
+       .replace(/\{\{Dismissals\}\}/gi, dismissStr)
+       .replace(/\{\{Count\}\}/gi, targetNames.length)
+       .replace(/\{\{List\}\}/gi, targetNames.join('\n'));
 
-    return `[${listTitle}]\n${formattedText}`;
+   return `[${listTitle}]\n${formattedText}`;
 }
 
 function copyColumnData(columnType) {
-    const finalMessage = generateColumnText(columnType);
-    navigator.clipboard.writeText(finalMessage).then(() => {
-        showFlashMessage('commGlobalStatus', "List copied to clipboard!", 'success');
-    }).catch(() => {
-        alert("Failed to copy list. Clipboard access denied.");
-    });
+   const finalMessage = generateColumnText(columnType);
+   navigator.clipboard.writeText(finalMessage).then(() => {
+       showFlashMessage('commGlobalStatus', "List copied to clipboard!", 'success');
+   }).catch(() => {
+       alert("Failed to copy list. Clipboard access denied.");
+   });
 }
 
 function shareColumnData(columnType) {
-    const finalMessage = generateColumnText(columnType);
-    const listTitle = finalMessage.split('\n')[0].replace(/\[|\]/g, '');
-    
-    if (navigator.share) {
-        navigator.share({
-            title: `${listTitle} List`,
-            text: finalMessage
-        }).catch(err => {
-            console.error("Share failed", err);
-        });
-    } else {
-        copyColumnData(columnType);
-    }
+   const finalMessage = generateColumnText(columnType);
+   const listTitle = finalMessage.split('\n')[0].replace(/\[|\]/g, '');
+   
+   if (navigator.share) {
+       navigator.share({
+           title: `${listTitle} List`,
+           text: finalMessage
+       }).catch(err => {
+           console.error("Share failed", err);
+       });
+   } else {
+       copyColumnData(columnType);
+   }
 }
 
 async function executeCommAttSync() {
@@ -782,7 +787,7 @@ const payloadUpdates = {};
 for (let junc in pendingCommAttUpdates) {
 payloadUpdates[junc] = [];
 for (let name in pendingCommAttUpdates[junc]) {
-  payloadUpdates[junc].push({ name: name, status: pendingCommAttUpdates[junc][name] });
+ payloadUpdates[junc].push({ name: name, status: pendingCommAttUpdates[junc][name] });
 }
 }
 
@@ -792,18 +797,18 @@ pendingCommAttUpdates = {};
 try {
 const res = await apiCall('syncCommAttendance', { sheetUrl: currentCommAttSheetUrl, multipleUpdates: payloadUpdates });
 if (res.success) {
-  setCommAttBtnState('saved');
+ setCommAttBtnState('saved');
 } else {
-  throw new Error(res.message);
+ throw new Error(res.message);
 }
 } catch (e) {
 console.error(e);
 setCommAttBtnState('error');
 for (let junc in batchBackup) {
-  if(!pendingCommAttUpdates[junc]) pendingCommAttUpdates[junc] = {};
-  for (let name in batchBackup[junc]) {
-      pendingCommAttUpdates[junc][name] = batchBackup[junc][name];
-  }
+ if(!pendingCommAttUpdates[junc]) pendingCommAttUpdates[junc] = {};
+ for (let name in batchBackup[junc]) {
+     pendingCommAttUpdates[junc][name] = batchBackup[junc][name];
+ }
 }
 } finally {
 isCommAttSyncing = false;
@@ -828,11 +833,11 @@ spinner.classList.remove('hidden');
 btn.classList.add('bg-green-50', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400', 'border-green-200', 'dark:border-green-800');
 textSpan.textContent = "Saved";
 setTimeout(() => {
-  if (!hasPendingUpdates()) {
-      btn.classList.remove('bg-green-50', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400', 'border-green-200', 'dark:border-green-800');
-      btn.classList.add('bg-gray-100', 'dark:bg-zinc-800', 'text-gray-700', 'dark:text-gray-300');
-      textSpan.textContent = "Saved";
-  }
+ if (!hasPendingUpdates()) {
+     btn.classList.remove('bg-green-50', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400', 'border-green-200', 'dark:border-green-800');
+     btn.classList.add('bg-gray-100', 'dark:bg-zinc-800', 'text-gray-700', 'dark:text-gray-300');
+     textSpan.textContent = "Saved";
+ }
 }, 2000);
 } else if (state === 'error') {
 btn.classList.add('bg-red-50', 'dark:bg-red-900/30', 'text-red-700', 'dark:text-red-400', 'border-red-200', 'dark:border-red-800');
@@ -850,14 +855,14 @@ overlay.classList.remove('hidden');
 apiCall('addCommJuncture', { sheetUrl: currentCommAttSheetUrl, junctureName: name.trim() }).then(res => {
 overlay.classList.add('hidden');
 if (res.success) {
-  commAttData = res;
-  if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
-  commAttState.currentJuncture = name.trim();
-  renderCommAttFilters();
-  renderCommAttJunctures();
-  showFlashMessage('commGlobalStatus', "Juncture added.", 'success');
+ commAttData = res;
+ if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
+ commAttState.currentJuncture = name.trim();
+ renderCommAttFilters();
+ renderCommAttJunctures();
+ showFlashMessage('commGlobalStatus', "Juncture added.", 'success');
 } else {
-  alert(res.message);
+ alert(res.message);
 }
 });
 }
@@ -874,14 +879,14 @@ overlay.classList.remove('hidden');
 apiCall('deleteCommJuncture', { sheetUrl: currentCommAttSheetUrl, junctureName: juncture }).then(res => {
 overlay.classList.add('hidden');
 if (res.success) {
-  commAttData = res;
-  if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
-  commAttState.currentJuncture = null;
-  renderCommAttFilters();
-  renderCommAttJunctures();
-  showFlashMessage('commGlobalStatus', "Juncture deleted.", 'success');
+ commAttData = res;
+ if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
+ commAttState.currentJuncture = null;
+ renderCommAttFilters();
+ renderCommAttJunctures();
+ showFlashMessage('commGlobalStatus', "Juncture deleted.", 'success');
 } else {
-  alert(res.message);
+ alert(res.message);
 }
 });
 }
@@ -898,13 +903,13 @@ overlay.classList.remove('hidden');
 apiCall('fetchCommAttendance', { sheetUrl: currentCommAttSheetUrl }).then(res => {
 overlay.classList.add('hidden');
 if (res.success) {
-  commAttData = res;
-  if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
-  renderCommAttFilters();
-  renderCommAttLists();
-  setCommAttBtnState('saved');
+ commAttData = res;
+ if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
+ renderCommAttFilters();
+ renderCommAttLists();
+ setCommAttBtnState('saved');
 } else {
-  setCommAttBtnState('error');
+ setCommAttBtnState('error');
 }
 });
 }
@@ -919,25 +924,25 @@ if (view && view.classList.contains('hidden')) return;
 if (isCommAttSyncing || hasPendingUpdates()) return;
 
 apiCall('fetchCommAttendance', { sheetUrl: currentCommAttSheetUrl }).then(res => {
-  if (res.success && !isCommAttSyncing && !hasPendingUpdates()) {
-      const oldJunctures = JSON.stringify(commAttData.junctures);
-      const oldParticipants = JSON.stringify(commAttData.participants);
-      const oldAttendance = JSON.stringify(commAttData.attendance);
+ if (res.success && !isCommAttSyncing && !hasPendingUpdates()) {
+     const oldJunctures = JSON.stringify(commAttData.junctures);
+     const oldParticipants = JSON.stringify(commAttData.participants);
+     const oldAttendance = JSON.stringify(commAttData.attendance);
 
-      commAttData = res;
-      if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
-      
-      const newJunctures = JSON.stringify(commAttData.junctures);
-      const newParticipants = JSON.stringify(commAttData.participants);
-      const newAttendance = JSON.stringify(commAttData.attendance);
+     commAttData = res;
+     if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
+     
+     const newJunctures = JSON.stringify(commAttData.junctures);
+     const newParticipants = JSON.stringify(commAttData.participants);
+     const newAttendance = JSON.stringify(commAttData.attendance);
 
-      if (oldJunctures !== newJunctures || oldParticipants !== newParticipants) {
-          renderCommAttFilters();
-          renderCommAttJunctures();
-      } else if (oldAttendance !== newAttendance) {
-          renderCommAttLists();
-      }
-  }
+     if (oldJunctures !== newJunctures || oldParticipants !== newParticipants) {
+         renderCommAttFilters();
+         renderCommAttJunctures();
+     } else if (oldAttendance !== newAttendance) {
+         renderCommAttLists();
+     }
+ }
 });
 }, 8000);
 }
@@ -977,40 +982,40 @@ let html = '';
 matches.forEach(p => {
 let isChecked = false;
 if (juncture && commAttData.attendance[juncture]) {
-  isChecked = commAttData.attendance[juncture][p.name] === true;
+ isChecked = commAttData.attendance[juncture][p.name] === true;
 }
 const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
 const safeName = p.name.replace(/'/g, "\\'");
 
 let statusBadge = '';
 if (isGoneHome) {
-  statusBadge = '<span class="text-[9px] md:text-[11px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1 py-0.5 rounded font-black uppercase border border-blue-200 dark:border-blue-800">Gone Home</span>';
+ statusBadge = '<span class="text-[9px] md:text-[11px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1 py-0.5 rounded font-black uppercase border border-blue-200 dark:border-blue-800">Gone Home</span>';
 } else if (isChecked) {
-  statusBadge = '<span class="text-[9px] md:text-[11px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1 py-0.5 rounded font-black uppercase border border-green-200 dark:border-green-800">Checked</span>';
+ statusBadge = '<span class="text-[9px] md:text-[11px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1 py-0.5 rounded font-black uppercase border border-green-200 dark:border-green-800">Checked</span>';
 } else {
-  statusBadge = '<span class="text-[9px] md:text-[11px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1 py-0.5 rounded font-black uppercase border border-red-200 dark:border-red-800">NOT Checked</span>';
+ statusBadge = '<span class="text-[9px] md:text-[11px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1 py-0.5 rounded font-black uppercase border border-red-200 dark:border-red-800">NOT Checked</span>';
 }
 
 let volHtml = '';
 if (p.volPaired) {
-  const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-  if (vols.length > 0) {
-      volHtml = vols.map(v => `<span class="text-[9px] md:text-[11px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
-  }
+ const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+ if (vols.length > 0) {
+     volHtml = vols.map(v => `<span class="text-[9px] md:text-[11px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
+ }
 } else if (!isGoneHome) {
-  volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
+ volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
 }
 
 let locHtml = '';
 if (p.meetingLoc || p.dismissalLoc) {
-  locHtml = '<div class="flex flex-col gap-1 w-full mt-1 border-t border-gray-100 dark:border-zinc-700/60 pt-1.5">';
-  if (p.meetingLoc) {
-      locHtml += `<span class="text-[9px] md:text-[11px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
-  }
-  if (p.dismissalLoc) {
-      locHtml += `<span class="text-[9px] md:text-[11px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
-  }
-  locHtml += '</div>';
+ locHtml = '<div class="flex flex-col gap-1 w-full mt-1 border-t border-gray-100 dark:border-zinc-700/60 pt-1.5">';
+ if (p.meetingLoc) {
+     locHtml += `<span class="text-[9px] md:text-[11px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
+ }
+ if (p.dismissalLoc) {
+     locHtml += `<span class="text-[9px] md:text-[11px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
+ }
+ locHtml += '</div>';
 }
 
 const caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] md:min-w-[20px] h-4 md:h-5 px-1 bg-red-500 rounded-full text-[9px] md:text-[11px] font-black text-white shadow-sm mt-px" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
@@ -1018,18 +1023,18 @@ const groupBadge = p.group ? `<span class="text-[9px] md:text-[11px] bg-gray-100
 
 html += `
 <li class="px-3 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex flex-col gap-1.5 border-b border-gray-200 dark:border-zinc-800 last:border-0 transition" onclick="selectFromCommAttSearch('${safeName}')">
-  <div class="flex items-start gap-1.5 w-full">
-      <span class="font-bold text-xs md:text-sm text-gray-900 dark:text-white break-words leading-tight">${p.name}</span>
-      ${caregiverBadge}
-  </div>
-  <div class="flex justify-between items-center w-full">
-      <div class="shrink-0 flex items-center">
-          ${groupBadge}
-      </div>
-      <div class="shrink-0">${statusBadge}</div>
-  </div>
-  ${volHtml ? `<div class="flex flex-col gap-1 w-full">${volHtml}</div>` : ''}
-  ${locHtml}
+ <div class="flex items-start gap-1.5 w-full">
+     <span class="font-bold text-xs md:text-sm text-gray-900 dark:text-white break-words leading-tight">${p.name}</span>
+     ${caregiverBadge}
+ </div>
+ <div class="flex justify-between items-center w-full">
+     <div class="shrink-0 flex items-center">
+         ${groupBadge}
+     </div>
+     <div class="shrink-0">${statusBadge}</div>
+ </div>
+ ${volHtml ? `<div class="flex flex-col gap-1 w-full">${volHtml}</div>` : ''}
+ ${locHtml}
 </li>`;
 });
 
