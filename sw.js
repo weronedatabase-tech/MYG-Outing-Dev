@@ -1,4 +1,4 @@
-const CACHE_NAME = 'minds-myg-cache-v49';
+const CACHE_NAME = 'minds-myg-cache-v50';
 const urlsToCache = [
 './',
 './index.html',
@@ -33,9 +33,9 @@ event.waitUntil(
 caches.keys().then(cacheNames => {
 return Promise.all(
 cacheNames.map(cacheName => {
- if (cacheWhitelist.indexOf(cacheName) === -1) {
-   return caches.delete(cacheName);
- }
+if (cacheWhitelist.indexOf(cacheName) === -1) {
+  return caches.delete(cacheName);
+}
 })
 );
 }).then(() => {
@@ -56,7 +56,7 @@ fetch(event.request)
 // Clone the response because it can only be consumed once
 const responseClone = networkResponse.clone();
 caches.open(CACHE_NAME).then(cache => {
- cache.put(event.request, responseClone);
+cache.put(event.request, responseClone);
 });
 return networkResponse;
 })
