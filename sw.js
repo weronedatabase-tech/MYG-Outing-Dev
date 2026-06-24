@@ -1,4 +1,4 @@
-const CACHE_NAME = 'minds-myg-cache-v43';
+const CACHE_NAME = 'minds-myg-cache-v44';
 const urlsToCache = [
 './',
 './index.html',
@@ -32,11 +32,11 @@ const cacheWhitelist = [CACHE_NAME];
 event.waitUntil(
 caches.keys().then(cacheNames => {
 return Promise.all(
- cacheNames.map(cacheName => {
-   if (cacheWhitelist.indexOf(cacheName) === -1) {
-     return caches.delete(cacheName);
-   }
- })
+cacheNames.map(cacheName => {
+  if (cacheWhitelist.indexOf(cacheName) === -1) {
+    return caches.delete(cacheName);
+  }
+})
 );
 }).then(() => {
 // Claim all clients immediately so the new SW takes over instantly
@@ -53,16 +53,16 @@ if (event.request.method !== 'GET') return;
 event.respondWith(
 fetch(event.request)
 .then(networkResponse => {
- // Clone the response because it can only be consumed once
- const responseClone = networkResponse.clone();
- caches.open(CACHE_NAME).then(cache => {
-   cache.put(event.request, responseClone);
- });
- return networkResponse;
+// Clone the response because it can only be consumed once
+const responseClone = networkResponse.clone();
+caches.open(CACHE_NAME).then(cache => {
+  cache.put(event.request, responseClone);
+});
+return networkResponse;
 })
 .catch(() => {
- // If network fetch fails (e.g., offline), try serving from cache
- return caches.match(event.request);
+// If network fetch fails (e.g., offline), try serving from cache
+return caches.match(event.request);
 })
 );
 });
