@@ -259,11 +259,13 @@ function triggerMassPairingPulse(sourceName, targetName, isPaired) {
 
 function generatePillHtml(pillName, traineeName, volName, isTraineeGoneHome = false) {
  const goneHomeBadge = isTraineeGoneHome ? `<i class="fa-solid fa-house-user text-blue-500 ml-1" title="Gone Home"></i>` : '';
+ const removeBtn = isTraineeGoneHome ? '' : `<div class="remove-x flex items-center justify-center font-bold text-[10px] bg-transparent text-red-500 shadow-none border-none hover:bg-transparent hover:text-red-700 hover:scale-125 top-0 right-1" onclick="unpairTrainee('${traineeName.replace(/'/g, "\\'")}', '${volName.replace(/'/g, "\\'")}')">✕</div>`;
+ 
  return `<div class="relative flex w-full align-top pointer-events-auto">
- <div class="bg-gray-100 dark:bg-zinc-800 border-gray-300 dark:border-zinc-600 text-gray-900 dark:text-gray-100 text-[10px] md:text-[11px] pl-2 pr-6 py-1 rounded shadow-sm border font-bold opacity-90 leading-tight break-words whitespace-normal text-left w-full flex items-center">
+ <div class="bg-gray-100 dark:bg-zinc-800 border-gray-300 dark:border-zinc-600 text-gray-900 dark:text-gray-100 text-[10px] md:text-[11px] pl-2 ${isTraineeGoneHome ? 'pr-2' : 'pr-6'} py-1 rounded shadow-sm border font-bold opacity-90 leading-tight break-words whitespace-normal text-left w-full flex items-center">
  <span>${pillName}</span>${goneHomeBadge}
  </div>
- <div class="remove-x flex items-center justify-center font-bold text-[10px] bg-transparent text-red-500 shadow-none border-none hover:bg-transparent hover:text-red-700 hover:scale-125 top-0 right-1" onclick="unpairTrainee('${traineeName.replace(/'/g, "\\'")}', '${volName.replace(/'/g, "\\'")}')">✕</div>
+ ${removeBtn}
  </div>`;
 }
 
@@ -294,7 +296,7 @@ function generateCardHtml(item, pairedNames) {
  let opacityClass = '';
  
  if (isGoneHome) {
-     sysBadge = `<span class="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800 text-[8px] uppercase font-black tracking-wider px-1 py-0.5 rounded shrink-0 shadow-sm pointer-events-none whitespace-nowrap">GONE HOME</span>`;
+     sysBadge = `<i class="fa-solid fa-house-user text-blue-500 dark:text-blue-400 shrink-0 text-[10px] md:text-xs ml-0.5" title="Gone Home"></i>`;
      opacityClass = 'opacity-50 grayscale pointer-events-none';
  } else if (item.isAttendingUnknown) {
      sysBadge = `<span class="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 text-[8px] uppercase font-black tracking-wider px-1 py-0.5 rounded shrink-0 shadow-sm pointer-events-none whitespace-nowrap">? ATTENDING</span>`;
@@ -305,7 +307,7 @@ function generateCardHtml(item, pairedNames) {
      cgBadge = `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm">${item.caregivers > 1 ? item.caregivers + 'C' : 'C'}</span>`;
  }
 
- const addBtnHtml = `<button class="shrink-0 text-xs text-gray-500 dark:text-gray-400 hover:text-primary transition-colors bg-gray-50 dark:bg-black hover:bg-gray-100 dark:hover:bg-zinc-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-sm pointer-events-auto flex items-center justify-center font-bold" onclick="openQuickPairModal('${safeName}', '${item.role}')">+${isVol ? 'Trn' : 'Vol'}</button>`;
+ const addBtnHtml = isGoneHome ? '' : `<button class="shrink-0 text-xs text-gray-500 dark:text-gray-400 hover:text-primary transition-colors bg-gray-50 dark:bg-black hover:bg-gray-100 dark:hover:bg-zinc-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-sm pointer-events-auto flex items-center justify-center font-bold" onclick="openQuickPairModal('${safeName}', '${item.role}')">+${isVol ? 'Trn' : 'Vol'}</button>`;
 
  return `
  <div class="dnd-draggable dnd-dropzone bg-white dark:bg-zinc-900 p-1.5 md:p-2 rounded-md border border-gray-200 dark:border-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-grab active:cursor-grabbing hover:border-primary transition select-none flex flex-col min-h-[60px] gap-1 ${opacityClass}" data-name="${safeName}" data-role="${item.role}">
@@ -386,7 +388,7 @@ function handleDndDrop(sourceName, sourceRole, targetName) {
  let traineeName = sourceRole === 'TRAINEE' ? sourceName : targetName;
 
  let trainee = massPairingData.trainees.find(t => t.name === traineeName);
- if (!trainee) return;
+ if (!trainee || trainee.isGoneHome) return;
 
  // Check if already paired
  const currentVols = trainee.volPaired ? trainee.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
@@ -410,14 +412,12 @@ function handleDndDrop(sourceName, sourceRole, targetName) {
      renderMassPairings(); 
      triggerMassPairingPulse(sourceName, targetName, true);
      triggerMassPairingSync();
- } else {
-     showToast("Already paired!", true);
  }
 }
 
 function unpairTrainee(traineeName, volName) {
  let trainee = massPairingData.trainees.find(t => t.name === traineeName);
- if (!trainee) return;
+ if (!trainee || trainee.isGoneHome) return;
 
  let currentVols = trainee.volPaired ? trainee.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
  const cleanVolToRemove = volName.toLowerCase();
