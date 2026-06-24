@@ -306,6 +306,11 @@ function generateCardHtml(item, pairedNames) {
  if (!isVol && item.caregivers > 0) {
      cgBadge = `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm">${item.caregivers > 1 ? item.caregivers + 'C' : 'C'}</span>`;
  }
+ 
+ let projBadge = '';
+ if (item.project) {
+     projBadge = `<span class="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 text-[8px] uppercase font-black tracking-wider px-1 py-0.5 rounded shrink-0 shadow-sm pointer-events-none whitespace-nowrap">${item.project}</span>`;
+ }
 
  const addBtnHtml = isGoneHome ? '' : `<button class="shrink-0 text-xs text-gray-500 dark:text-gray-400 hover:text-primary transition-colors bg-gray-50 dark:bg-black hover:bg-gray-100 dark:hover:bg-zinc-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-sm pointer-events-auto flex items-center justify-center font-bold" onclick="openQuickPairModal('${safeName}', '${item.role}')">+${isVol ? 'Trn' : 'Vol'}</button>`;
 
@@ -314,6 +319,7 @@ function generateCardHtml(item, pairedNames) {
      <div class="flex justify-between items-start w-full gap-1">
          <div class="main-name-pill font-extrabold text-[11px] md:text-[12px] px-1.5 py-0.5 rounded shadow-sm border bg-gray-100 dark:bg-zinc-800 border-gray-300 dark:border-zinc-600 text-gray-900 dark:text-white max-w-full inline-flex flex-wrap items-center gap-1 self-start min-w-0 leading-[1.1]">
              <span class="break-words whitespace-normal min-w-0 text-left">${displayName}</span>
+             ${projBadge}
              ${cgBadge}
              ${sysBadge}
          </div>
@@ -333,7 +339,22 @@ function renderMassPairings() {
      return att === 'y';
  });
  
- const vols = massPairingData.volunteers || []; 
+ let vols = [...(massPairingData.volunteers || [])]; 
+
+ // Sorting Logic: Project Alphabetical, followed by Name Alphabetical
+ const sortFn = (a, b) => {
+     const projA = a.project ? a.project.toString().toLowerCase().trim() : "zzzz";
+     const projB = b.project ? b.project.toString().toLowerCase().trim() : "zzzz";
+     const projCmp = projA.localeCompare(projB);
+     if (projCmp !== 0) return projCmp;
+
+     const nameA = a.name ? a.name.toString().toLowerCase().trim() : "";
+     const nameB = b.name ? b.name.toString().toLowerCase().trim() : "";
+     return nameA.localeCompare(nameB);
+ };
+
+ vols.sort(sortFn);
+ trainees.sort(sortFn);
 
  // Calculate unpaired trainees
  let unpairedCount = 0;
@@ -412,6 +433,8 @@ function handleDndDrop(sourceName, sourceRole, targetName) {
      renderMassPairings(); 
      triggerMassPairingPulse(sourceName, targetName, true);
      triggerMassPairingSync();
+ } else {
+     showToast("Already paired!", true);
  }
 }
 
@@ -566,6 +589,18 @@ function openQuickPairModal(sourceName, sourceRole) {
  title.innerHTML = `Pairing with <span class="text-primary">${sourceName}</span>`;
  input.value = '';
  
+ // Sorting Logic for Modal: Project Alphabetical, followed by Name Alphabetical
+ const sortFn = (a, b) => {
+     const projA = a.project ? a.project.toString().toLowerCase().trim() : "zzzz";
+     const projB = b.project ? b.project.toString().toLowerCase().trim() : "zzzz";
+     const projCmp = projA.localeCompare(projB);
+     if (projCmp !== 0) return projCmp;
+
+     const nameA = a.name ? a.name.toString().toLowerCase().trim() : "";
+     const nameB = b.name ? b.name.toString().toLowerCase().trim() : "";
+     return nameA.localeCompare(nameB);
+ };
+ 
  // Build target list
  if (sourceRole === 'VOLUNTEER') {
      // Search Trainees (Strictly 'Y' and not gone home)
@@ -574,10 +609,12 @@ function openQuickPairModal(sourceName, sourceRole) {
              const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
              return att === 'y' && !t.isGoneHome;
          })
+         .sort(sortFn)
          .map(t => t.name);
  } else {
      // Search Volunteers
      quickPairContext.targetList = (massPairingData.volunteers || [])
+         .sort(sortFn)
          .map(v => v.name);
  }
  
