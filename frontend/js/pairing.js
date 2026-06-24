@@ -186,6 +186,9 @@ function openFilteredMassPairing(overrideUrl = null) {
  const url = overrideUrl || currentCommAttSheetUrl || currentMassPairingSheetUrl;
  if(!url) return;
 
+ // Capture the exact view we are coming from BEFORE we switch
+ window.filteredMassPairingSourceView = window.currentActiveView;
+
  isFilteredMassPairingMode = true;
  currentMassPairingSheetUrl = url;
  document.getElementById('navContextTitle').innerText = "Filtered Mass Pair";
