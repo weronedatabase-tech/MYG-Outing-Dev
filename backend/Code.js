@@ -132,7 +132,6 @@ return h.toString().toLowerCase().replace(/[^a-z0-9]/g, "").includes(key);
 /**
  * Robust Header Mapper
  * Maps a standard key to a column index based on sets of keywords.
- * This ensures that if a header changes from "Meal" to "Dietary Restrictions", it still works.
  */
 function findColByKeywords(headers, key) {
   const keywordMap = {
@@ -270,7 +269,6 @@ const folderList = [];
 const regex = /(\d{8})/;
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-// Calculate the threshold date: current day - 1 day
 const today = new Date();
 today.setDate(today.getDate() - 1);
 const tY = today.getFullYear();
@@ -279,7 +277,7 @@ const tD = String(today.getDate()).padStart(2, '0');
 const thresholdDateNum = parseInt(`${tY}${tM}${tD}`);
 
 let count = 0;
-const maxScan = 500; // Prevent GAS Timeout limit
+const maxScan = 500;
 
 while (subfolders.hasNext()) {
 count++;
@@ -289,12 +287,10 @@ let folder = subfolders.next();
 let name = folder.getName();
 let match = name.match(regex);
 
-// Strictly require the YYYYMMDD string pattern in the folder name
 if (match) {
 let dStr = match[1];
 let folderDateNum = parseInt(dStr);
 
-// Exclude folders that are older than (current day - 1 day)
 if (folderDateNum < thresholdDateNum) {
 continue;
 }
@@ -324,7 +320,6 @@ sheetUrl: ""
 }
 }
 
-// Sort by date descending
 folderList.sort((a, b) => {
 if (b.folderDateNum !== a.folderDateNum) {
 return b.folderDateNum - a.folderDateNum;
@@ -371,7 +366,6 @@ const initProj = (p) => {
 if(!stats[p]) stats[p] = { tY: 0, tTot: 0, cY: 0, vY: 0, vTot: 0 };
 };
 
-// 1. PROCESS TRAINEES
 const tLastRow = tSheet.getLastRow();
 if(tLastRow > 1) {
 const tData = tSheet.getRange(2, 1, tLastRow-1, tSheet.getLastColumn()).getValues();
@@ -382,11 +376,11 @@ const tProjIdx = getColIndex(tHeaders, "project");
 const tCareIdx = getColIndex(tHeaders, "caregiver");
 const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
 let tNameIdx = getColIndex(tHeaders, "name");
-if (tNameIdx === -1) tNameIdx = 0; // Fallback
+if (tNameIdx === -1) tNameIdx = 0;
 
 tData.forEach(row => {
 const name = row[tNameIdx] ? row[tNameIdx].toString().trim() : "";
-if(!name) return; // Skip empty rows
+if(!name) return;
 
 const project = (tProjIdx > -1 && row[tProjIdx]) ? row[tProjIdx].toString().trim() : "Unassigned";
 const att = (tAttIdx > -1 && row[tAttIdx]) ? row[tAttIdx].toString().trim().toLowerCase() : "";
@@ -402,13 +396,11 @@ if(!isNaN(cgCount) && cgCount > 0) stats[project].cY += cgCount;
 } else if (att === 'n') {
 // Do nothing for N
 } else {
-// BLANK -> Add to pending
 pendingTrainees.push(name);
 }
 });
 }
 
-// 2. PROCESS VOLUNTEERS
 const vLastRow = vSheet.getLastRow();
 if(vLastRow > 1) {
 const vData = vSheet.getRange(2, 1, vLastRow-1, vSheet.getLastColumn()).getValues();
@@ -458,11 +450,9 @@ const gSheet = getGroupingSheet(ss);
 
 if (!tSheet || !vSheet || !gSheet) return { success: false, message: "Missing Tabs" };
 
-// 1. Get Trainees & Active Volunteers
 const trainees = [];
 const volunteers = [];
 
-// Trainees Logic
 const tLastRow = tSheet.getLastRow();
 if (tLastRow > 1) {
  const tData = tSheet.getRange(2, 1, tLastRow - 1, tSheet.getLastColumn()).getValues();
@@ -490,13 +480,12 @@ if (tLastRow > 1) {
              project: project,
              isAttendingN: att === 'n',
              isAttendingUnknown: att === '',
-             isGoneHome: false // Pulled next
+             isGoneHome: false 
          });
      }
  });
 }
 
-// Gone Home logic
 const gLastRow = gSheet.getLastRow();
 const gHeaders = gLastRow > 1 ? gSheet.getRange(2, 1, 1, gSheet.getLastColumn()).getValues()[0] : [];
 const goneHomeIdx = gHeaders.indexOf("[Sys] Gone Home");
@@ -521,7 +510,6 @@ if (goneHomeIdx > -1 && gLastRow > 2) {
  });
 }
 
-// Volunteers Logic
 const vLastRow = vSheet.getLastRow();
 if (vLastRow > 1) {
  const vData = vSheet.getRange(2, 1, vLastRow - 1, vSheet.getLastColumn()).getValues();
@@ -595,7 +583,6 @@ for (let i = 0; i < tData.length; i++) {
 if (changed) {
  tRange.setValues(tData);
  
- // Also mirror to Groupings tab if active
  const gSheet = getGroupingSheet(ss);
  if (gSheet) {
      const gLastRow = gSheet.getLastRow();
@@ -638,7 +625,6 @@ lock.releaseLock();
 
 /* =========================================
 CORE LOGIC 1: MANUAL PAIRING BUTTON
-(Updates STRICTLY "Vol Paired" Column ONLY)
 ========================================= */
 function runAutoPairing(sheetUrl) {
 try {
@@ -649,7 +635,6 @@ const vSheet = ss.getSheetByName("Volunteer Attendance");
 const mSheet = ss.getSheetByName("MISC PriVol");
 if (!tSheet || !vSheet || !mSheet) return { success: false, message: "Missing Tabs" };
 
-// 1. Get Active Volunteers
 const vLastRow = vSheet.getLastRow();
 const vActive = new Set();
 if (vLastRow > 1) {
@@ -664,11 +649,10 @@ if(r[vNameIdx]) vActive.add(r[vNameIdx].toString().toLowerCase());
 }
 }
 
-// 2. Get Mapping (Primary & Fallback)
 const priVolMap = new Map();
 const mHeaders = mSheet.getRange(1,1,1,mSheet.getLastColumn()).getValues()[0];
 const mPairIdx = getColIndex(mHeaders, "outing pairing");
-const mVolIdx = getColIndex(mHeaders, "vol"); // Fallback column
+const mVolIdx = getColIndex(mHeaders, "vol");
 
 const mData = mSheet.getDataRange().getValues();
 for(let j=1; j<mData.length; j++){
@@ -681,7 +665,6 @@ priVolMap.set(name, { primary: primary, secondary: secondary });
 }
 }
 
-// 3. Populate Trainee Vol Paired (Single Column Write)
 const tLastRow = tSheet.getLastRow();
 if (tLastRow > 1) {
 const tHeaders = tSheet.getRange(1,1,1,tSheet.getLastColumn()).getValues()[0];
@@ -712,7 +695,6 @@ if(assignmentInfo) {
 
 volPairedRange.setValues(volPairedValues);
 
-// Mirror to Grouping Tab
 const gSheet = getGroupingSheet(ss);
 if (gSheet) {
  const gLastRow = gSheet.getLastRow();
@@ -750,7 +732,6 @@ return { success: true, message: "✅ Auto Pairing Complete!\nVolunteer Paired c
 
 /* =========================================
 CORE LOGIC 2: MANUAL GROUPING BUTTON
-(Strictly populates Outing Grouping only - PRESERVES FORMULAS)
 ========================================= */
 function runAutoGrouping(sheetUrl) {
 try {
@@ -785,7 +766,7 @@ for(let k=0; k<tValues.length; k++){
 const name = tValues[k][tNameIdx] ? tValues[k][tNameIdx].toString().toLowerCase() : "";
 if(name && groupMap.has(name)) {
 tValues[k][tGroupIdx] = groupMap.get(name);
-tFormulas[k][tGroupIdx] = ""; // Clear formula
+tFormulas[k][tGroupIdx] = "";
 }
 }
 
@@ -799,7 +780,6 @@ return { success: true, message: "✅ Auto Grouping Complete!\nOuting Grouping c
 
 /* =========================================
 CORE LOGIC 3: SHEET MAINTENANCE (AUTO)
-(Sorts ONLY. NO Pairing, NO Grouping, NO Data Validation)
 ========================================= */
 function runSheetMaintenance(sheetUrl) {
 try {
@@ -832,7 +812,7 @@ const sortSpec = [{ column: tempColIdx, ascending: true }];
 if (projIdx > -1) {
 sortSpec.push({ column: projIdx + 1, ascending: true });
 }
-sortSpec.push({ column: 1, ascending: true }); // Priority 6: Name
+sortSpec.push({ column: 1, ascending: true });
 
 const sortRange = sheet.getRange(2, 1, lastRow - 1, tempColIdx);
 sortRange.sort(sortSpec);
@@ -891,7 +871,7 @@ const goneHomeIdx = headers.indexOf("[Sys] Gone Home");
 let nameIdx = getColIndex(headers, "traineename");
 if (nameIdx === -1) nameIdx = getColIndex(headers, "trainee");
 if (nameIdx === -1) nameIdx = getColIndex(headers, "name");
-if (nameIdx === -1) nameIdx = 0; // Fallback to first column
+if (nameIdx === -1) nameIdx = 0;
 
 const junctures = [];
 const junctureColMap = {}; 
@@ -904,10 +884,8 @@ headers.forEach((h, i) => {
  }
 });
 
-// ---------- EXTRA INFO PULL FOR LONG PRESS MODAL ----------
 const extraData = {};
 
-// Trainee Attendance Info (e.g., Dietary, Remarks)
 const tSheet = ss.getSheetByName("Trainee Attendance");
 if (tSheet) {
  const tLastRow = tSheet.getLastRow();
@@ -938,14 +916,13 @@ if (tSheet) {
  }
 }
 
-// MISC PriVol Info (e.g., Caregiver Contacts)
 const mSheet = ss.getSheetByName("MISC PriVol");
 if (mSheet) {
  const mLastRow = mSheet.getLastRow();
  if (mLastRow > 1) {
      const mData = mSheet.getRange(2, 1, mLastRow - 1, mSheet.getLastColumn()).getValues();
      const mHeaders = mSheet.getRange(1, 1, 1, mSheet.getLastColumn()).getValues()[0].map(h => normalizeHeader(h));
-     let mNameIdx = 0; // Usually column A
+     let mNameIdx = 0;
      
      mData.forEach(row => {
          const mName = String(row[mNameIdx]).trim();
@@ -965,7 +942,6 @@ if (mSheet) {
      });
  }
 }
-// -----------------------------------------------------------
 
 const data = lastRow > 2 ? sheet.getRange(3, 1, lastRow - 2, lastCol).getValues() : [];
 const participants = [];
@@ -976,13 +952,12 @@ junctures.forEach(j => attendance[j] = {});
 data.forEach(row => {
  const name = String(row[nameIdx]).trim();
  if (name) {
-     const group = String(row[0]).trim(); // Column A contains the group number
+     const group = String(row[0]).trim();
      const caregivers = cgIdx > -1 ? parseInt(row[cgIdx]) || 0 : 0;
      const volPaired = volIdx > -1 ? String(row[volIdx]).trim() : "";
      const meetingLoc = meetIdx > -1 ? String(row[meetIdx]).trim() : "";
      const dismissalLoc = dismissIdx > -1 ? String(row[dismissIdx]).trim() : "";
      
-     // Attach the extra data safely
      const extra = extraData[name.toLowerCase()] || {};
      
      participants.push({ 
@@ -1092,7 +1067,6 @@ if (nameIdx === -1) nameIdx = 0;
 const namesData = sheet.getRange(3, nameIdx + 1, lastRow - 2).getValues();
 let changedGlobal = false;
 
-// Gather all updates into memory first
 for (const [junctureName, updates] of Object.entries(multipleUpdates)) {
  let targetHeader = junctureName === '__GONE_HOME__' ? "[Sys] Gone Home" : `[Att] ${junctureName}`;
  let juncIdx = headers.indexOf(targetHeader);
@@ -1299,8 +1273,6 @@ rawHeaders.forEach((h, i) => {
 let normH = normalizeHeader(h);
 let key = normH;
 
-// Robust key mapping using the keyword helper logic effectively
-// We essentially map any identified keyword column to a standard internal key
 const standardKeys = ['name', 'project', 'attending', 'caregiver', 'meetingloc', 'dismissalloc', 'volpaired', 'dietary', 'contact', 'remarks', 'group'];
 let foundKey = null;
 for(let sk of standardKeys) {
@@ -1313,7 +1285,6 @@ for(let sk of standardKeys) {
 if (foundKey) {
   key = foundKey;
 } else {
-  // Fallback to the normalized header string if it's a custom column
   key = normH;
 }
 
@@ -1390,7 +1361,6 @@ if (!colAVals[k][0]) {
 if (insertRow === -1) insertRow = sheet.getLastRow() + 1;
 sheet.getRange(insertRow, 1, 1, newRow.length).setValues([newRow]);
 
-// --- UPDATE TEMPLATE (Name AND Project) ---
 try {
 const templateFolder = DriveApp.getFolderById(getTemplateFolderId());
 const tFiles = templateFolder.getFilesByType(MimeType.GOOGLE_SHEETS);
@@ -1454,17 +1424,14 @@ break;
 }
 }
 
-// --- LOGICAL CASCADE: If 'N' attending, unpair globally ---
 if (attendingStatus === 'n') {
  const tSheet = ss.getSheetByName("Trainee Attendance");
  if (form.type === 'trainee') {
-     // Trainee is not attending -> Clear their volunteer paired
      const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
      const tVolPairedIdx = findColByKeywords(tHeaders, 'volpaired');
      if (tVolPairedIdx > -1) {
          tSheet.getRange(targetRow, tVolPairedIdx + 1).setValue("");
      }
-     // Also clear in Groupings
      const gSheet = getGroupingSheet(ss);
      if (gSheet) {
          const gLastRow = gSheet.getLastRow();
@@ -1496,7 +1463,6 @@ if (attendingStatus === 'n') {
          }
      }
  } else if (form.type === 'volunteer') {
-     // Volunteer is not attending -> Strip them from ANY trainee's 'vol paired' column
      if (tSheet) {
          const tLastRow = tSheet.getLastRow();
          if (tLastRow > 1) {
@@ -1511,7 +1477,6 @@ if (attendingStatus === 'n') {
                  for(let k=0; k<tData.length; k++){
                      const currentPaired = tData[k][tVolPairedIdx] ? tData[k][tVolPairedIdx].toString() : "";
                      if (currentPaired.toLowerCase().includes(nameClean)) {
-                         // Splice the name out
                          const vols = currentPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
                          const updatedVols = vols.filter(v => v.toLowerCase() !== nameClean);
                          tData[k][tVolPairedIdx] = updatedVols.join(', ');
