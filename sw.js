@@ -1,4 +1,4 @@
-const CACHE_NAME = 'minds-myg-cache-v51';
+const CACHE_NAME = 'minds-myg-cache-v50';
 const urlsToCache = [
 './',
 './index.html',
@@ -34,7 +34,7 @@ caches.keys().then(cacheNames => {
 return Promise.all(
 cacheNames.map(cacheName => {
 if (cacheWhitelist.indexOf(cacheName) === -1) {
- return caches.delete(cacheName);
+  return caches.delete(cacheName);
 }
 })
 );
@@ -61,7 +61,7 @@ cache.put(event.request, responseClone);
 return networkResponse;
 })
 .catch(() => {
-// If network fetch (e.g. offline), try serving from cache
+// If network fetch fails (e.g., offline), try serving from cache
 return caches.match(event.request);
 })
 );
