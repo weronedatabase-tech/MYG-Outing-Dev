@@ -68,60 +68,69 @@ outingReminders = {};
 outingDetailsCache = {};
 
 if(res.data.length > 0) {
-   // Re-enable action buttons now that we have data
-   document.getElementById('scrubBtn').disabled = false;
-   document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-   document.getElementById('manualPairBtn').disabled = false;
-   document.getElementById('manualPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-   document.getElementById('groupBtn').disabled = false;
-   document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-   document.getElementById('manualGroupBtn').disabled = false;
-   document.getElementById('manualGroupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+  // Re-enable action buttons now that we have data
+  document.getElementById('scrubBtn').disabled = false;
+  document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+  document.getElementById('manualPairBtn').disabled = false;
+  document.getElementById('manualPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+  document.getElementById('groupBtn').disabled = false;
+  document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+  document.getElementById('manualGroupBtn').disabled = false;
+  document.getElementById('manualGroupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
 
-   let allCards = '';
-   res.data.forEach((item, index) => {
-       allCards += `
-       <div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
-          <div class="flex justify-between items-start">
-            <div>
-                <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
-                <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
-                <div id="pending-badge-${index}" class="mt-1 hidden"></div>
-            </div>
-            <div class="flex gap-2 text-xs">
-                <button onclick="openEditOutingModal(${index})" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors" title="Edit Outing"><i class="fa-solid fa-pen text-base"></i></button>
-                <a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a>
-                <a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a>
-            </div>
-          </div>
-          <div id="stats-${index}" class="text-xs text-gray-400 dark:text-gray-500 animate-pulse mt-2">Loading stats...</div>
-          <div id="btn-group-${index}" class="hidden grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
-              <button onclick="openReminderModal('${index}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 text-[10px] md:text-xs py-2 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors truncate"><i class="fa-solid fa-bell mr-1"></i>Remind</button>
-              <button onclick="copyOutingMessage('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 text-[10px] md:text-xs py-2 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors truncate"><i class="fa-regular fa-copy mr-1"></i>Copy Info</button>
-              <button onclick="openShareTableFromComm('${item.sheetUrl}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] md:text-xs py-2 px-1 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors truncate"><i class="fa-solid fa-share-nodes mr-1"></i>Share Table</button>
-          </div>
-       </div>`;
-   });
-   listContainer.innerHTML = allCards;
-   res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
+  let allCards = '';
+  res.data.forEach((item, index) => {
+      allCards += `
+      <div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
+         <div class="flex justify-between items-start">
+           <div>
+               <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
+               <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
+               <div id="pending-badge-${index}" class="mt-1 hidden"></div>
+           </div>
+           <div class="flex gap-2 text-xs">
+               <button onclick="openEditOutingModal(${index})" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors" title="Edit Outing"><i class="fa-solid fa-pen text-base"></i></button>
+               <a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a>
+               <a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a>
+           </div>
+         </div>
+         <div id="stats-${index}" class="text-xs text-gray-400 dark:text-gray-500 animate-pulse mt-2">Loading stats...</div>
+         <div id="btn-group-${index}" class="hidden grid grid-cols-3 gap-1.5 md:gap-2 mt-2 pt-3 border-t border-gray-100 dark:border-zinc-800">
+             <button onclick="openReminderModal('${index}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Remind">
+                <i class="fa-solid fa-bell text-sm md:text-base shrink-0"></i>
+                <span class="text-xs md:text-sm font-semibold truncate">Remind</span>
+             </button>
+             <button onclick="copyOutingMessage('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Copy Info">
+                <i class="fa-regular fa-copy text-sm md:text-base shrink-0"></i>
+                <span class="text-xs md:text-sm font-semibold truncate">Copy Info</span>
+             </button>
+             <button onclick="openShareTableFromComm('${item.sheetUrl}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Share Table">
+                <i class="fa-solid fa-share-nodes text-sm md:text-base shrink-0"></i>
+                <span class="text-xs md:text-sm font-semibold truncate">Share Table</span>
+             </button>
+         </div>
+      </div>`;
+  });
+  listContainer.innerHTML = allCards;
+  res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
 } else {
-   listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
+  listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
 }
 }
 if(res.data.length > 0) {
 window.currentSheetList = res.data;
 res.data.forEach(item => {
-   let opt = document.createElement('option');
-   opt.value = item.sheetUrl;
-   opt.text = item.displayName;
-   selector.appendChild(opt);
+  let opt = document.createElement('option');
+  opt.value = item.sheetUrl;
+  opt.text = item.displayName;
+  selector.appendChild(opt);
 });
 selector.selectedIndex = 0;
 
 if(viewId === 'volunteer') {
-   resetVolForm();
+  resetVolForm();
 } else if (viewId === 'actual-attendance' && res.data.length === 1) {
-   setTimeout(() => openLiveAttendance(), 100);
+  setTimeout(() => openLiveAttendance(), 100);
 }
 } else {
 selector.innerHTML = '<option disabled selected>No upcoming events</option>';
@@ -142,14 +151,36 @@ const btnGroup = document.getElementById(`btn-group-${index}`);
 if(res.success) {
 outingDetailsCache[index] = { config: res.outingConfig, message: res.outingMessage };
 
-let html = '<table class="w-full text-[10px] text-left border-collapse"><tr class="text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-zinc-700"><th>Proj</th><th class="text-center">Trainees</th><th class="text-center">CG</th><th class="text-center">Vols</th></tr>';
+let html = '<table class="w-full text-[10px] md:text-xs text-left border-collapse"><tr class="text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-zinc-700"><th class="pb-1">Proj</th><th class="text-center pb-1">Trainees</th><th class="text-center pb-1">CG</th><th class="text-center pb-1">Vols</th></tr>';
+
+let total_tY = 0, total_tTot = 0, total_cY = 0, total_vY = 0, total_vTot = 0;
 const sortedKeys = Object.keys(res.stats).sort();
-if(sortedKeys.length === 0) {
-html += '<tr><td colspan="4" class="text-center py-2 text-gray-400 dark:text-gray-500 italic">No data yet</td></tr>';
-} else {
+
 for(const proj of sortedKeys) {
-   const d = res.stats[proj];
-   html += `<tr class="border-b border-gray-100 dark:border-zinc-800/50 last:border-0"><td class="py-1 font-bold text-gray-700 dark:text-gray-300">${proj}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.tY}</span>/${d.tTot}</td><td class="text-center text-gray-900 dark:text-white">${d.cY}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.vY}</span>/${d.vTot}</td></tr>`;
+  total_tY += res.stats[proj].tY;
+  total_tTot += res.stats[proj].tTot;
+  total_cY += res.stats[proj].cY;
+  total_vY += res.stats[proj].vY;
+  total_vTot += res.stats[proj].vTot;
+}
+
+const standardProjects = sortedKeys.filter(k => k !== 'Unassigned');
+
+if(sortedKeys.length === 0) {
+html += '<tr><td colspan="4" class="text-center py-3 text-gray-400 dark:text-gray-500 italic">No data yet</td></tr>';
+} else {
+for(const proj of standardProjects) {
+  const d = res.stats[proj];
+  html += `<tr class="border-b border-gray-100 dark:border-zinc-800/50 last:border-0"><td class="py-1.5 font-bold text-gray-700 dark:text-gray-300">${proj}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.tY}</span>/${d.tTot}</td><td class="text-center text-gray-900 dark:text-white">${d.cY}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.vY}</span>/${d.vTot}</td></tr>`;
+}
+
+// Total Row
+html += `<tr class="border-y-2 border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800/50"><td class="py-1.5 font-black text-gray-900 dark:text-white">Total</td><td class="text-center text-gray-700 dark:text-gray-300 font-bold"><span class="text-gray-900 dark:text-white">${total_tY}</span>/${total_tTot}</td><td class="text-center text-gray-900 dark:text-white font-bold">${total_cY}</td><td class="text-center text-gray-700 dark:text-gray-300 font-bold"><span class="text-gray-900 dark:text-white">${total_vY}</span>/${total_vTot}</td></tr>`;
+
+// Unassigned Row
+if(res.stats['Unassigned']) {
+  const d = res.stats['Unassigned'];
+  html += `<tr class="opacity-60"><td class="py-1.5 font-bold text-gray-500 dark:text-gray-400 italic">Unassigned</td><td class="text-center text-gray-500 dark:text-gray-400 italic"><span class="text-gray-700 dark:text-gray-300">${d.tY}</span>/${d.tTot}</td><td class="text-center text-gray-700 dark:text-gray-300 italic">${d.cY}</td><td class="text-center text-gray-500 dark:text-gray-400 italic"><span class="text-gray-700 dark:text-gray-300">${d.vY}</span>/${d.vTot}</td></tr>`;
 }
 }
 html += '</table>';
@@ -184,16 +215,16 @@ function copyFromModal(btn) { performCopy(document.getElementById('modalReminder
 function copyOutingMessage(index, btn) {
 const cache = outingDetailsCache[index];
 if(cache && cache.message) {
-    performCopy(cache.message, btn);
+   performCopy(cache.message, btn);
 } else {
-    alert("No message configured in the template yet.");
+   alert("No message configured in the template yet.");
 }
 }
 
 function performCopy(text, btn) {
 navigator.clipboard.writeText(text).then(() => {
 const original = btn.innerHTML;
-btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+btn.innerHTML = '<i class="fa-solid fa-check text-sm md:text-base shrink-0"></i><span class="text-xs md:text-sm font-semibold truncate">Copied!</span>';
 btn.classList.add('text-green-600', 'dark:text-green-400', 'border-green-200', 'dark:border-green-800');
 setTimeout(() => {
 btn.innerHTML = original;
@@ -231,16 +262,16 @@ showFlashMessage('scrubStatus', res.message, res.success ? 'success' : 'error');
 }
 
 function openShareTableFromComm(sheetUrl) {
-    showOverlay('loading', 'Generating Table...');
-    apiCall('fetchManualPairingData', { sheetUrl: sheetUrl }).then(res => {
-        closeOverlay();
-        if (res.success) {
-            groupingData = res.data;
-            openTableExportModal();
-        } else {
-            alert("Error: " + res.message);
-        }
-    });
+   showOverlay('loading', 'Generating Table...');
+   apiCall('fetchManualPairingData', { sheetUrl: sheetUrl }).then(res => {
+       closeOverlay();
+       if (res.success) {
+           groupingData = res.data;
+           openTableExportModal();
+       } else {
+           alert("Error: " + res.message);
+       }
+   });
 }
 
 // === CREATE OUTING LOGIC ===
@@ -294,75 +325,75 @@ showOverlay('error', res.message);
 
 // === EDIT OUTING LOGIC ===
 function openEditOutingModal(index) {
-    const cache = outingDetailsCache[index];
-    if(!cache || !cache.config) return;
-    const config = cache.config;
-    
-    document.getElementById('editEventName').value = config.eventName || "";
-    document.getElementById('editEventDate').value = config.eventDate || "";
-    
-    const mLocs = document.getElementsByName('editMeetingLoc');
-    const mTimes = document.getElementsByName('editMeetingTime');
-    for(let i=0; i<4; i++) {
-        mLocs[i].value = config.meetingLocs[i] || "";
-        mTimes[i].value = config.meetingTimes[i] || "";
-    }
-    
-    const dLocs = document.getElementsByName('editDismissalLoc');
-    const dTimes = document.getElementsByName('editDismissalTime');
-    for(let i=0; i<4; i++) {
-        dLocs[i].value = config.dismissalLocs[i] || "";
-        dTimes[i].value = config.dismissalTimes[i] || "";
-    }
-    
-    currentEditSheetUrl = window.currentSheetList[index].sheetUrl;
-    
-    const modal = document.getElementById('editModal'); 
-    const modalPanel = document.getElementById('editModalPanel');
-    modal.classList.remove('hidden'); 
-    setTimeout(() => { 
-        modal.classList.remove('opacity-0'); 
-        modalPanel.classList.remove('scale-95'); 
-        modalPanel.classList.add('scale-100'); 
-    }, 10); 
+   const cache = outingDetailsCache[index];
+   if(!cache || !cache.config) return;
+   const config = cache.config;
+   
+   document.getElementById('editEventName').value = config.eventName || "";
+   document.getElementById('editEventDate').value = config.eventDate || "";
+   
+   const mLocs = document.getElementsByName('editMeetingLoc');
+   const mTimes = document.getElementsByName('editMeetingTime');
+   for(let i=0; i<4; i++) {
+       mLocs[i].value = config.meetingLocs[i] || "";
+       mTimes[i].value = config.meetingTimes[i] || "";
+   }
+   
+   const dLocs = document.getElementsByName('editDismissalLoc');
+   const dTimes = document.getElementsByName('editDismissalTime');
+   for(let i=0; i<4; i++) {
+       dLocs[i].value = config.dismissalLocs[i] || "";
+       dTimes[i].value = config.dismissalTimes[i] || "";
+   }
+   
+   currentEditSheetUrl = window.currentSheetList[index].sheetUrl;
+   
+   const modal = document.getElementById('editModal'); 
+   const modalPanel = document.getElementById('editModalPanel');
+   modal.classList.remove('hidden'); 
+   setTimeout(() => { 
+       modal.classList.remove('opacity-0'); 
+       modalPanel.classList.remove('scale-95'); 
+       modalPanel.classList.add('scale-100'); 
+   }, 10); 
 }
 
 function closeEditModal() {
-    const modal = document.getElementById('editModal'); 
-    const modalPanel = document.getElementById('editModalPanel');
-    modal.classList.add('opacity-0'); 
-    modalPanel.classList.remove('scale-100'); 
-    modalPanel.classList.add('scale-95'); 
-    setTimeout(() => { 
-        modal.classList.add('hidden'); 
-    }, 300); 
+   const modal = document.getElementById('editModal'); 
+   const modalPanel = document.getElementById('editModalPanel');
+   modal.classList.add('opacity-0'); 
+   modalPanel.classList.remove('scale-100'); 
+   modalPanel.classList.add('scale-95'); 
+   setTimeout(() => { 
+       modal.classList.add('hidden'); 
+   }, 300); 
 }
 
 function handleEditSubmit(e) {
-    e.preventDefault();
-    if(!currentEditSheetUrl) return;
+   e.preventDefault();
+   if(!currentEditSheetUrl) return;
 
-    showOverlay('loading', 'Updating Outing Details...');
+   showOverlay('loading', 'Updating Outing Details...');
 
-    const formData = { 
-        eventName: document.getElementById('editEventName').value, 
-        eventDate: document.getElementById('editEventDate').value, 
-        meetingLocs: Array.from(document.getElementsByName('editMeetingLoc')).map(i=>i.value), 
-        meetingTimes: Array.from(document.getElementsByName('editMeetingTime')).map(i=>i.value), 
-        dismissalLocs: Array.from(document.getElementsByName('editDismissalLoc')).map(i=>i.value), 
-        dismissalTimes: Array.from(document.getElementsByName('editDismissalTime')).map(i=>i.value), 
-    }; 
+   const formData = { 
+       eventName: document.getElementById('editEventName').value, 
+       eventDate: document.getElementById('editEventDate').value, 
+       meetingLocs: Array.from(document.getElementsByName('editMeetingLoc')).map(i=>i.value), 
+       meetingTimes: Array.from(document.getElementsByName('editMeetingTime')).map(i=>i.value), 
+       dismissalLocs: Array.from(document.getElementsByName('editDismissalLoc')).map(i=>i.value), 
+       dismissalTimes: Array.from(document.getElementsByName('editDismissalTime')).map(i=>i.value), 
+   }; 
 
-    apiCall('updateOuting', { sheetUrl: currentEditSheetUrl, form: formData }).then(res => { 
-        if(res.success) { 
-            showOverlay('success', 'Outing Details Updated!');
-            closeEditModal(); 
-            loadSheets('comm'); 
-            showFlashMessage('commGlobalStatus', "Outing Updated Successfully!", 'success');
-        } else { 
-            showOverlay('error', res.message);
-        } 
-    }); 
+   apiCall('updateOuting', { sheetUrl: currentEditSheetUrl, form: formData }).then(res => { 
+       if(res.success) { 
+           showOverlay('success', 'Outing Details Updated!');
+           closeEditModal(); 
+           loadSheets('comm'); 
+           showFlashMessage('commGlobalStatus', "Outing Updated Successfully!", 'success');
+       } else { 
+           showOverlay('error', res.message);
+       } 
+   }); 
 }
 
 
@@ -451,14 +482,14 @@ if (availableItems.length === 0) {
 html += `<div class="p-2 text-center text-xs text-gray-500 dark:text-gray-400 italic">No options</div>`;
 } else {
 availableItems.forEach(item => {
-  const isChecked = selectedArray.includes(item);
-  html += `
-  <div class="px-3 py-2 border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-between transition-colors" onclick="toggleCommAttFilterItem('${type}', '${item.replace(/'/g, "\\'")}', event)">
-      <span class="text-xs text-gray-700 dark:text-gray-300 font-bold break-words pr-2">${type === 'group' ? 'Grp ' + item : item}</span>
-      <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-blue-500 border-blue-600 text-white' : 'bg-gray-100 border-gray-300 dark:bg-black dark:border-zinc-600 text-transparent'}">
-          <i class="fa-solid fa-check text-[10px]"></i>
-      </div>
-  </div>`;
+ const isChecked = selectedArray.includes(item);
+ html += `
+ <div class="px-3 py-2 border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-between transition-colors" onclick="toggleCommAttFilterItem('${type}', '${item.replace(/'/g, "\\'")}', event)">
+     <span class="text-xs text-gray-700 dark:text-gray-300 font-bold break-words pr-2">${type === 'group' ? 'Grp ' + item : item}</span>
+     <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-blue-500 border-blue-600 text-white' : 'bg-gray-100 border-gray-300 dark:bg-black dark:border-zinc-600 text-transparent'}">
+         <i class="fa-solid fa-check text-[10px]"></i>
+     </div>
+ </div>`;
 });
 }
 
@@ -495,12 +526,12 @@ commAttFiltersChanged = false;
 
 document.addEventListener('click', function(e) {
 const isDropdownClick = e.target.closest('#commAttGroupDropdown') || 
-                  e.target.closest('#commAttMeetDropdown') || 
-                  e.target.closest('#commAttDismissDropdown');
+                 e.target.closest('#commAttMeetDropdown') || 
+                 e.target.closest('#commAttDismissDropdown');
 
 const isBtnClick = e.target.closest('#commAttGroupBtn') || 
-             e.target.closest('#commAttMeetBtn') || 
-             e.target.closest('#commAttDismissBtn');
+            e.target.closest('#commAttMeetBtn') || 
+            e.target.closest('#commAttDismissBtn');
 
 if (!isDropdownClick && !isBtnClick) {
 closeAllCommAttFilters();
@@ -587,11 +618,11 @@ let participants = commAttData.participants || [];
 
 // SORTING: By Group (numeric) then Name (alphabetical)
 participants.sort((a, b) => {
- const grpA = a.group ? a.group.toString().toLowerCase() : "zzzz";
- const grpB = b.group ? b.group.toString().toLowerCase() : "zzzz";
- const groupCmp = grpA.localeCompare(grpB, undefined, {numeric: true});
- if (groupCmp !== 0) return groupCmp;
- return a.name.localeCompare(b.name);
+const grpA = a.group ? a.group.toString().toLowerCase() : "zzzz";
+const grpB = b.group ? b.group.toString().toLowerCase() : "zzzz";
+const groupCmp = grpA.localeCompare(grpB, undefined, {numeric: true});
+if (groupCmp !== 0) return groupCmp;
+return a.name.localeCompare(b.name);
 });
 
 if (commAttState.selectedGroups.length > 0) {
@@ -643,11 +674,11 @@ goneHomeList.scrollTop = scrollGH;
 
 // Bind Long Press logic after rendering
 document.querySelectorAll('.comm-att-card').forEach(el => {
- uiBindLongPress(el, () => {
-     const name = el.getAttribute('data-name');
-     const p = (commAttData.participants || []).find(x => x.name.replace(/'/g, "\\'") === name);
-     if (p) showPersonInfo(p);
- });
+uiBindLongPress(el, () => {
+    const name = el.getAttribute('data-name');
+    const p = (commAttData.participants || []).find(x => x.name.replace(/'/g, "\\'") === name);
+    if (p) showPersonInfo(p);
+});
 });
 }
 
@@ -699,10 +730,10 @@ ${groupBadge}
 </div>
 <div class="shrink-0 flex items-center gap-1.5 md:gap-2">
 <button onclick="toggleGoneHomeStatus('${safeName}', ${!isGoneHome}, event)" class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
-    <i class="fa-solid fa-house-user text-[10px] md:text-xs"></i>
+   <i class="fa-solid fa-house-user text-[10px] md:text-xs"></i>
 </button>
 <div class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
-    <i class="fa-solid fa-check text-xs md:text-sm"></i>
+   <i class="fa-solid fa-check text-xs md:text-sm"></i>
 </div>
 </div>
 </div>
@@ -750,37 +781,37 @@ triggerSync();
 function triggerCommAttPulse(name, stateType) {
 setTimeout(() => {
 requestAnimationFrame(() => {
-  const id = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
-  const card = document.getElementById(id);
-  if (card) {
-      const container = card.parentElement;
-      if (container) {
-          const containerRect = container.getBoundingClientRect();
-          const cardRect = card.getBoundingClientRect();
-          
-          if (cardRect.height > 0) {
-              const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
-              
-              container.scrollTo({
-                  top: scrollTop,
-                  behavior: 'smooth'
-              });
-          }
-      }
-      
-      let pulseClass = 'pulse-red';
-      
-      if (stateType === 'checked') {
-          pulseClass = 'pulse-green';
-      } else if (stateType === 'gonehome') {
-          pulseClass = 'pulse-blue';
-      }
-      
-      card.classList.add(pulseClass);
-      setTimeout(() => {
-          card.classList.remove(pulseClass);
-      }, 800);
-  }
+ const id = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
+ const card = document.getElementById(id);
+ if (card) {
+     const container = card.parentElement;
+     if (container) {
+         const containerRect = container.getBoundingClientRect();
+         const cardRect = card.getBoundingClientRect();
+         
+         if (cardRect.height > 0) {
+             const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
+             
+             container.scrollTo({
+                 top: scrollTop,
+                 behavior: 'smooth'
+             });
+         }
+     }
+     
+     let pulseClass = 'pulse-red';
+     
+     if (stateType === 'checked') {
+         pulseClass = 'pulse-green';
+     } else if (stateType === 'gonehome') {
+         pulseClass = 'pulse-blue';
+     }
+     
+     card.classList.add(pulseClass);
+     setTimeout(() => {
+         card.classList.remove(pulseClass);
+     }, 800);
+ }
 });
 }, 150);
 }
@@ -795,23 +826,23 @@ if (columnType === 'checked') listTitle = "PRESENT";
 if (columnType === 'goneHome') listTitle = "GONE HOME";
 
 if (commAttState.selectedGroups.length > 0) {
-  participants = participants.filter(p => commAttState.selectedGroups.includes(String(p.group)));
+ participants = participants.filter(p => commAttState.selectedGroups.includes(String(p.group)));
 }
 if (commAttState.selectedMeets.length > 0) {
-  participants = participants.filter(p => commAttState.selectedMeets.includes(String(p.meetingLoc)));
+ participants = participants.filter(p => commAttState.selectedMeets.includes(String(p.meetingLoc)));
 }
 if (commAttState.selectedDismissals.length > 0) {
-  participants = participants.filter(p => commAttState.selectedDismissals.includes(String(p.dismissalLoc)));
+ participants = participants.filter(p => commAttState.selectedDismissals.includes(String(p.dismissalLoc)));
 }
 
 const targetNames = [];
 participants.forEach(p => {
-  const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
-  const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
-  
-  if (columnType === 'goneHome' && isGoneHome) targetNames.push(p.name);
-  else if (columnType === 'checked' && !isGoneHome && isChecked) targetNames.push(p.name);
-  else if (columnType === 'notChecked' && !isGoneHome && !isChecked) targetNames.push(p.name);
+ const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
+ const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
+ 
+ if (columnType === 'goneHome' && isGoneHome) targetNames.push(p.name);
+ else if (columnType === 'checked' && !isGoneHome && isChecked) targetNames.push(p.name);
+ else if (columnType === 'notChecked' && !isGoneHome && !isChecked) targetNames.push(p.name);
 });
 
 const groupsStr = commAttState.selectedGroups.length > 0 ? "Grp: " + commAttState.selectedGroups.join(", ") : "All Groups";
@@ -821,11 +852,11 @@ const dismissStr = commAttState.selectedDismissals.length > 0 ? "Dismissal: " + 
 let format = (window.appSettings && window.appSettings.shareFormat) ? window.appSettings.shareFormat : DEF_SHARE_FORMAT;
 
 const formattedText = format
-  .replace(/\{\{Groups\}\}/gi, groupsStr)
-  .replace(/\{\{Meetings\}\}/gi, meetsStr)
-  .replace(/\{\{Dismissals\}\}/gi, dismissStr)
-  .replace(/\{\{Count\}\}/gi, targetNames.length)
-  .replace(/\{\{List\}\}/gi, targetNames.join('\n'));
+ .replace(/\{\{Groups\}\}/gi, groupsStr)
+ .replace(/\{\{Meetings\}\}/gi, meetsStr)
+ .replace(/\{\{Dismissals\}\}/gi, dismissStr)
+ .replace(/\{\{Count\}\}/gi, targetNames.length)
+ .replace(/\{\{List\}\}/gi, targetNames.join('\n'));
 
 return `[${listTitle}]\n${formattedText}`;
 }
@@ -833,9 +864,9 @@ return `[${listTitle}]\n${formattedText}`;
 function copyColumnData(columnType) {
 const finalMessage = generateColumnText(columnType);
 navigator.clipboard.writeText(finalMessage).then(() => {
-  showFlashMessage('commGlobalStatus', "List copied to clipboard!", 'success');
+ showFlashMessage('commGlobalStatus', "List copied to clipboard!", 'success');
 }).catch(() => {
-  alert("Failed to copy list. Clipboard access denied.");
+ alert("Failed to copy list. Clipboard access denied.");
 });
 }
 
@@ -844,14 +875,14 @@ const finalMessage = generateColumnText(columnType);
 const listTitle = finalMessage.split('\n')[0].replace(/\[|\]/g, '');
 
 if (navigator.share) {
-  navigator.share({
-      title: `${listTitle} List`,
-      text: finalMessage
-  }).catch(err => {
-      console.error("Share failed", err);
-  });
+ navigator.share({
+     title: `${listTitle} List`,
+     text: finalMessage
+ }).catch(err => {
+     console.error("Share failed", err);
+ });
 } else {
-  copyColumnData(columnType);
+ copyColumnData(columnType);
 }
 }
 
@@ -1015,10 +1046,10 @@ const newParticipants = JSON.stringify(commAttData.participants);
 const newAttendance = JSON.stringify(commAttData.attendance);
 
 if (oldJunctures !== newJunctures || oldParticipants !== newParticipants) {
-    renderCommAttFilters();
-    renderCommAttJunctures();
+   renderCommAttFilters();
+   renderCommAttJunctures();
 } else if (oldAttendance !== newAttendance) {
-    renderCommAttLists();
+   renderCommAttLists();
 }
 }
 });
@@ -1107,7 +1138,7 @@ ${caregiverBadge}
 </div>
 <div class="flex justify-between items-center w-full">
 <div class="shrink-0 flex items-center">
-    ${groupBadge}
+   ${groupBadge}
 </div>
 <div class="shrink-0">${statusBadge}</div>
 </div>
