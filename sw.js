@@ -1,4 +1,4 @@
-const CACHE_NAME = 'minds-myg-cache-v52';
+const CACHE_NAME = 'minds-myg-cache-v53';
 const urlsToCache = [
 './',
 './index.html',
@@ -34,7 +34,7 @@ caches.keys().then(cacheNames => {
 return Promise.all(
 cacheNames.map(cacheName => {
 if (cacheWhitelist.indexOf(cacheName) === -1) {
- return caches.delete(cacheName);
+return caches.delete(cacheName);
 }
 })
 );
