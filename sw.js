@@ -1,4 +1,4 @@
-const CACHE_NAME = 'minds-myg-cache-v56';
+const CACHE_NAME = 'minds-myg-cache-v57';
 const urlsToCache = [
 './',
 './index.html',
