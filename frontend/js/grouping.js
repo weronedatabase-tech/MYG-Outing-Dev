@@ -442,6 +442,9 @@ function toggleGroupIC(volName, isChecked) {
 
 function buildExportTable() {
    const container = document.getElementById('exportTableContainer');
+   // Strip min-w-max dynamically and enforce full width for mobile screen wrap
+   container.classList.remove('min-w-max');
+   container.classList.add('w-full');
    
    let allGroups = new Set();
    groupingData.trainees.forEach(t => {
@@ -453,7 +456,7 @@ function buildExportTable() {
    let sortedGroups = Array.from(allGroups).sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
    
    let html = `
-   <table class="w-full text-left border-collapse text-[9px] md:text-xs text-gray-800" style="font-family: Arial, sans-serif; border: 1px solid #333; table-layout: fixed; word-wrap: break-word;">
+   <table class="w-full text-left border-collapse text-[9px] md:text-xs text-gray-800" style="font-family: Arial, sans-serif; border: 1px solid #333; table-layout: fixed; width: 100%; word-wrap: break-word;">
        <thead>
            <tr style="background-color: #333; color: #fff;">
                <th style="padding: 3px; border: 1px solid #555; width: 30%;">Volunteer</th>
@@ -584,6 +587,8 @@ async function shareExportTable() {
        const dataUrl = canvas.toDataURL('image/png');
 
        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up fa-spin"></i> Uploading to Drive...';
+
+       if (!currentGroupingSheetUrl) throw new Error("Missing Event Context (URL).");
 
        const res = await apiCall('uploadExportTable', {
            sheetUrl: currentGroupingSheetUrl,

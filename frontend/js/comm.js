@@ -267,6 +267,7 @@ function openShareTableFromComm(sheetUrl) {
        closeOverlay();
        if (res.success) {
            groupingData = res.data;
+           currentGroupingSheetUrl = sheetUrl; // Bind globally for image export Context
            openTableExportModal();
        } else {
            alert("Error: " + res.message);

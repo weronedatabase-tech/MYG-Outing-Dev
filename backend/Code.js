@@ -413,11 +413,14 @@ FEATURE: GET DETAILED STATS & CONFIGURATIONS
 function getOutingDetails(sheetUrl) {
 try {
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
-const tSheet = ss.getSheetByName("Trainee Attendance");
+const tSheet = ss.getSheetByName("Traine Attendance");
 const vSheet = ss.getSheetByName("Volunteer Attendance");
 const infoSheet = ss.getSheetByName("OutingInformation");
+// Fix fallback for trailing spaces
+let tSheetFinal = tSheet || ss.getSheetByName("Trainee Attendance ");
+if (!tSheetFinal) tSheetFinal = ss.getSheetByName("Trainee Attendance");
 
-if(!tSheet || !vSheet) return { success: false, message: "Missing Tabs: 'Trainee Attendance' or 'Volunteer Attendance'" };
+if(!tSheetFinal || !vSheet) return { success: false, message: "Missing Tabs: 'Trainee Attendance' or 'Volunteer Attendance'" };
 
 // Extract Edit Configurations & Messages from OutingInformation safely
 let outingMessage = "";
@@ -508,10 +511,10 @@ if(!stats[p]) stats[p] = { tY: 0, tTot: 0, cY: 0, vY: 0, vTot: 0 };
 };
 
 // 1. PROCESS TRAINEES
-const tLastRow = tSheet.getLastRow();
+const tLastRow = tSheetFinal.getLastRow();
 if(tLastRow > 1) {
-const tData = tSheet.getRange(2, 1, tLastRow-1, tSheet.getLastColumn()).getValues();
-const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
+const tData = tSheetFinal.getRange(2, 1, tLastRow-1, tSheetFinal.getLastColumn()).getValues();
+const tHeaders = tSheetFinal.getRange(1, 1, 1, tSheetFinal.getLastColumn()).getValues()[0];
 
 const tAttIdx = getColIndex(tHeaders, "attending");
 const tProjIdx = getColIndex(tHeaders, "project");
@@ -589,12 +592,15 @@ IMAGE UPLOAD (DRIVE) LOGIC
 function uploadExportTable(payload) {
     try {
         const { sheetUrl, imageBase64 } = payload;
+        if (!sheetUrl) return { success: false, message: "Missing sheetUrl parameter. Please refresh the page and try again." };
+        if (!imageBase64) return { success: false, message: "Missing imageBase64 parameter." };
+        
         const ss = SpreadsheetApp.openByUrl(sheetUrl);
         const fileId = ss.getId();
         const file = DriveApp.getFileById(fileId);
         const parents = file.getParents();
         if (!parents.hasNext()) {
-            return { success: false, message: "Folder not found" };
+            return { success: false, message: "Folder not found in Drive" };
         }
         const folder = parents.next();
         
@@ -622,7 +628,8 @@ MANUAL PAIRING & GROUPING DATA ENGINE
 function fetchManualPairingData(sheetUrl) {
 try {
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
-const tSheet = ss.getSheetByName("Trainee Attendance");
+let tSheet = ss.getSheetByName("Trainee Attendance");
+if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
 const vSheet = ss.getSheetByName("Volunteer Attendance");
 const gSheet = getGroupingSheet(ss);
 
@@ -741,7 +748,8 @@ const lock = LockService.getScriptLock();
 try {
 lock.waitLock(10000);
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
-const tSheet = ss.getSheetByName("Trainee Attendance");
+let tSheet = ss.getSheetByName("Trainee Attendance");
+if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
 if (!tSheet) return { success: false, message: "Missing Trainee Attendance Tab" };
 
 const tLastRow = tSheet.getLastRow();
@@ -825,7 +833,8 @@ const ss = SpreadsheetApp.openByUrl(sheetUrl);
 // --- Process Trainees ---
 const tUpdates = updates.filter(u => u.role === 'TRAINEE' || u.traineeName);
 if (tUpdates.length > 0) {
-   const tSheet = ss.getSheetByName("Trainee Attendance");
+   let tSheet = ss.getSheetByName("Trainee Attendance");
+   if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
    if (tSheet) {
        const tLastRow = tSheet.getLastRow();
        if (tLastRow >= 2) {
@@ -925,7 +934,8 @@ function runAutoPairing(sheetUrl) {
 try {
 if (!sheetUrl) throw new Error("Invalid URL");
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
-const tSheet = ss.getSheetByName("Trainee Attendance");
+let tSheet = ss.getSheetByName("Trainee Attendance");
+if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
 const vSheet = ss.getSheetByName("Volunteer Attendance");
 const mSheet = ss.getSheetByName("MISC PriVol");
 if (!tSheet || !vSheet || !mSheet) return { success: false, message: "Missing Tabs" };
@@ -1038,7 +1048,8 @@ function runAutoGrouping(sheetUrl) {
 try {
 if (!sheetUrl) throw new Error("Invalid URL");
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
-const tSheet = ss.getSheetByName("Trainee Attendance");
+let tSheet = ss.getSheetByName("Trainee Attendance");
+if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
 const mSheet = ss.getSheetByName("MISC PriVol");
 if (!tSheet || !mSheet) return { success: false, message: "Missing Tabs" };
 
@@ -1086,7 +1097,8 @@ CORE LOGIC 3: SHEET MAINTENANCE (AUTO)
 function runSheetMaintenance(sheetUrl) {
 try {
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
-const tSheet = ss.getSheetByName("Trainee Attendance");
+let tSheet = ss.getSheetByName("Trainee Attendance");
+if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
 const vSheet = ss.getSheetByName("Volunteer Attendance");
 if (!tSheet || !vSheet) return;
 
@@ -1394,7 +1406,8 @@ const files = folder.getFilesByType(MimeType.GOOGLE_SHEETS);
 if (!files.hasNext()) throw new Error("No Template Sheet found.");
 const file = files.next();
 const ss = SpreadsheetApp.openById(file.getId());
-const tSheet = ss.getSheetByName("Trainee Attendance");
+let tSheet = ss.getSheetByName("Trainee Attendance");
+if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
 const vSheet = ss.getSheetByName("Volunteer Attendance");
 if(!tSheet || !vSheet) throw new Error("Template missing required tabs.");
 const tRaw = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
@@ -1410,7 +1423,8 @@ try {
 if (!sheetUrl || sheetUrl === "") return { success: false, message: "Invalid Sheet URL" };
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
 const tabName = type === 'trainee' ? "Trainee Attendance" : "Volunteer Attendance";
-const sheet = ss.getSheetByName(tabName);
+let sheet = ss.getSheetByName(tabName);
+if(!sheet && type === 'trainee') sheet = ss.getSheetByName("Trainee Attendance ");
 if(!sheet) throw new Error(tabName + " not found.");
 const lastRow = sheet.getLastRow();
 if (lastRow < 2) return { success: true, names: [] };
@@ -1425,7 +1439,8 @@ try {
 if (!sheetUrl || sheetUrl === "") return { success: false, message: "Invalid Sheet URL" };
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
 const tabName = type === 'trainee' ? "Trainee Attendance" : "Volunteer Attendance";
-const sheet = ss.getSheetByName(tabName);
+let sheet = ss.getSheetByName(tabName);
+if(!sheet && type === 'trainee') sheet = ss.getSheetByName("Trainee Attendance ");
 
 const infoSheet = ss.getSheetByName("OutingInformation");
 let meetingLocations = [];
@@ -1568,7 +1583,8 @@ if (!form.sheetUrl || form.sheetUrl === "") return { success: false, message: "I
 
 const ss = SpreadsheetApp.openByUrl(form.sheetUrl);
 const tabName = form.type === 'trainee' ? "Trainee Attendance" : "Volunteer Attendance";
-const sheet = ss.getSheetByName(tabName);
+let sheet = ss.getSheetByName(tabName);
+if(!sheet && form.type === 'trainee') sheet = ss.getSheetByName("Trainee Attendance ");
 
 const name = form.targetName || form.data['Name'] || form.data[Object.keys(form.data)[0]];
 
@@ -1684,7 +1700,9 @@ break;
 
 // --- LOGICAL CASCADE: If 'N' attending, unpair globally ---
 if (attendingStatus === 'n') {
-const tSheet = ss.getSheetByName("Trainee Attendance");
+let tSheet = ss.getSheetByName("Trainee Attendance");
+if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
+
 if (form.type === 'trainee') {
   // Trainee is not attending -> Clear their volunteer paired
   const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
