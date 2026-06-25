@@ -4,9 +4,11 @@ let pendingGroupingUpdates = [];
 let isGroupingSyncing = false;
 let groupingSyncTimeout = null;
 let groupingPollInterval = null;
+let currentGroupingFilter = "ALL";
+let currentGroupingSearch = "";
 
 // ==========================================
-// MANUAL GROUPING LOGIC
+// MANUAL GROUPING LOGIC (Vertical List UI)
 // ==========================================
 
 function openManualGrouping() {
@@ -17,6 +19,11 @@ if(!url || url.includes("Select") || url.includes("Loading") || url.includes("Er
 currentGroupingSheetUrl = url;
 document.getElementById('navContextTitle').innerText = "Manual Group: " + selector.options[selector.selectedIndex].text;
 
+currentGroupingFilter = "ALL";
+currentGroupingSearch = "";
+document.getElementById('groupingFilterSelect').value = "ALL";
+document.getElementById('groupingSearchInput').value = "";
+
 showView('manual-grouping');
 loadGroupingData();
 }
@@ -25,12 +32,11 @@ function loadGroupingData() {
 const overlay = document.getElementById('groupingLoadingOverlay');
 overlay.classList.remove('hidden');
 
-// We re-use the pairing data fetcher since it pulls everything we need
 apiCall('fetchManualPairingData', { sheetUrl: currentGroupingSheetUrl }).then(res => {
   overlay.classList.add('hidden');
   if (res.success) {
       groupingData = res.data;
-      renderGroupingBoard();
+      renderGroupingList();
       startGroupingPolling();
   } else {
       alert("Error: " + res.message);
@@ -39,123 +45,136 @@ apiCall('fetchManualPairingData', { sheetUrl: currentGroupingSheetUrl }).then(re
 });
 }
 
-function renderGroupingBoard() {
-const board = document.getElementById('groupingKanbanBoard');
+function changeGroupingFilter() {
+currentGroupingFilter = document.getElementById('groupingFilterSelect').value;
+renderGroupingList();
+}
 
-// Collect all unique groups, numeric sort. 
-// Any trainee without a group goes into "Unassigned"
-let groupSet = new Set();
-let unassignedTrainees = [];
+function changeGroupingSearch() {
+currentGroupingSearch = document.getElementById('groupingSearchInput').value.toLowerCase().trim();
+renderGroupingList();
+}
 
+function renderGroupingList() {
+const container = document.getElementById('groupingList');
+
+let activeTrainees = (groupingData.trainees || []).filter(t => {
+    const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
+    return att === 'y' && !t.isGoneHome;
+});
+
+// Apply Search
+if (currentGroupingSearch) {
+    activeTrainees = activeTrainees.filter(t => 
+        t.name.toLowerCase().includes(currentGroupingSearch) || 
+        (t.volPaired && t.volPaired.toLowerCase().includes(currentGroupingSearch)) ||
+        (t.group && String(t.group).toLowerCase().includes(currentGroupingSearch))
+    );
+}
+
+// Apply Filter
+if (currentGroupingFilter === "UNASSIGNED") {
+    activeTrainees = activeTrainees.filter(t => String(t.group || "").trim() === "");
+}
+
+// Sort alphabetically by name
+activeTrainees.sort((a,b) => a.name.localeCompare(b.name));
+
+let html = '';
+
+if (activeTrainees.length === 0) {
+    html = `<div class="p-4 text-center text-gray-500 dark:text-gray-400 font-bold text-xs italic">No trainees match the current filters.</div>`;
+} else {
+    activeTrainees.forEach(t => {
+        const groupStr = String(t.group || "").trim();
+        const groupBadge = groupStr !== "" 
+            ? `<span class="bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 border border-orange-200 dark:border-orange-800 px-2 py-0.5 rounded font-black text-[10px] uppercase shadow-sm">Grp ${groupStr}</span>` 
+            : `<span class="bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-900/50 px-2 py-0.5 rounded font-bold text-[10px] uppercase shadow-sm">Unassigned</span>`;
+            
+        let volInfo = '';
+        if (t.volPaired) {
+            volInfo = `<div class="text-[10px] text-teal-600 dark:text-teal-400 font-bold line-clamp-2 leading-tight mt-1 flex items-start gap-1"><i class="fa-solid fa-handshake-angle mt-0.5 opacity-80"></i><span>${t.volPaired}</span></div>`;
+        }
+
+        const safeName = t.name.replace(/'/g, "\\'");
+        
+        html += `
+        <div class="bg-white dark:bg-zinc-900 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm cursor-pointer hover:border-orange-500 transition active:scale-[0.98] select-none" onclick="openQuickGroupModal('${safeName}')">
+            <div class="flex justify-between items-start w-full gap-2">
+                <div class="font-extrabold text-xs md:text-sm text-gray-900 dark:text-white leading-tight break-words whitespace-normal flex-1">
+                    ${t.name}
+                </div>
+                <div class="shrink-0 flex items-center justify-end min-w-[70px]">
+                    ${groupBadge}
+                </div>
+            </div>
+            ${volInfo}
+        </div>
+        `;
+    });
+}
+
+container.innerHTML = html;
+}
+
+// ==========================================
+// QUICK GROUP MODAL (Vertical List Logic)
+// ==========================================
+let currentGroupingTargetTrainee = "";
+
+function openQuickGroupModal(traineeName) {
+currentGroupingTargetTrainee = traineeName;
+const trainee = groupingData.trainees.find(t => t.name === traineeName);
+if(!trainee) return;
+
+const title = document.getElementById('quickGroupModalTitle');
+title.innerHTML = `Assign <span class="text-orange-500">${traineeName}</span>`;
+
+const grid = document.getElementById('quickGroupGrid');
+
+// Find highest group number currently active
 let activeTrainees = (groupingData.trainees || []).filter(t => {
     const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
     return att === 'y';
 });
 
+let highest = 0;
+let groupSet = new Set();
+
 activeTrainees.forEach(t => {
     const g = String(t.group || "").trim();
-    if (g === "") {
-        unassignedTrainees.push(t);
-    } else {
+    if (g !== "") {
         groupSet.add(g);
+        const num = parseInt(g);
+        if (!isNaN(num) && num > highest) highest = num;
     }
 });
 
 let groups = Array.from(groupSet).sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
+const currentGroup = String(trainee.group || "").trim();
 
-// Ensure there is always at least one group to drag into if unassigned exists
-if (groups.length === 0) {
-    groups = ["1"];
-}
-
-// Generate the columns HTML
-let boardHtml = '';
-
-// Unassigned Column
-boardHtml += generateKanbanColumn("Unassigned", unassignedTrainees);
-
-// Group Columns
+let gridHtml = '';
 groups.forEach(g => {
-    const traineesInGroup = activeTrainees.filter(t => String(t.group || "").trim() === g);
-    boardHtml += generateKanbanColumn(g, traineesInGroup);
-});
-
-// "Add Group" Column button
-boardHtml += `
-<div class="flex-none w-64 md:w-72 shrink-0 flex flex-col h-full opacity-50 hover:opacity-100 transition-opacity">
-    <button onclick="addNewGroupColumn()" class="w-full h-full min-h-[100px] border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-lg text-gray-500 dark:text-gray-400 font-bold flex flex-col items-center justify-center gap-2 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
-        <i class="fa-solid fa-plus text-2xl"></i>
-        <span>Add Group</span>
+    const isCurrent = g === currentGroup;
+    gridHtml += `
+    <button onclick="handleGroupSelection('${g}')" class="py-3 px-2 rounded-lg border flex flex-col items-center justify-center gap-1 transition ${isCurrent ? 'bg-orange-100 border-orange-500 text-orange-800 dark:bg-orange-900/50 dark:border-orange-500 dark:text-orange-200' : 'bg-gray-50 border-gray-300 text-gray-700 hover:bg-orange-50 hover:border-orange-300 dark:bg-black dark:border-zinc-700 dark:text-gray-300 dark:hover:bg-zinc-800'}">
+        <span class="text-[10px] font-bold uppercase opacity-80 leading-none">Group</span>
+        <span class="text-lg font-black leading-none">${g}</span>
     </button>
-</div>
-`;
-
-board.innerHTML = boardHtml;
-
-// Bind Long Press globally to items
-document.querySelectorAll('.dnd-draggable').forEach(el => {
-  uiBindLongPress(el, () => {
-      const name = el.getAttribute('data-name');
-      const p = (groupingData.trainees || []).find(x => x.name.replace(/'/g, "\\'") === name);
-      if (p) showPersonInfo(p);
-  });
-});
-}
-
-function generateKanbanColumn(groupName, trainees) {
-const isUnassigned = groupName === "Unassigned";
-const colTitle = isUnassigned ? "Unassigned" : `Group ${groupName}`;
-const targetValue = isUnassigned ? "" : groupName;
-
-let cardsHtml = '';
-trainees.sort((a,b) => a.name.localeCompare(b.name)).forEach(t => {
-    cardsHtml += generateGroupingCardHtml(t);
+    `;
 });
 
-if (cardsHtml === '') {
-    cardsHtml = `<div class="text-[10px] text-gray-400 font-medium text-center p-4 border border-dashed border-gray-200 dark:border-zinc-700 rounded pointer-events-none">Drop trainees here</div>`;
+grid.innerHTML = gridHtml || `<div class="col-span-3 text-center text-xs text-gray-500 p-2">No groups exist yet.</div>`;
+
+document.getElementById('quickGroupModal').classList.remove('hidden');
 }
 
-return `
-<div class="flex-none w-64 md:w-72 flex flex-col h-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden shadow-sm dnd-dropzone" data-grouptarget="${targetValue}">
-    <div class="bg-gray-100 dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 px-3 py-2 flex justify-between items-center shrink-0">
-        <h3 class="font-black text-sm text-gray-900 dark:text-white uppercase tracking-wider">${colTitle}</h3>
-        <span class="bg-white dark:bg-black text-xs font-bold px-2 py-0.5 rounded-full border border-gray-200 dark:border-zinc-700">${trainees.length}</span>
-    </div>
-    <div class="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar pb-6 bg-gray-50 dark:bg-black/20">
-        ${cardsHtml}
-    </div>
-</div>
-`;
+function closeQuickGroupModal() {
+document.getElementById('quickGroupModal').classList.add('hidden');
 }
 
-function generateGroupingCardHtml(trainee) {
-const safeName = trainee.name.replace(/'/g, "\\'");
-let cgBadge = '';
-if (trainee.caregivers > 0) {
-  cgBadge = `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm">${trainee.caregivers > 1 ? trainee.caregivers + 'C' : 'C'}</span>`;
-}
-
-let volInfo = '';
-if (trainee.volPaired) {
-    volInfo = `<div class="text-[10px] text-teal-600 dark:text-teal-400 font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 mt-1 line-clamp-2 leading-tight">🤝 ${trainee.volPaired}</div>`;
-}
-
-return `
-<div class="dnd-draggable bg-white dark:bg-zinc-900 p-2.5 rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm cursor-grab active:cursor-grabbing hover:border-primary transition select-none flex flex-col gap-1" data-name="${safeName}">
-  <div class="flex justify-between items-start w-full gap-2">
-      <div class="main-name-pill font-extrabold text-[12px] text-gray-900 dark:text-white leading-tight break-words whitespace-normal flex items-start gap-1 min-w-0 flex-1">
-          <span class="break-words">${trainee.name}</span>
-          ${cgBadge}
-      </div>
-  </div>
-  ${volInfo}
-</div>
-`;
-}
-
-function addNewGroupColumn() {
-const activeTrainees = (groupingData.trainees || []).filter(t => {
+function handleNewGroupSelection() {
+let activeTrainees = (groupingData.trainees || []).filter(t => {
     const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
     return att === 'y';
 });
@@ -167,69 +186,60 @@ activeTrainees.forEach(t => {
 });
 
 const newGroup = String(highest + 1);
-
-// Visual simulation - no trainees in it yet, but it forces a render
-let groupSet = new Set();
-activeTrainees.forEach(t => {
-    const g = String(t.group || "").trim();
-    if (g !== "") groupSet.add(g);
-});
-groupSet.add(newGroup);
-
-// Temporarily hijack the render logic to force the new group
-const board = document.getElementById('groupingKanbanBoard');
-let boardHtml = generateKanbanColumn("Unassigned", activeTrainees.filter(t => String(t.group || "").trim() === ""));
-let groups = Array.from(groupSet).sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
-
-groups.forEach(g => {
-    const traineesInGroup = activeTrainees.filter(t => String(t.group || "").trim() === g);
-    boardHtml += generateKanbanColumn(g, traineesInGroup);
-});
-boardHtml += `<div class="flex-none w-64 md:w-72 shrink-0 flex flex-col h-full opacity-50 hover:opacity-100 transition-opacity"><button onclick="addNewGroupColumn()" class="w-full h-full min-h-[100px] border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-lg text-gray-500 dark:text-gray-400 font-bold flex flex-col items-center justify-center gap-2 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors"><i class="fa-solid fa-plus text-2xl"></i><span>Add Group</span></button></div>`;
-board.innerHTML = boardHtml;
-
-// Bind Long Press globally to items
-document.querySelectorAll('.dnd-draggable').forEach(el => {
-  uiBindLongPress(el, () => {
-      const name = el.getAttribute('data-name');
-      const p = (groupingData.trainees || []).find(x => x.name.replace(/'/g, "\\'") === name);
-      if (p) showPersonInfo(p);
-  });
-});
-
-// Scroll to the far right smoothly
-setTimeout(() => {
-    board.scrollTo({ left: board.scrollWidth, behavior: 'smooth' });
-}, 100);
+handleGroupSelection(newGroup);
 }
 
-function handleGroupingDrop(traineeName, targetGroup) {
+function handleGroupSelection(targetGroupRaw) {
+const targetGroup = targetGroupRaw === "UNASSIGNED" ? "" : targetGroupRaw;
+const traineeName = currentGroupingTargetTrainee;
+
 let trainee = groupingData.trainees.find(t => t.name === traineeName);
-if (!trainee) return;
+if (!trainee) {
+    closeQuickGroupModal();
+    return;
+}
 
 const currentGroup = String(trainee.group || "").trim();
-if (currentGroup === targetGroup) return;
+if (currentGroup === targetGroup) {
+    closeQuickGroupModal();
+    return;
+}
 
-const namesToMove = new Set([traineeName]);
+// Logic: Build a graph of all trainees connected through shared volunteers
+const traineesToMove = new Set([traineeName]);
 
-// Advanced Logic: Auto-move connected trainees.
-// If this trainee has paired volunteers, find all OTHER trainees paired with these same volunteers.
-if (trainee.volPaired && targetGroup !== "") {
-    const volArray = trainee.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
-    
-    groupingData.trainees.forEach(otherT => {
-        if (otherT.name === traineeName || !otherT.volPaired) return;
-        const otherVols = otherT.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+if (targetGroup !== "" && trainee.volPaired) {
+    let changed = true;
+    while(changed) {
+        changed = false;
         
-        const hasSharedVol = volArray.some(v => otherVols.includes(v));
-        if (hasSharedVol && String(otherT.group || "").trim() !== targetGroup) {
-            namesToMove.add(otherT.name);
-        }
-    });
+        // Build an aggregate list of all volunteers currently attached to any trainee in the "Move List"
+        let aggregateVols = new Set();
+        traineesToMove.forEach(name => {
+            const t = groupingData.trainees.find(x => x.name === name);
+            if (t && t.volPaired) {
+                const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+                vols.forEach(v => aggregateVols.add(v));
+            }
+        });
+        
+        // Scan all other trainees to see if they share ANY volunteer with the aggregate list
+        groupingData.trainees.forEach(otherT => {
+            if (traineesToMove.has(otherT.name) || !otherT.volPaired) return;
+            
+            const otherVols = otherT.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+            const hasSharedVol = otherVols.some(v => aggregateVols.has(v));
+            
+            if (hasSharedVol) {
+                traineesToMove.add(otherT.name);
+                changed = true; // Loop again because adding a new trainee might introduce NEW volunteers to the aggregate list
+            }
+        });
+    }
 }
 
 // Apply updates
-namesToMove.forEach(name => {
+traineesToMove.forEach(name => {
     let t = groupingData.trainees.find(x => x.name === name);
     if(t) {
         t.group = targetGroup;
@@ -242,20 +252,16 @@ namesToMove.forEach(name => {
     }
 });
 
-renderGroupingBoard();
+renderGroupingList();
 triggerGroupingSync();
+closeQuickGroupModal();
 
-// Pulse animations
-setTimeout(() => {
-    namesToMove.forEach(name => {
-        const card = document.querySelector(`.dnd-draggable[data-name="${name.replace(/'/g, "\\'")}"]`);
-        if (card) {
-            card.classList.add('pulse-blue');
-            setTimeout(() => card.classList.remove('pulse-blue'), 800);
-        }
-    });
-}, 150);
+// If cascade happened, notify the user immediately
+if (traineesToMove.size > 1 && targetGroup !== "") {
+    showFlashMessage('groupingGlobalStatus', `Auto-Grouped ${traineesToMove.size} trainees together due to shared volunteers.`, 'success');
 }
+}
+
 
 function setGroupingSyncButtonState(state) {
 const btn = document.getElementById('btn-sync-manual-grouping');
@@ -327,7 +333,7 @@ if (groupingPollInterval) clearInterval(groupingPollInterval);
 
 groupingPollInterval = setInterval(async () => {
   const view = document.getElementById('view-manual-grouping');
-  if(!view || view.classList.contains('hidden') || isGroupingSyncing || (dndState.el || dndState.isDragging)) return;
+  if(!view || view.classList.contains('hidden') || isGroupingSyncing) return;
 
   try {
       const res = await apiCall('fetchManualPairingData', { sheetUrl: currentGroupingSheetUrl });
@@ -337,7 +343,7 @@ groupingPollInterval = setInterval(async () => {
           
           if (newDataStr !== oldDataStr) {
               groupingData = res.data;
-              renderGroupingBoard();
+              renderGroupingList();
           }
       }
   } catch(e) { }
@@ -358,7 +364,7 @@ try {
   overlay.classList.add('hidden');
   if (res.success) {
       groupingData = res.data;
-      renderGroupingBoard();
+      renderGroupingList();
       setGroupingSyncButtonState('saved');
   } else {
       setGroupingSyncButtonState('error');

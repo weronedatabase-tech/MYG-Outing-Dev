@@ -297,14 +297,15 @@ manualPairingData.trainees.forEach(otherT => {
     const vols = otherT.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
     if (vols.includes(cleanVolName)) {
         const otherTGroup = String(otherT.group || "").trim();
-        if (tGroup !== otherTGroup) {
+        // If both have groups assigned and they are different, block the pairing
+        if (tGroup !== "" && otherTGroup !== "" && tGroup !== otherTGroup) {
             blockingTraineeName = otherT.name;
         }
     }
 });
 
 if (blockingTraineeName) {
-    alert(`Cannot pair! ${volName} is already paired with ${blockingTraineeName} who is in a different group.`);
+    showFlashMessage('commGlobalStatus', `Cannot pair! ${volName} is already paired with ${blockingTraineeName} in a different group.`, 'error');
     return;
 }
 

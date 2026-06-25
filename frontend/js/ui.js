@@ -204,7 +204,7 @@ function updateUnpairedNotification(count) {
 // Update Comm Dashboard List
 if(window.currentSheetList) {
  window.currentSheetList.forEach((item, index) => {
-     if (item.sheetUrl === currentCommAttSheetUrl || item.sheetUrl === currentManualPairingSheetUrl || item.sheetUrl === currentGroupingSheetUrl) {
+     if (item.sheetUrl === currentCommAttSheetUrl || item.sheetUrl === currentManualPairingSheetUrl || (typeof currentGroupingSheetUrl !== 'undefined' && item.sheetUrl === currentGroupingSheetUrl)) {
          const pendingDiv = document.getElementById(`pending-badge-${index}`);
          if (pendingDiv) {
              if (count > 0) {
