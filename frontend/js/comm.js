@@ -166,7 +166,7 @@ msg = "Great news! All trainees have updated their attendance.\n\nVolunteers ple
 outingReminders[index] = msg;
 if(btnGroup) btnGroup.classList.remove('hidden');
 } else {
-container.innerHTML = '<span class="text-red-500 dark:text-red-400">Error loading stats</span>';
+container.innerHTML = `<span class="text-red-500 dark:text-red-400" title="${res.message || 'Unknown error'}">Error loading stats</span>`;
 }
 });
 }
@@ -185,6 +185,8 @@ function copyOutingMessage(index, btn) {
 const cache = outingDetailsCache[index];
 if(cache && cache.message) {
     performCopy(cache.message, btn);
+} else {
+    alert("No message configured in the template yet.");
 }
 }
 

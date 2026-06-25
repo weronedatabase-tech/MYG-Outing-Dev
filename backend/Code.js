@@ -281,10 +281,12 @@ function updateSpecificCells(spreadsheetId, form, formattedDate) {
 const ss = SpreadsheetApp.openById(spreadsheetId);
 let sheet = ss.getSheetByName("OutingInformation");
 if (!sheet) sheet = ss.getSheets()[0];
+const maxCol = sheet.getMaxColumns();
+const maxRow = sheet.getMaxRows();
 
 const setVal = (keyword, val) => {
 const found = sheet.createTextFinder(keyword).matchSubstring(true).findNext();
-if (found) found.offset(0, 1).setValue(val);
+if (found && found.getColumn() < maxCol) found.offset(0, 1).setValue(val);
 };
 
 setVal("Name of Outing", form.eventName);
@@ -295,9 +297,13 @@ const found = sheet.createTextFinder(keyword).matchSubstring(true).findNext();
 if (found) {
 let row = found.getRow() + 1;
 let col = found.getColumn();
-for(let i=0; i<4; i++) {
- sheet.getRange(row + i, col).setValue(locs[i] || "");
- sheet.getRange(row + i, col + 1).setValue(times[i] || "");
+if (col < maxCol) {
+    for(let i=0; i<4; i++) {
+        if (row + i <= maxRow) {
+            sheet.getRange(row + i, col).setValue(locs[i] || "");
+            sheet.getRange(row + i, col + 1).setValue(times[i] || "");
+        }
+    }
 }
 }
 };
@@ -408,64 +414,87 @@ const tSheet = ss.getSheetByName("Trainee Attendance");
 const vSheet = ss.getSheetByName("Volunteer Attendance");
 const infoSheet = ss.getSheetByName("OutingInformation");
 
-if(!tSheet || !vSheet) return { success: false, message: "Missing Tabs" };
+if(!tSheet || !vSheet) return { success: false, message: "Missing Tabs: 'Trainee Attendance' or 'Volunteer Attendance'" };
 
-// Extract Edit Configurations & Messages from OutingInformation
+// Extract Edit Configurations & Messages from OutingInformation safely
 let outingMessage = "";
-let outingConfig = {};
+let outingConfig = {
+    eventName: "",
+    eventDate: "",
+    meetingLocs: [],
+    meetingTimes: [],
+    dismissalLocs: [],
+    dismissalTimes: []
+};
 
 if (infoSheet) {
-const maxInfoRow = Math.min(infoSheet.getLastRow(), 25);
-if(maxInfoRow >= 2) {
-   outingMessage = infoSheet.getRange(2, 2, maxInfoRow - 1, 1).getDisplayValues()
-       .map(r => r[0])
-       .join('\n')
-       .trim();
-}
+    try {
+        const maxInfoRow = infoSheet.getLastRow();
+        const maxInfoCol = infoSheet.getMaxColumns();
 
-const getVal = (keyword) => {
-   const found = infoSheet.createTextFinder(keyword).matchSubstring(true).findNext();
-   return found ? found.offset(0, 1).getDisplayValue() : "";
-};
-const getList = (keyword, stopKeyword) => {
-   const found = infoSheet.createTextFinder(keyword).matchSubstring(true).findNext();
-   const locs = [], times = [];
-   if (found) {
-       const row = found.getRow() + 1;
-       const col = found.getColumn();
-       const maxRows = infoSheet.getLastRow() - row + 1;
-       if (maxRows > 0) {
-           const vals = infoSheet.getRange(row, col, Math.min(10, maxRows), 2).getDisplayValues();
-           for(let r of vals) {
-               const val = String(r[0]).trim();
-               if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
-               locs.push(val);
-               times.push(String(r[1]).trim());
+        if (maxInfoRow >= 2 && maxInfoCol >= 2) {
+            const numRows = Math.min(maxInfoRow, 25) - 1;
+            if (numRows > 0) {
+               outingMessage = infoSheet.getRange(2, 2, numRows, 1).getDisplayValues()
+                   .map(r => r[0])
+                   .join('\n')
+                   .trim();
+            }
+        }
+
+        const getVal = (keyword) => {
+           const found = infoSheet.createTextFinder(keyword).matchSubstring(true).findNext();
+           if (!found || found.getColumn() >= maxInfoCol) return "";
+           return found.offset(0, 1).getDisplayValue();
+        };
+
+        const getList = (keyword, stopKeyword) => {
+           const locs = [], times = [];
+           const found = infoSheet.createTextFinder(keyword).matchSubstring(true).findNext();
+           if (found) {
+               const row = found.getRow() + 1;
+               const col = found.getColumn();
+               const maxRows = infoSheet.getLastRow() - row + 1;
+               if (maxRows > 0 && col < maxInfoCol) {
+                   const numColsToRead = Math.min(2, maxInfoCol - col + 1);
+                   const vals = infoSheet.getRange(row, col, Math.min(10, maxRows), numColsToRead).getDisplayValues();
+                   for(let r of vals) {
+                       const val = String(r[0]).trim();
+                       if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
+                       locs.push(val);
+                       if (r.length > 1) {
+                           times.push(String(r[1]).trim());
+                       } else {
+                           times.push("");
+                       }
+                   }
+               }
            }
-       }
-   }
-   return { locs, times };
-};
+           return { locs, times };
+        };
 
-outingConfig.eventName = getVal("Name of Outing");
+        outingConfig.eventName = getVal("Name of Outing");
 
-const dateCell = infoSheet.createTextFinder("Date").matchSubstring(true).findNext();
-if(dateCell) {
-   const dVal = dateCell.offset(0,1).getValue();
-   if (dVal instanceof Date) {
-       outingConfig.eventDate = Utilities.formatDate(dVal, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
-   } else {
-       outingConfig.eventDate = getVal("Date"); 
-   }
-}
+        const dateCell = infoSheet.createTextFinder("Date").matchEntireCell(true).findNext() || infoSheet.createTextFinder("Date").matchSubstring(true).findNext();
+        if(dateCell && dateCell.getColumn() < maxInfoCol) {
+           const dVal = dateCell.offset(0,1).getValue();
+           if (dVal instanceof Date) {
+               outingConfig.eventDate = Utilities.formatDate(dVal, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
+           } else {
+               outingConfig.eventDate = getVal("Date"); 
+           }
+        }
 
-const meet = getList("Meeting Location", "Dismissal");
-outingConfig.meetingLocs = meet.locs;
-outingConfig.meetingTimes = meet.times;
+        const meet = getList("Meeting Location", "Dismissal");
+        outingConfig.meetingLocs = meet.locs;
+        outingConfig.meetingTimes = meet.times;
 
-const dis = getList("Dismissal Location", "Timeline");
-outingConfig.dismissalLocs = dis.locs;
-outingConfig.dismissalTimes = dis.times;
+        const dis = getList("Dismissal Location", "Timeline");
+        outingConfig.dismissalLocs = dis.locs;
+        outingConfig.dismissalTimes = dis.times;
+    } catch(extractErr) {
+        console.log("Failed to extract OutingInformation: " + extractErr.toString());
+    }
 }
 
 const stats = {};
@@ -1368,26 +1397,30 @@ let meetingLocations = [];
 let dismissalLocations = [];
 
 if (infoSheet) {
-const findAndExtract = (keyword, stopKeyword) => {
-  const found = infoSheet.createTextFinder(keyword).matchSubstring(true).findNext();
-  const locs = [];
-  if (found) {
-      const row = found.getRow() + 1;
-      const col = found.getColumn();
-      const maxRows = infoSheet.getLastRow() - row + 1;
-      if (maxRows > 0) {
-          const vals = infoSheet.getRange(row, col, Math.min(10, maxRows), 1).getValues();
-          for(let r of vals) {
-              const val = String(r[0]).trim();
-              if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
-              locs.push(val);
+try {
+    const findAndExtract = (keyword, stopKeyword) => {
+      const found = infoSheet.createTextFinder(keyword).matchSubstring(true).findNext();
+      const locs = [];
+      if (found) {
+          const row = found.getRow() + 1;
+          const col = found.getColumn();
+          const maxRows = infoSheet.getLastRow() - row + 1;
+          if (maxRows > 0 && col <= infoSheet.getMaxColumns()) {
+              const vals = infoSheet.getRange(row, col, Math.min(10, maxRows), 1).getValues();
+              for(let r of vals) {
+                  const val = String(r[0]).trim();
+                  if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
+                  locs.push(val);
+              }
           }
       }
-  }
-  return locs;
-};
-meetingLocations = findAndExtract("Meeting Location", "Dismissal");
-dismissalLocations = findAndExtract("Dismissal Location", "Timeline");
+      return locs;
+    };
+    meetingLocations = findAndExtract("Meeting Location", "Dismissal");
+    dismissalLocations = findAndExtract("Dismissal Location", "Timeline");
+} catch (e) {
+    console.log("getPersonData extraction err: " + e);
+}
 }
 
 let projects = [];
