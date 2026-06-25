@@ -8,7 +8,7 @@ document.getElementById('createStatusArea').classList.add('hidden');
 document.getElementById('settingsStatus').classList.add('hidden'); 
 
 const mainContainer = document.getElementById('mainContainer');
-if (viewId === 'comm-attendance' || viewId === 'mass-pairing') {
+if (viewId === 'comm-attendance' || viewId === 'manual-pairing' || viewId === 'manual-grouping') {
 // Ironclad Lock on root scroll to prevent scrollIntoView or programmatic focus from shifting the entire window
 document.documentElement.classList.add('overflow-hidden', 'overscroll-none');
 document.body.classList.add('overflow-hidden', 'overscroll-none');
@@ -27,15 +27,20 @@ mainContainer.classList.add('p-4', 'mt-2');
 const navDefault = document.getElementById('navDefault');
 const navContext = document.getElementById('navContext');
 const titleEl = document.getElementById('navContextTitle');
-const massPairingActions = document.getElementById('navContextActionsMassPairing');
+const manualPairingActions = document.getElementById('navContextActionsManualPairing');
+const manualGroupingActions = document.getElementById('navContextActionsManualGrouping');
 const commAttActions = document.getElementById('navContextActionsCommAtt');
 
 navDefault.classList.add('hidden');
 navContext.classList.remove('hidden');
 
-if (massPairingActions) {
-    massPairingActions.classList.add('hidden');
-    massPairingActions.classList.remove('flex');
+if (manualPairingActions) {
+    manualPairingActions.classList.add('hidden');
+    manualPairingActions.classList.remove('flex');
+}
+if (manualGroupingActions) {
+    manualGroupingActions.classList.add('hidden');
+    manualGroupingActions.classList.remove('flex');
 }
 if (commAttActions) {
     commAttActions.classList.add('hidden');
@@ -44,30 +49,37 @@ if (commAttActions) {
 
 if (viewId === 'comm') {
 titleEl.innerText = 'Comm Dashboard';
-titleEl.className = 'text-xs md:text-sm font-extrabold text-blue-600 dark:text-blue-400 leading-none mb-0.5 truncate';
+titleEl.className = 'text-xs md:text-sm font-extrabold text-blue-600 dark:text-blue-400 leading-tight break-words whitespace-normal';
 } else if (viewId === 'actual-attendance') {
 titleEl.innerText = 'Select Event for Tracker';
-titleEl.className = 'text-xs md:text-sm font-extrabold text-teal-600 dark:text-teal-400 leading-none mb-0.5 truncate';
+titleEl.className = 'text-xs md:text-sm font-extrabold text-teal-600 dark:text-teal-400 leading-tight break-words whitespace-normal';
 } else if (viewId === 'comm-attendance') {
 // Title is updated dynamically in loadCommAttendanceData
-titleEl.className = 'text-xs md:text-sm font-extrabold text-teal-600 dark:text-teal-400 leading-none mb-0.5 truncate';
+titleEl.className = 'text-xs md:text-sm font-extrabold text-teal-600 dark:text-teal-400 leading-tight break-words whitespace-normal';
 if (commAttActions) {
     commAttActions.classList.remove('hidden');
     commAttActions.classList.add('flex');
 }
-} else if (viewId === 'mass-pairing') {
-// Title is updated dynamically in loadMassPairingData
-titleEl.className = 'text-xs md:text-sm font-extrabold text-blue-600 dark:text-blue-400 leading-none mb-0.5 truncate';
-if (massPairingActions) {
-    massPairingActions.classList.remove('hidden');
-    massPairingActions.classList.add('flex');
+} else if (viewId === 'manual-pairing') {
+// Title is updated dynamically in loadManualPairingData
+titleEl.className = 'text-xs md:text-sm font-extrabold text-blue-600 dark:text-blue-400 leading-tight break-words whitespace-normal';
+if (manualPairingActions) {
+    manualPairingActions.classList.remove('hidden');
+    manualPairingActions.classList.add('flex');
+}
+} else if (viewId === 'manual-grouping') {
+// Title is updated dynamically in loadGroupingData
+titleEl.className = 'text-xs md:text-sm font-extrabold text-orange-600 dark:text-orange-400 leading-tight break-words whitespace-normal';
+if (manualGroupingActions) {
+    manualGroupingActions.classList.remove('hidden');
+    manualGroupingActions.classList.add('flex');
 }
 } else if (viewId === 'volunteer') {
 titleEl.innerText = 'Attendance Update';
-titleEl.className = 'text-xs md:text-sm font-extrabold text-green-600 dark:text-green-400 leading-none mb-0.5 truncate';
+titleEl.className = 'text-xs md:text-sm font-extrabold text-green-600 dark:text-green-400 leading-tight break-words whitespace-normal';
 } else if (viewId === 'settings') {
 titleEl.innerText = 'Field Configuration';
-titleEl.className = 'text-xs md:text-sm font-extrabold text-purple-600 dark:text-purple-400 leading-none mb-0.5 truncate';
+titleEl.className = 'text-xs md:text-sm font-extrabold text-purple-600 dark:text-purple-400 leading-tight break-words whitespace-normal';
 } else {
 // Landing page shows default logo
 navDefault.classList.remove('hidden');
@@ -81,15 +93,15 @@ if (viewId === 'settings') loadSettings();
 window.handleNavBack = function() {
 if (currentActiveView === 'comm-attendance') {
 showView('actual-attendance');
-} else if (currentActiveView === 'mass-pairing') {
-if (typeof isFilteredMassPairingMode !== 'undefined' && isFilteredMassPairingMode) {
-   isFilteredMassPairingMode = false;
+} else if (currentActiveView === 'manual-pairing') {
+if (typeof isFilteredManualPairingMode !== 'undefined' && isFilteredManualPairingMode) {
+   isFilteredManualPairingMode = false;
    
-   let targetView = window.filteredMassPairingSourceView || 'comm';
+   let targetView = window.filteredManualPairingSourceView || 'comm';
    
-   if (targetView === 'mass-pairing') {
-       // Re-initialize standard mass pairing to effectively exit filtered mode safely
-       openMassPairing();
+   if (targetView === 'manual-pairing') {
+       // Re-initialize standard manual pairing to effectively exit filtered mode safely
+       openManualPairing();
    } else if (targetView === 'comm-attendance') {
        // Restore Live Tracker title securely before showing
        const selector = document.getElementById('actualSheetSelector');
@@ -103,6 +115,8 @@ if (typeof isFilteredMassPairingMode !== 'undefined' && isFilteredMassPairingMod
 } else {
    showView('comm');
 }
+} else if (currentActiveView === 'manual-grouping') {
+showView('comm');
 } else {
 showView('landing');
 }
@@ -190,11 +204,11 @@ function updateUnpairedNotification(count) {
 // Update Comm Dashboard List
 if(window.currentSheetList) {
  window.currentSheetList.forEach((item, index) => {
-     if (item.sheetUrl === currentCommAttSheetUrl || item.sheetUrl === currentMassPairingSheetUrl) {
+     if (item.sheetUrl === currentCommAttSheetUrl || item.sheetUrl === currentManualPairingSheetUrl || item.sheetUrl === currentGroupingSheetUrl) {
          const pendingDiv = document.getElementById(`pending-badge-${index}`);
          if (pendingDiv) {
              if (count > 0) {
-                 pendingDiv.innerHTML = `<button onclick="openFilteredMassPairing('${item.sheetUrl}')" class="bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800 animate-pulse shadow-sm flex items-center justify-center w-fit pointer-events-auto cursor-pointer">${count} Unpaired</button>`;
+                 pendingDiv.innerHTML = `<button onclick="openFilteredManualPairing('${item.sheetUrl}')" class="bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800 animate-pulse shadow-sm flex items-center justify-center w-fit pointer-events-auto cursor-pointer">${count} Unpaired</button>`;
                  pendingDiv.classList.remove('hidden');
                  pendingDiv.classList.add('flex');
              } else {
@@ -220,16 +234,16 @@ if (liveBadgeBtn && liveBadgeCount) {
  }
 }
 
-// Update Mass Pairing View
-const massBadge = document.getElementById('massPairingUnpairedCount');
-if (massBadge) {
+// Update Manual Pairing View
+const manualBadge = document.getElementById('manualPairingUnpairedCount');
+if (manualBadge) {
  if (count > 0) {
-     massBadge.innerText = `${count} Unpaired`;
-     massBadge.classList.remove('hidden');
-     massBadge.classList.add('flex');
+     manualBadge.innerText = `${count} Unpaired`;
+     manualBadge.classList.remove('hidden');
+     manualBadge.classList.add('flex');
  } else {
-     massBadge.classList.add('hidden');
-     massBadge.classList.remove('flex');
+     manualBadge.classList.add('hidden');
+     manualBadge.classList.remove('flex');
  }
 }
 }

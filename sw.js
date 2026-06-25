@@ -1,4 +1,4 @@
-const CACHE_NAME = 'minds-myg-cache-v53';
+const CACHE_NAME = 'minds-myg-cache-v54';
 const urlsToCache = [
 './',
 './index.html',
@@ -7,9 +7,11 @@ const urlsToCache = [
 './backend/config.js',
 './frontend/js/state.js',
 './frontend/js/api.js',
+'./frontend/js/dnd.js',
 './frontend/js/ui.js',
 './frontend/js/auth.js',
 './frontend/js/pairing.js',
+'./frontend/js/grouping.js',
 './frontend/js/comm.js',
 './frontend/js/volunteer.js',
 './frontend/js/settings.js',

@@ -28,10 +28,12 @@ loadingId = 'commSheetSpinner';
 // Disable action buttons while loading
 document.getElementById('scrubBtn').disabled = true;
 document.getElementById('scrubBtn').classList.add('opacity-50', 'cursor-not-allowed');
-document.getElementById('massPairBtn').disabled = true;
-document.getElementById('massPairBtn').classList.add('opacity-50', 'cursor-not-allowed');
+document.getElementById('manualPairBtn').disabled = true;
+document.getElementById('manualPairBtn').classList.add('opacity-50', 'cursor-not-allowed');
 document.getElementById('groupBtn').disabled = true;
 document.getElementById('groupBtn').classList.add('opacity-50', 'cursor-not-allowed');
+document.getElementById('manualGroupBtn').disabled = true;
+document.getElementById('manualGroupBtn').classList.add('opacity-50', 'cursor-not-allowed');
 
 } else if (viewId === 'actual-attendance') {
 selectorId = 'actualSheetSelector'; 
@@ -63,10 +65,12 @@ if(res.data.length > 0) {
     // Re-enable action buttons now that we have data
     document.getElementById('scrubBtn').disabled = false;
     document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-    document.getElementById('massPairBtn').disabled = false;
-    document.getElementById('massPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+    document.getElementById('manualPairBtn').disabled = false;
+    document.getElementById('manualPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
     document.getElementById('groupBtn').disabled = false;
     document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+    document.getElementById('manualGroupBtn').disabled = false;
+    document.getElementById('manualGroupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
 
     let allCards = '';
     res.data.forEach((item, index) => {

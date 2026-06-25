@@ -1,215 +1,57 @@
-let currentMassPairingSheetUrl = null;
-let massPairingData = { trainees: [], volunteers: [], priVolMap: new Map() };
+let currentManualPairingSheetUrl = null;
+let manualPairingData = { trainees: [], volunteers: [], priVolMap: new Map() };
 let pendingPairingUpdates = [];
-let isMassPairingSyncing = false;
-let massPairingSyncTimeout = null;
-let massPairingPollInterval = null;
+let isManualPairingSyncing = false;
+let manualPairingSyncTimeout = null;
+let manualPairingPollInterval = null;
 
-let isFilteredMassPairingMode = false;
-
-// Expose DND state globally
-let dndState = {
-isDragging: false,
-el: null,
-clone: null,
-startX: 0,
-startY: 0,
-nameNode: null,
-rectWidth: 0,
-rectHeight: 0
-};
+let isFilteredManualPairingMode = false;
 
 // ==========================================
-// DRAG & DROP ENGINE (Mouse + Touch)
-// ==========================================
-if (!window.dndInitialized) {
-window.dndInitialized = true;
-
-// --- TOUCH EVENTS (MOBILE) ---
-document.addEventListener('touchstart', (e) => {
-  if(e.touches.length > 1) return;
-  startDrag(e, e.touches[0].clientX, e.touches[0].clientY, true);
-}, {passive: false});
-
-document.addEventListener('touchmove', (e) => {
-  moveDrag(e, e.touches[0].clientX, e.touches[0].clientY, true);
-}, {passive: false});
-
-document.addEventListener('touchend', (e) => {
-  const touch = e.changedTouches ? e.changedTouches[0] : e.touches[0];
-  endDrag(e, touch.clientX, touch.clientY);
-});
-
-document.addEventListener('touchcancel', (e) => {
-  const touch = e.changedTouches ? e.changedTouches[0] : e.touches[0];
-  endDrag(e, touch.clientX, touch.clientY);
-});
-
-// --- MOUSE EVENTS (DESKTOP) ---
-document.addEventListener('mousedown', (e) => {
-  if (e.button !== 0) return; 
-  startDrag(e, e.clientX, e.clientY, false);
-});
-
-document.addEventListener('mousemove', (e) => {
-  moveDrag(e, e.clientX, e.clientY, false);
-});
-
-document.addEventListener('mouseup', (e) => {
-  endDrag(e, e.clientX, e.clientY);
-});
-
-// --- CORE LOGIC ---
-function startDrag(e, clientX, clientY, isTouch) {
-  if(e.target.closest('.remove-x') || e.target.closest('button') || e.target.closest('input') || e.target.closest('select')) return;
-
-  let draggable = e.target.closest('.dnd-draggable');
-  if(!draggable) return;
-
-  const pairingContainer = document.getElementById('view-mass-pairing');
-  if(!pairingContainer || pairingContainer.classList.contains('hidden')) return;
-  
-  dndState.el = draggable;
-  dndState.nameNode = dndState.el.querySelector('.main-name-pill') || dndState.el;
-
-  const rect = dndState.nameNode.getBoundingClientRect();
-  dndState.rectWidth = rect.width;
-  dndState.rectHeight = rect.height;
-
-  dndState.startX = clientX;
-  dndState.startY = clientY;
-  dndState.isDragging = false;
-}
-
-function moveDrag(e, clientX, clientY, isTouch) {
-  if (!dndState.el) return;
-
-  const deltaX = Math.abs(clientX - dndState.startX);
-  const deltaY = Math.abs(clientY - dndState.startY);
-
-  // If user hasn't triggered drag, check direction of movement
-  if (!dndState.isDragging) {
-      const threshold = 8;
-
-      if (deltaX > threshold && deltaX > deltaY) {
-          dndState.isDragging = true;
-          
-          if(isTouch && navigator.vibrate) navigator.vibrate(20);
-          
-          dndState.el.classList.add('locked-for-drag');
-          
-          // Generate visually identical clone
-          dndState.clone = dndState.nameNode.cloneNode(true);
-          dndState.clone.classList.add('dragging-clone');
-          
-          // Force size to exact bounding box constraints so centering works perfectly
-          dndState.clone.style.width = dndState.rectWidth + 'px';
-          dndState.clone.style.height = dndState.rectHeight + 'px';
-          dndState.clone.style.margin = '0px';
-          
-          document.body.appendChild(dndState.clone);
-      } else if (deltaY > 8) {
-          dndState.el = null;
-          return;
-      }
-  }
-
-  if (dndState.isDragging && dndState.clone) {
-      if(e.cancelable) e.preventDefault(); 
-
-      updateClonePosition(clientX, clientY);
-
-      // Highlight valid drop zones
-      const elAtPoint = document.elementFromPoint(clientX, clientY);
-      const activeDz = elAtPoint ? elAtPoint.closest('.dnd-dropzone') : null;
-      document.querySelectorAll('.dnd-dropzone').forEach(dz => {
-          if (dz === activeDz && dz.dataset.role !== dndState.el.dataset.role) {
-              dz.classList.add('border-primary', 'bg-blue-50', 'dark:bg-blue-900/30', 'ring-1', 'ring-primary');
-          } else {
-              dz.classList.remove('border-primary', 'bg-blue-50', 'dark:bg-blue-900/30', 'ring-1', 'ring-primary');
-          }
-      });
-  }
-}
-
-function endDrag(e, clientX, clientY) {
-  if(dndState.el) dndState.el.classList.remove('locked-for-drag');
-
-  if (dndState.isDragging && dndState.clone) {
-      dndState.clone.remove(); 
-      dndState.clone = null; 
-      dndState.isDragging = false;
-
-      document.querySelectorAll('.dnd-dropzone').forEach(dz => dz.classList.remove('border-primary', 'bg-blue-50', 'dark:bg-blue-900/30', 'ring-1', 'ring-primary'));
-
-      const elAtPoint = document.elementFromPoint(clientX, clientY);
-      const dropZone = elAtPoint ? elAtPoint.closest('.dnd-dropzone') : null;
-      
-      if(dropZone && dndState.el && dropZone.dataset.role !== dndState.el.dataset.role) {
-          const sourceName = dndState.el.dataset.name;
-          const sourceRole = dndState.el.dataset.role;
-          const targetName = dropZone.dataset.name;
-          if(sourceName && targetName) handleDndDrop(sourceName, sourceRole, targetName);
-      }
-  }
-  dndState.el = null;
-  dndState.nameNode = null;
-}
-
-function updateClonePosition(x, y) {
-  if(dndState.clone) {
-      const centerX = x - (dndState.rectWidth / 2);
-      const centerY = y - (dndState.rectHeight / 2);
-      dndState.clone.style.transform = `translate3d(${centerX}px, ${centerY}px, 0px) scale(1.05)`;
-  }
-}
-}
-
-// ==========================================
-// MASS PAIRING LOGIC
+// MANUAL PAIRING LOGIC
 // ==========================================
 
-function openMassPairing() {
+function openManualPairing() {
 const selector = document.getElementById('commSheetSelector');
 const url = selector.value;
 if(!url || url.includes("Select") || url.includes("Loading") || url.includes("Error")) return alert("Select an event first");
 
-isFilteredMassPairingMode = false;
-currentMassPairingSheetUrl = url;
-document.getElementById('navContextTitle').innerText = "Mass Pair: " + selector.options[selector.selectedIndex].text;
+isFilteredManualPairingMode = false;
+currentManualPairingSheetUrl = url;
+document.getElementById('navContextTitle').innerText = "Manual Pair: " + selector.options[selector.selectedIndex].text;
 
-showView('mass-pairing');
-loadMassPairingData();
+showView('manual-pairing');
+loadManualPairingData();
 }
 
-function openFilteredMassPairing(overrideUrl = null) {
-const url = overrideUrl || currentCommAttSheetUrl || currentMassPairingSheetUrl;
+function openFilteredManualPairing(overrideUrl = null) {
+const url = overrideUrl || currentCommAttSheetUrl || currentManualPairingSheetUrl;
 if(!url) return;
 
 // Capture the exact view we are coming from BEFORE we switch
-window.filteredMassPairingSourceView = window.currentActiveView;
+window.filteredManualPairingSourceView = window.currentActiveView;
 
-isFilteredMassPairingMode = true;
-currentMassPairingSheetUrl = url;
-document.getElementById('navContextTitle').innerText = "Filtered Mass Pair";
+isFilteredManualPairingMode = true;
+currentManualPairingSheetUrl = url;
+document.getElementById('navContextTitle').innerText = "Filtered Manual Pair";
 
-showView('mass-pairing');
-loadMassPairingData();
+showView('manual-pairing');
+loadManualPairingData();
 }
 
-function loadMassPairingData() {
-const overlay = document.getElementById('massPairingLoadingOverlay');
+function loadManualPairingData() {
+const overlay = document.getElementById('manualPairingLoadingOverlay');
 overlay.classList.remove('hidden');
 
-apiCall('fetchMassPairingData', { sheetUrl: currentMassPairingSheetUrl }).then(res => {
+apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl }).then(res => {
   overlay.classList.add('hidden');
   if (res.success) {
-      massPairingData = res.data;
-      renderMassPairings();
-      startMassPairingPolling();
+      manualPairingData = res.data;
+      renderManualPairings();
+      startManualPairingPolling();
   } else {
       alert("Error: " + res.message);
-      if (isFilteredMassPairingMode) {
+      if (isFilteredManualPairingMode) {
           showView('comm-attendance');
       } else {
           showView('comm');
@@ -219,15 +61,12 @@ apiCall('fetchMassPairingData', { sheetUrl: currentMassPairingSheetUrl }).then(r
 }
 
 function filterPairingPools() {
-  renderMassPairings();
+  renderManualPairings();
 }
 
-function triggerMassPairingPulse(sourceName, targetName, isPaired) {
+function triggerManualPairingPulse(sourceName, targetName, isPaired) {
  setTimeout(() => {
      requestAnimationFrame(() => {
-         const cleanSource = sourceName.replace(/[^a-zA-Z0-9]/g, '');
-         const cleanTarget = targetName.replace(/[^a-zA-Z0-9]/g, '');
-         
          // Try to find the exact dropzone elements based on their data attributes
          const sourceCard = document.querySelector(`.dnd-dropzone[data-name="${sourceName.replace(/'/g, "\\'")}"]`);
          const targetCard = document.querySelector(`.dnd-dropzone[data-name="${targetName.replace(/'/g, "\\'")}"]`);
@@ -261,7 +100,7 @@ function triggerMassPairingPulse(sourceName, targetName, isPaired) {
  }, 150);
 }
 
-function generatePillHtml(pillName, traineeName, volName, isTraineeGoneHome = false) {
+function generatePairingPillHtml(pillName, traineeName, volName, isTraineeGoneHome = false) {
 const goneHomeBadge = isTraineeGoneHome ? `<i class="fa-solid fa-house-user text-blue-500 ml-1" title="Gone Home"></i>` : '';
 const removeBtn = isTraineeGoneHome ? '' : `<div class="remove-x flex items-center justify-center font-bold text-[10px] bg-transparent text-red-500 shadow-none border-none hover:bg-transparent hover:text-red-700 hover:scale-125 top-0 right-1" onclick="unpairTrainee('${traineeName.replace(/'/g, "\\'")}', '${volName.replace(/'/g, "\\'")}')">✕</div>`;
 
@@ -273,7 +112,7 @@ ${removeBtn}
 </div>`;
 }
 
-function generateCardHtml(item, pairedNames) {
+function generatePairingCardHtml(item, pairedNames) {
 const isVol = item.role === 'VOLUNTEER';
 let pairedPills = '';
 
@@ -283,13 +122,13 @@ pairedNames.forEach(pairedName => {
   
   let isTraineeGoneHome = false;
   if (isVol) {
-      const traineeObj = (massPairingData.trainees || []).find(t => t.name === tName);
+      const traineeObj = (manualPairingData.trainees || []).find(t => t.name === tName);
       if (traineeObj && traineeObj.isGoneHome) {
           isTraineeGoneHome = true;
       }
   }
 
-  pairedPills += generatePillHtml(pairedName, tName, vName, isTraineeGoneHome);
+  pairedPills += generatePairingPillHtml(pairedName, tName, vName, isTraineeGoneHome);
 });
 
 const safeName = item.name.replace(/'/g, "\\'");
@@ -340,14 +179,14 @@ return `
 `;
 }
 
-function renderMassPairings() {
+function renderManualPairings() {
 // STRICT FILTERING: Exclude any trainees that do not have explicitly 'Y' or 'y' in the attending column
-let trainees = (massPairingData.trainees || []).filter(t => {
+let trainees = (manualPairingData.trainees || []).filter(t => {
   const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
   return att === 'y';
 });
 
-let vols = [...(massPairingData.volunteers || [])]; 
+let vols = [...(manualPairingData.volunteers || [])]; 
 
 // Fuzzy Search logic
 const volSearchQuery = document.getElementById('pairingVolSearch')?.value.toLowerCase().trim() || "";
@@ -384,7 +223,7 @@ trainees.sort(sortFn);
 
 // Calculate unpaired trainees
 let unpairedCount = 0;
-(massPairingData.trainees || []).forEach(t => {
+(manualPairingData.trainees || []).forEach(t => {
   if (!t.isGoneHome && (!t.volPaired || t.volPaired.trim() === '')) {
       unpairedCount++;
   }
@@ -393,7 +232,7 @@ updateUnpairedNotification(unpairedCount);
 
 // Build Volunteer Pairings Map
 const volPairingsMap = new Map();
-(massPairingData.trainees || []).forEach(t => {
+(manualPairingData.trainees || []).forEach(t => {
   if (t.volPaired) {
       const pairedVols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
       pairedVols.forEach(v => {
@@ -406,24 +245,24 @@ const volPairingsMap = new Map();
 
 // If filtered mode is active, exclusively show Unpaired Trainees in the Target list
 // Enforce that Gone Home trainees never appear in the Target list during Filtered Mode
-if (isFilteredMassPairingMode) {
+if (isFilteredManualPairingMode) {
   trainees = trainees.filter(t => !t.isGoneHome && (!t.volPaired || t.volPaired.trim() === ''));
 }
 
 let sourceHtml = '';
 vols.forEach(item => { 
   const myTrainees = volPairingsMap.get(item.name.toLowerCase()) || [];
-  sourceHtml += generateCardHtml(item, myTrainees); 
+  sourceHtml += generatePairingCardHtml(item, myTrainees); 
 });
 document.getElementById('dnd-source-pool').innerHTML = sourceHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active volunteers matching search.</p>';
 
 let targetHtml = '';
 trainees.forEach(item => { 
   const myVols = item.volPaired ? item.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
-  targetHtml += generateCardHtml(item, myVols); 
+  targetHtml += generatePairingCardHtml(item, myVols); 
 });
 
-if (isFilteredMassPairingMode && targetHtml === '') {
+if (isFilteredManualPairingMode && targetHtml === '') {
   document.getElementById('dnd-target-list').innerHTML = '<p class="text-[10px] text-green-500 font-bold p-2 text-center mt-2">All trainees are paired!</p>';
 } else {
   document.getElementById('dnd-target-list').innerHTML = targetHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active trainees matching search.</p>';
@@ -434,25 +273,44 @@ document.querySelectorAll('.dnd-draggable').forEach(el => {
   uiBindLongPress(el, () => {
       const name = el.getAttribute('data-name');
       const arr = el.getAttribute('data-source-array');
-      const p = (massPairingData[arr] || []).find(x => x.name.replace(/'/g, "\\'") === name);
+      const p = (manualPairingData[arr] || []).find(x => x.name.replace(/'/g, "\\'") === name);
       if (p) showPersonInfo(p);
   });
 });
 }
 
-function handleDndDrop(sourceName, sourceRole, targetName) {
+function handleManualPairingDrop(sourceName, sourceRole, targetName) {
 let volName = sourceRole === 'VOLUNTEER' ? sourceName : targetName;
 let traineeName = sourceRole === 'TRAINEE' ? sourceName : targetName;
 
-let trainee = massPairingData.trainees.find(t => t.name === traineeName);
+let trainee = manualPairingData.trainees.find(t => t.name === traineeName);
 if (!trainee || trainee.isGoneHome) return;
+
+// Constraint Check: Volunteer cannot be paired to multiple trainees in DIFFERENT groups.
+const tGroup = String(trainee.group || "").trim();
+const cleanVolName = volName.toLowerCase();
+let blockingTraineeName = null;
+
+// Find all trainees the volunteer is CURRENTLY paired to (or pending to be paired to)
+manualPairingData.trainees.forEach(otherT => {
+    if (otherT.name === traineeName || !otherT.volPaired) return;
+    const vols = otherT.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+    if (vols.includes(cleanVolName)) {
+        const otherTGroup = String(otherT.group || "").trim();
+        if (tGroup !== otherTGroup) {
+            blockingTraineeName = otherT.name;
+        }
+    }
+});
+
+if (blockingTraineeName) {
+    alert(`Cannot pair! ${volName} is already paired with ${blockingTraineeName} who is in a different group.`);
+    return;
+}
 
 // Check if already paired
 const currentVols = trainee.volPaired ? trainee.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
-
-// Fuzzy matching for exact names
-const cleanVol = volName.toLowerCase();
-const exists = currentVols.some(v => v.toLowerCase() === cleanVol);
+const exists = currentVols.some(v => v.toLowerCase() === cleanVolName);
 
 if (!exists) {
   currentVols.push(volName);
@@ -466,16 +324,16 @@ if (!exists) {
       pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
   }
 
-  renderMassPairings(); 
-  triggerMassPairingPulse(sourceName, targetName, true);
-  triggerMassPairingSync();
+  renderManualPairings(); 
+  triggerManualPairingPulse(sourceName, targetName, true);
+  triggerManualPairingSync();
 } else {
   showFlashMessage('commGlobalStatus', "Already paired!", 'error');
 }
 }
 
 function unpairTrainee(traineeName, volName) {
-let trainee = massPairingData.trainees.find(t => t.name === traineeName);
+let trainee = manualPairingData.trainees.find(t => t.name === traineeName);
 if (!trainee || trainee.isGoneHome) return;
 
 let currentVols = trainee.volPaired ? trainee.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
@@ -492,13 +350,13 @@ if (updateIndex > -1) {
   pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
 }
 
-renderMassPairings(); 
-triggerMassPairingPulse(traineeName, volName, false);
-triggerMassPairingSync();
+renderManualPairings(); 
+triggerManualPairingPulse(traineeName, volName, false);
+triggerManualPairingSync();
 }
 
-function setMassPairingSyncButtonState(state) {
-const btn = document.getElementById('btn-sync-mass-pairing');
+function setManualPairingSyncButtonState(state) {
+const btn = document.getElementById('btn-sync-manual-pairing');
 if(!btn) return;
 const textSpan = btn.querySelector('.btn-text'); const spinner = btn.querySelector('.btn-spinner');
 
@@ -525,88 +383,88 @@ if (state === 'loading' || state === 'saving') {
 }
 }
 
-function triggerMassPairingSync() {
-setMassPairingSyncButtonState('saving');
-if (massPairingSyncTimeout) clearTimeout(massPairingSyncTimeout);
-massPairingSyncTimeout = setTimeout(() => {
-  executeMassPairingSync();
+function triggerManualPairingSync() {
+setManualPairingSyncButtonState('saving');
+if (manualPairingSyncTimeout) clearTimeout(manualPairingSyncTimeout);
+manualPairingSyncTimeout = setTimeout(() => {
+  executeManualPairingSync();
 }, 800); 
 }
 
-async function executeMassPairingSync() {
+async function executeManualPairingSync() {
 if (pendingPairingUpdates.length === 0) return;
 
-isMassPairingSyncing = true;
-setMassPairingSyncButtonState('saving');
+isManualPairingSyncing = true;
+setManualPairingSyncButtonState('saving');
 
 const updatesToSync = [...pendingPairingUpdates];
 pendingPairingUpdates = [];
 
 try {
-  const res = await apiCall('syncMassPairingUpdates', { sheetUrl: currentMassPairingSheetUrl, updates: updatesToSync });
+  const res = await apiCall('syncManualPairingUpdates', { sheetUrl: currentManualPairingSheetUrl, updates: updatesToSync });
 
   if (res.success) {
-      setMassPairingSyncButtonState('saved');
+      setManualPairingSyncButtonState('saved');
   } else {
       throw new Error(res.message);
   }
 } catch(e) {
   console.error(e);
-  setMassPairingSyncButtonState('error');
+  setManualPairingSyncButtonState('error');
   // Push back failed updates
   updatesToSync.forEach(u => {
       const idx = pendingPairingUpdates.findIndex(p => p.traineeName === u.traineeName);
       if (idx === -1) pendingPairingUpdates.push(u);
   });
 } finally {
-  isMassPairingSyncing = false;
+  isManualPairingSyncing = false;
 }
 }
 
-function startMassPairingPolling() {
-if (massPairingPollInterval) clearInterval(massPairingPollInterval);
+function startManualPairingPolling() {
+if (manualPairingPollInterval) clearInterval(manualPairingPollInterval);
 
-massPairingPollInterval = setInterval(async () => {
-  const view = document.getElementById('view-mass-pairing');
-  if(!view || view.classList.contains('hidden') || isMassPairingSyncing || (dndState.el || dndState.isDragging)) return;
+manualPairingPollInterval = setInterval(async () => {
+  const view = document.getElementById('view-manual-pairing');
+  if(!view || view.classList.contains('hidden') || isManualPairingSyncing || (dndState.el || dndState.isDragging)) return;
 
   try {
-      const res = await apiCall('fetchMassPairingData', { sheetUrl: currentMassPairingSheetUrl });
-      if(res.success && !isMassPairingSyncing && pendingPairingUpdates.length === 0) {
+      const res = await apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl });
+      if(res.success && !isManualPairingSyncing && pendingPairingUpdates.length === 0) {
           const newDataStr = JSON.stringify(res.data);
-          const oldDataStr = JSON.stringify(massPairingData);
+          const oldDataStr = JSON.stringify(manualPairingData);
           
           if (newDataStr !== oldDataStr) {
-              massPairingData = res.data;
-              renderMassPairings();
+              manualPairingData = res.data;
+              renderManualPairings();
           }
       }
   } catch(e) { }
 }, 8000);
 }
 
-async function manualSyncMassPairing() {
+async function manualSyncManualPairing() {
 if (pendingPairingUpdates.length > 0) {
-  await executeMassPairingSync();
+  await executeManualPairingSync();
 }
 
-setMassPairingSyncButtonState('loading');
-const overlay = document.getElementById('massPairingLoadingOverlay');
+setManualPairingSyncButtonState('loading');
+const overlay = document.getElementById('manualPairingLoadingOverlay');
 overlay.classList.remove('hidden');
 
 try {
-  const res = await apiCall('fetchMassPairingData', { sheetUrl: currentMassPairingSheetUrl });
+  const res = await apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl });
   overlay.classList.add('hidden');
   if (res.success) {
-      massPairingData = res.data;
-      renderMassPairings();
-      setMassPairingSyncButtonState('saved');
+      manualPairingData = res.data;
+      renderManualPairings();
+      setManualPairingSyncButtonState('saved');
   } else {
-      setMassPairingSyncButtonState('error');
+      setManualPairingSyncButtonState('error');
   }
 } catch (e) {
   overlay.classList.add('hidden');
-  setMassPairingSyncButtonState('error');
+  setManualPairingSyncButtonState('error');
 }
 }
 
@@ -641,7 +499,7 @@ const sortFn = (a, b) => {
 // Build target list
 if (sourceRole === 'VOLUNTEER') {
   // Search Trainees (Strictly 'Y' and not gone home)
-  quickPairContext.targetList = (massPairingData.trainees || [])
+  quickPairContext.targetList = (manualPairingData.trainees || [])
       .filter(t => {
           const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
           return att === 'y' && !t.isGoneHome;
@@ -650,7 +508,7 @@ if (sourceRole === 'VOLUNTEER') {
       .map(t => t.name);
 } else {
   // Search Volunteers
-  quickPairContext.targetList = (massPairingData.volunteers || [])
+  quickPairContext.targetList = (manualPairingData.volunteers || [])
       .sort(sortFn)
       .map(v => v.name);
 }
@@ -682,7 +540,7 @@ matches.forEach(name => {
   const traineeName = quickPairContext.sourceRole === 'TRAINEE' ? quickPairContext.sourceName : name;
   const volName = quickPairContext.sourceRole === 'VOLUNTEER' ? quickPairContext.sourceName : name;
   
-  const trainee = massPairingData.trainees.find(t => t.name === traineeName);
+  const trainee = manualPairingData.trainees.find(t => t.name === traineeName);
   if (trainee && trainee.volPaired) {
       const vols = trainee.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
       isPaired = vols.some(v => v.toLowerCase() === volName.toLowerCase());
@@ -695,7 +553,7 @@ matches.forEach(name => {
   
   if (!isPaired) {
       li.onclick = () => {
-          handleDndDrop(quickPairContext.sourceName, quickPairContext.sourceRole, name);
+          handleManualPairingDrop(quickPairContext.sourceName, quickPairContext.sourceRole, name);
           closeQuickPairModal();
       };
   }

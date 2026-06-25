@@ -31,9 +31,11 @@ colors: {
 <script src="backend/config.js"></script>
 <script src="frontend/js/state.js"></script>
 <script src="frontend/js/api.js"></script>
+<script src="frontend/js/dnd.js"></script>
 <script src="frontend/js/ui.js"></script>
 <script src="frontend/js/auth.js"></script>
 <script src="frontend/js/pairing.js"></script>
+<script src="frontend/js/grouping.js"></script>
 <script src="frontend/js/comm.js"></script>
 <script src="frontend/js/volunteer.js"></script>
 <script src="frontend/js/settings.js"></script>
@@ -54,7 +56,7 @@ colors: {
      <div class="bg-primary p-1.5 rounded-lg shadow-lg shadow-blue-500/20 flex items-center justify-center">
          <i class="fa-solid fa-calendar-days text-white text-lg"></i>
      </div>
-     <div class="flex flex-col justify-center hidden sm:flex">
+     <div class="flex flex-col justify-center">
          <h1 class="text-base font-extrabold text-gray-900 dark:text-white leading-none mb-0.5">MINDS MYG</h1>
          <p class="text-[10px] text-gray-500 dark:text-gray-400 leading-none">Outings Organiser</p>
      </div>
@@ -66,20 +68,24 @@ colors: {
          <i class="fa-solid fa-arrow-left text-xs"></i>
      </button>
      <div class="flex flex-col justify-center min-w-0 flex-1">
-         <h1 id="navContextTitle" class="text-xs md:text-sm font-extrabold text-gray-900 dark:text-white leading-none mb-0.5 truncate">Context</h1>
-         <p class="text-[9px] text-gray-500 dark:text-gray-400 leading-none truncate hidden sm:block">MINDS MYG</p>
+         <h1 id="navContextTitle" class="text-xs md:text-sm font-extrabold text-gray-900 dark:text-white leading-tight break-words whitespace-normal">Context</h1>
      </div>
  </div>
 
- <!-- Dynamic Actions for Mass Pairing View -->
- <div id="navContextActionsMassPairing" class="hidden items-center gap-1 shrink-0">
-     <button id="massPairingUnpairedCount" onclick="openFilteredMassPairing()" class="text-[9px] md:text-[10px] font-bold text-red-700 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400 px-1.5 py-1 rounded border border-red-200 dark:border-red-800 hidden uppercase tracking-wider animate-pulse shadow-sm transition-colors cursor-pointer shrink-0">0 Unpaired</button>
-     <button id="btn-sync-mass-pairing" onclick="manualSyncMassPairing()" class="text-[10px] md:text-xs px-1.5 py-1 rounded font-bold transition flex items-center border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 shadow-sm focus:outline-none shrink-0"><span class="btn-text">Saved</span><i class="fa-solid fa-circle-notch fa-spin btn-spinner hidden ml-1"></i></button>
+ <!-- Dynamic Actions for Manual Pairing View -->
+ <div id="navContextActionsManualPairing" class="hidden items-center gap-1 shrink-0">
+     <button id="manualPairingUnpairedCount" onclick="openFilteredManualPairing()" class="text-[9px] md:text-[10px] font-bold text-red-700 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-400 px-1.5 py-1 rounded border border-red-200 dark:border-red-800 hidden uppercase tracking-wider animate-pulse shadow-sm transition-colors cursor-pointer shrink-0">0 Unpaired</button>
+     <button id="btn-sync-manual-pairing" onclick="manualSyncManualPairing()" class="text-[10px] md:text-xs px-1.5 py-1 rounded font-bold transition flex items-center border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 shadow-sm focus:outline-none shrink-0"><span class="btn-text">Saved</span><i class="fa-solid fa-circle-notch fa-spin btn-spinner hidden ml-1"></i></button>
  </div>
  
+ <!-- Dynamic Actions for Manual Grouping View -->
+ <div id="navContextActionsManualGrouping" class="hidden items-center gap-1 shrink-0">
+     <button id="btn-sync-manual-grouping" onclick="manualSyncGrouping()" class="text-[10px] md:text-xs px-1.5 py-1 rounded font-bold transition flex items-center border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 shadow-sm focus:outline-none shrink-0"><span class="btn-text">Saved</span><i class="fa-solid fa-circle-notch fa-spin btn-spinner hidden ml-1"></i></button>
+ </div>
+
  <!-- Dynamic Actions for Comm Attendance View -->
  <div id="navContextActionsCommAtt" class="hidden items-center gap-1 shrink-0">
-     <button id="liveUnpairedBtn" onclick="openFilteredMassPairing()" class="hidden text-[9px] md:text-[10px] font-bold bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900/70 text-red-700 dark:text-red-400 px-1.5 py-1 rounded border border-red-300 dark:border-red-700 uppercase tracking-wider flex items-center shadow-sm transition-colors cursor-pointer animate-pulse shrink-0"><span id="liveUnpairedCount">0 Unpaired</span></button>
+     <button id="liveUnpairedBtn" onclick="openFilteredManualPairing()" class="hidden text-[9px] md:text-[10px] font-bold bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900/70 text-red-700 dark:text-red-400 px-1.5 py-1 rounded border border-red-300 dark:border-red-700 uppercase tracking-wider flex items-center shadow-sm transition-colors cursor-pointer animate-pulse shrink-0"><span id="liveUnpairedCount">0 Unpaired</span></button>
      <button id="btn-sync-comm-att" onclick="manualSyncCommAttendance()" class="text-[10px] md:text-xs px-1.5 py-1 flex items-center justify-center rounded font-bold transition border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 focus:outline-none shadow-sm shrink-0"><span class="btn-text text-[10px] md:text-xs">Saved</span><i class="fa-solid fa-circle-notch fa-spin btn-spinner hidden ml-1 text-[10px] md:text-xs"></i></button>
  </div>
 
@@ -160,10 +166,11 @@ colors: {
              <label class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold mb-1 block flex items-center gap-1">Select Event <span id="commSheetLoading" class="hidden"><i class="fa-solid fa-circle-notch fa-spin text-teal-500"></i></span></label>
              <select id="commSheetSelector" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-2 px-3 text-sm focus:border-teal-500 outline-none text-gray-900 dark:text-white"><option disabled selected>Loading...</option></select>
          </div>
-         <div class="flex gap-2 mt-3">
-             <button id="scrubBtn" onclick="handlePair()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-teal-50 dark:hover:bg-zinc-700 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-700 font-bold py-2 rounded-xl transition-all text-xs shadow-sm">Auto Pair</button>
-             <button id="massPairBtn" onclick="openMassPairing()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 font-bold py-2 rounded-xl transition-all text-xs shadow-sm">Mass Pairing</button>
-             <button id="groupBtn" onclick="handleGroup()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-purple-50 dark:hover:bg-zinc-700 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-700 font-bold py-2 rounded-xl transition-all text-xs shadow-sm">Auto Group</button>
+         <div class="flex gap-2 mt-3 flex-wrap">
+             <button id="scrubBtn" onclick="handlePair()" class="flex-1 min-w-[30%] bg-white dark:bg-zinc-800 hover:bg-teal-50 dark:hover:bg-zinc-700 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-700 font-bold py-2 rounded-xl transition-all text-xs shadow-sm">Auto Pair</button>
+             <button id="manualPairBtn" onclick="openManualPairing()" class="flex-1 min-w-[30%] bg-white dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 font-bold py-2 rounded-xl transition-all text-xs shadow-sm">Manual Pairing</button>
+             <button id="groupBtn" onclick="handleGroup()" class="flex-1 min-w-[30%] bg-white dark:bg-zinc-800 hover:bg-purple-50 dark:hover:bg-zinc-700 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-700 font-bold py-2 rounded-xl transition-all text-xs shadow-sm">Auto Group</button>
+             <button id="manualGroupBtn" onclick="openManualGrouping()" class="flex-1 min-w-[30%] bg-white dark:bg-zinc-800 hover:bg-orange-50 dark:hover:bg-zinc-700 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-700 font-bold py-2 rounded-xl transition-all text-xs shadow-sm">Manual Grouping</button>
          </div>
          <div id="scrubStatus" class="hidden mt-4 p-3 bg-gray-50 dark:bg-black rounded-xl text-xs whitespace-pre-wrap font-mono border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-gray-100"></div>
      </div>
@@ -192,8 +199,8 @@ colors: {
 </div>
 </div>
 
-<!-- MASS PAIRING VIEW -->
-<div id="view-mass-pairing" class="hidden fade-in">
+<!-- MANUAL PAIRING VIEW -->
+<div id="view-manual-pairing" class="hidden fade-in">
 <div class="flex flex-col h-[calc(100vh-75px)] w-full relative bg-gray-50 dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden max-w-7xl mx-auto">
 <div class="px-2 md:px-4 py-2 border-b border-gray-200 dark:border-zinc-800 shrink-0 z-10 flex flex-col gap-2 bg-white dark:bg-zinc-900">
     <!-- Search Bar Row -->
@@ -210,7 +217,7 @@ colors: {
 </div>
 
 <div class="flex flex-row flex-1 min-h-0 w-full overflow-hidden relative">
-    <div id="massPairingLoadingOverlay" class="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm z-50 flex flex-col justify-center items-center">
+    <div id="manualPairingLoadingOverlay" class="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm z-50 flex flex-col justify-center items-center">
         <i class="fa-solid fa-circle-notch fa-spin text-primary text-3xl mb-2"></i>
         <span class="text-primary font-bold text-xs tracking-wide">Loading...</span>
     </div>
@@ -223,6 +230,27 @@ colors: {
     <div id="dnd-target-col" class="flex-1 min-w-0 flex flex-col h-full overflow-hidden transition-colors border-l border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/10">
         <h4 id="dnd-target-title" class="font-black text-xs md:text-sm py-2 shrink-0 text-center uppercase tracking-widest border-b border-blue-200 dark:border-blue-800 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-400">Trainees</h4>
         <div id="dnd-target-list" class="space-y-2 flex-grow overflow-y-auto p-2 md:p-4 custom-scrollbar pb-6"></div>
+    </div>
+</div>
+</div>
+</div>
+
+<!-- MANUAL GROUPING VIEW -->
+<div id="view-manual-grouping" class="hidden fade-in">
+<div class="flex flex-col h-[calc(100vh-75px)] w-full relative bg-gray-50 dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden max-w-7xl mx-auto">
+<div class="px-2 md:px-4 py-2 border-b border-gray-200 dark:border-zinc-800 shrink-0 z-10 flex flex-col gap-2 bg-white dark:bg-zinc-900">
+    <div class="text-xs font-bold text-gray-500 dark:text-gray-400 text-center">Drag and drop trainees into groups. Connected volunteers follow automatically.</div>
+</div>
+
+<div class="flex flex-row flex-1 min-h-0 w-full overflow-hidden relative">
+    <div id="groupingLoadingOverlay" class="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm z-50 flex flex-col justify-center items-center">
+        <i class="fa-solid fa-circle-notch fa-spin text-orange-500 text-3xl mb-2"></i>
+        <span class="text-orange-600 font-bold text-xs tracking-wide">Loading...</span>
+    </div>
+    
+    <!-- Kanban Columns Container -->
+    <div id="groupingKanbanBoard" class="flex-1 flex overflow-x-auto custom-scrollbar p-3 md:p-4 gap-3 md:gap-4 items-start bg-gray-50/50 dark:bg-black">
+         <!-- Generated by JS -->
     </div>
 </div>
 </div>
