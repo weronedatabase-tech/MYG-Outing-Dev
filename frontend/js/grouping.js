@@ -418,6 +418,11 @@ setGroupingSyncButtonState('error');
 
 function openTableExportModal() {
    buildExportTable();
+   // Reset preview area
+   const preview = document.getElementById('exportTablePreview');
+   if(preview) preview.innerHTML = '';
+   
+   document.getElementById('exportTableContainer').classList.remove('hidden');
    document.getElementById('exportTableModal').classList.remove('hidden');
 }
 
@@ -459,10 +464,10 @@ function buildExportTable() {
    <table class="w-full text-left border-collapse text-[9px] md:text-xs text-gray-800" style="font-family: Arial, sans-serif; border: 1px solid #333; table-layout: fixed; width: 100%; word-wrap: break-word;">
        <thead>
            <tr style="background-color: #333; color: #fff;">
-               <th style="padding: 3px; border: 1px solid #555; width: 30%;">Volunteer</th>
-               <th style="padding: 3px; border: 1px solid #555; width: 30%;">Trainee(s)</th>
-               <th style="padding: 3px; border: 1px solid #555; width: 10%; text-align: center;">Grp</th>
-               <th style="padding: 3px; border: 1px solid #555; width: 30%;">Remarks</th>
+               <th style="padding: 3px; border: 1px solid #555; width: 30%; vertical-align: middle;">Volunteer</th>
+               <th style="padding: 3px; border: 1px solid #555; width: 30%; vertical-align: middle;">Trainee(s)</th>
+               <th style="padding: 3px; border: 1px solid #555; width: 10%; text-align: center; vertical-align: middle;">Grp</th>
+               <th style="padding: 3px; border: 1px solid #555; width: 30%; vertical-align: middle;">Remarks</th>
            </tr>
        </thead>
        <tbody>
@@ -519,9 +524,9 @@ function buildExportTable() {
        
        if (rows.length === 0 && unpairedTrainees.length === 0) {
            html += `<tr style="background-color: ${bgColor};">
-               <td colspan="2" style="padding: 3px; border: 1px solid #ccc; font-style: italic;">No assignments</td>
-               <td style="padding: 3px; border: 1px solid #ccc; text-align: center; font-weight: bold;">${g}</td>
-               <td style="padding: 3px; border: 1px solid #ccc;"></td>
+               <td colspan="2" style="padding: 3px; border: 1px solid #ccc; font-style: italic; vertical-align: middle;">No assignments</td>
+               <td style="padding: 3px; border: 1px solid #ccc; text-align: center; font-weight: bold; vertical-align: middle;">${g}</td>
+               <td style="padding: 3px; border: 1px solid #ccc; vertical-align: middle;"></td>
            </tr>`;
        }
        
@@ -537,19 +542,19 @@ function buildExportTable() {
            let rDisplay = r.remarks.join('<br><br>');
            
            html += `<tr style="background-color: ${bgColor};">
-               <td style="padding: 3px; border: 1px solid #ccc; vertical-align: top;">${volDisplay}</td>
-               <td style="padding: 3px; border: 1px solid #ccc; vertical-align: top;">${tDisplay}</td>
-               <td style="padding: 3px; border: 1px solid #ccc; text-align: center; font-weight: bold; vertical-align: top;">${g}</td>
-               <td contenteditable="true" style="padding: 3px; border: 1px solid #ccc; outline: none; transition: background 0.2s; vertical-align: top;" onfocus="this.style.backgroundColor='#fff'" onblur="this.style.backgroundColor='transparent'">${rDisplay}</td>
+               <td style="padding: 3px; border: 1px solid #ccc; vertical-align: middle;">${volDisplay}</td>
+               <td style="padding: 3px; border: 1px solid #ccc; vertical-align: middle;">${tDisplay}</td>
+               <td style="padding: 3px; border: 1px solid #ccc; text-align: center; font-weight: bold; vertical-align: middle;">${g}</td>
+               <td contenteditable="true" style="padding: 3px; border: 1px solid #ccc; outline: none; transition: background 0.2s; vertical-align: middle;" onfocus="this.style.backgroundColor='#fff'" onblur="this.style.backgroundColor='transparent'">${rDisplay}</td>
            </tr>`;
        });
        
        unpairedTrainees.forEach(ut => {
            html += `<tr style="background-color: ${bgColor};">
-               <td style="padding: 3px; border: 1px solid #ccc; font-weight: bold; color: #dc2626; text-align: center; vertical-align: top;">-</td>
-               <td style="padding: 3px; border: 1px solid #ccc; vertical-align: top;">${ut.name}</td>
-               <td style="padding: 3px; border: 1px solid #ccc; text-align: center; font-weight: bold; vertical-align: top;">${g}</td>
-               <td contenteditable="true" style="padding: 3px; border: 1px solid #ccc; outline: none; transition: background 0.2s; vertical-align: top;" onfocus="this.style.backgroundColor='#fff'" onblur="this.style.backgroundColor='transparent'">${ut.remarks}</td>
+               <td style="padding: 3px; border: 1px solid #ccc; font-weight: bold; color: #dc2626; text-align: center; vertical-align: middle;">-</td>
+               <td style="padding: 3px; border: 1px solid #ccc; vertical-align: middle;">${ut.name}</td>
+               <td style="padding: 3px; border: 1px solid #ccc; text-align: center; font-weight: bold; vertical-align: middle;">${g}</td>
+               <td contenteditable="true" style="padding: 3px; border: 1px solid #ccc; outline: none; transition: background 0.2s; vertical-align: middle;" onfocus="this.style.backgroundColor='#fff'" onblur="this.style.backgroundColor='transparent'">${ut.remarks}</td>
            </tr>`;
        });
    });
@@ -558,13 +563,16 @@ function buildExportTable() {
    container.innerHTML = html;
 }
 
+let generatedImageBlob = null; // Store blob to share via Web Share API
+
 async function shareExportTable() {
    const container = document.getElementById('exportTableContainer');
    const btn = document.getElementById('shareTableBtn');
-   if(!container || !btn) return;
+   const preview = document.getElementById('exportTablePreview');
+   if(!container || !btn || !preview) return;
    
    const originalText = btn.innerHTML;
-   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating Image...';
+   btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
    btn.disabled = true;
 
    // Temporarily hide UI elements for clean image
@@ -585,37 +593,63 @@ async function shareExportTable() {
        });
        
        const dataUrl = canvas.toDataURL('image/png');
+       
+       // Hide actual table, show image preview
+       container.classList.add('hidden');
+       preview.innerHTML = `<p class="text-xs text-green-600 dark:text-green-400 font-bold mb-2 text-center">Image ready! Long press to save or share directly.</p><img src="${dataUrl}" class="w-full h-auto shadow-md rounded border border-gray-200 dark:border-zinc-700 mx-auto" />`;
+       
+       // Convert Base64 to Blob for Native Sharing
+       generatedImageBlob = await (await fetch(dataUrl)).blob();
+       
+       // Transform button to Share Via Apps
+       btn.innerHTML = '<i class="fa-solid fa-share-nodes"></i> Share via Apps';
+       btn.onclick = executeNativeShare;
+       btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+       btn.classList.add('bg-green-600', 'hover:bg-green-700');
 
-       btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up fa-spin"></i> Uploading to Drive...';
-
-       if (!currentGroupingSheetUrl) throw new Error("Missing Event Context (URL).");
-
-       const res = await apiCall('uploadExportTable', {
-           sheetUrl: currentGroupingSheetUrl,
-           imageBase64: dataUrl
-       });
-
-       if (res.success) {
-           if (navigator.share) {
-               await navigator.share({
-                   title: 'Outing Groups',
-                   text: 'Here is the generated outing groups table.',
-                   url: res.url
-               }).catch(e => console.log('Share canceled or failed', e));
-           } else {
-               // Fallback: Open URL in new tab
-               window.open(res.url, '_blank');
-           }
-           showFlashMessage('groupingGlobalStatus', "Table successfully saved to Drive!", 'success');
-       } else {
-           throw new Error(res.message);
+       // Async Upload to Drive without blocking user
+       if (currentGroupingSheetUrl) {
+           apiCall('uploadExportTable', {
+               sheetUrl: currentGroupingSheetUrl,
+               imageBase64: dataUrl
+           }).then(res => {
+               if(res.success) {
+                   showFlashMessage('groupingGlobalStatus', "Backup saved to Drive.", 'success');
+               }
+           });
        }
+
    } catch (e) {
        console.error(e);
        alert("Failed to share table: " + e.message);
+       btn.innerHTML = originalText;
    } finally {
        toggles.forEach(t => t.style.display = 'flex');
-       btn.innerHTML = originalText;
        btn.disabled = false;
+   }
+}
+
+async function executeNativeShare() {
+   if (!generatedImageBlob) return;
+
+   const file = new File([generatedImageBlob], 'outing-groups.png', { type: 'image/png' });
+   
+   try {
+       if (navigator.canShare && navigator.canShare({ files: [file] })) {
+           await navigator.share({
+               title: 'Outing Groups',
+               files: [file]
+           });
+       } else {
+           // Fallback to clipboard if share not supported
+           if (navigator.clipboard && window.ClipboardItem) {
+               await navigator.clipboard.write([new ClipboardItem({ 'image/png': generatedImageBlob })]);
+               showFlashMessage('groupingGlobalStatus', "Table copied to clipboard!", 'success');
+           } else {
+               alert("Sharing not supported on this device. Long press the image to save it.");
+           }
+       }
+   } catch (e) {
+       console.log('Share canceled or failed', e);
    }
 }

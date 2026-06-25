@@ -44,60 +44,60 @@ const overlay = document.getElementById('manualPairingLoadingOverlay');
 overlay.classList.remove('hidden');
 
 apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl }).then(res => {
-  overlay.classList.add('hidden');
-  if (res.success) {
-      manualPairingData = res.data;
-      renderManualPairings();
-      startManualPairingPolling();
-  } else {
-      alert("Error: " + res.message);
-      if (isFilteredManualPairingMode) {
-          showView('comm-attendance');
-      } else {
-          showView('comm');
-      }
-  }
+ overlay.classList.add('hidden');
+ if (res.success) {
+     manualPairingData = res.data;
+     renderManualPairings();
+     startManualPairingPolling();
+ } else {
+     alert("Error: " + res.message);
+     if (isFilteredManualPairingMode) {
+         showView('comm-attendance');
+     } else {
+         showView('comm');
+     }
+ }
 });
 }
 
 function filterPairingPools() {
-  renderManualPairings();
+ renderManualPairings();
 }
 
 function triggerManualPairingPulse(sourceName, targetName, isPaired) {
- setTimeout(() => {
-     requestAnimationFrame(() => {
-         // Try to find the exact dropzone elements based on their data attributes
-         const sourceCard = document.querySelector(`.dnd-dropzone[data-name="${sourceName.replace(/'/g, "\\'")}"]`);
-         const targetCard = document.querySelector(`.dnd-dropzone[data-name="${targetName.replace(/'/g, "\\'")}"]`);
-         
-         [sourceCard, targetCard].forEach(card => {
-             if (card) {
-                 const container = card.parentElement;
-                 if (container) {
-                     const containerRect = container.getBoundingClientRect();
-                     const cardRect = card.getBoundingClientRect();
-                     
-                     if (cardRect.height > 0) {
-                         const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
-                         
-                         container.scrollTo({
-                             top: scrollTop,
-                             behavior: 'smooth'
-                         });
-                     }
-                 }
-                 
-                 const pulseClass = isPaired ? 'pulse-green' : 'pulse-red';
-                 
-                 card.classList.add(pulseClass);
-                 setTimeout(() => {
-                     card.classList.remove(pulseClass);
-                 }, 800);
-             }
-         });
-     });
- }, 150);
+setTimeout(() => {
+    requestAnimationFrame(() => {
+        // Try to find the exact dropzone elements based on their data attributes
+        const sourceCard = document.querySelector(`.dnd-dropzone[data-name="${sourceName.replace(/'/g, "\\'")}"]`);
+        const targetCard = document.querySelector(`.dnd-dropzone[data-name="${targetName.replace(/'/g, "\\'")}"]`);
+        
+        [sourceCard, targetCard].forEach(card => {
+            if (card) {
+                const container = card.parentElement;
+                if (container) {
+                    const containerRect = container.getBoundingClientRect();
+                    const cardRect = card.getBoundingClientRect();
+                    
+                    if (cardRect.height > 0) {
+                        const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
+                        
+                        container.scrollTo({
+                            top: scrollTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+                
+                const pulseClass = isPaired ? 'pulse-green' : 'pulse-red';
+                
+                card.classList.add(pulseClass);
+                setTimeout(() => {
+                    card.classList.remove(pulseClass);
+                }, 800);
+            }
+        });
+    });
+}, 150);
 }
 
 function generatePairingPillHtml(pillName, traineeName, volName, isTraineeGoneHome = false) {
@@ -117,18 +117,18 @@ const isVol = item.role === 'VOLUNTEER';
 let pairedPills = '';
 
 pairedNames.forEach(pairedName => {
-  const tName = isVol ? pairedName : item.name;
-  const vName = isVol ? item.name : pairedName;
-  
-  let isTraineeGoneHome = false;
-  if (isVol) {
-      const traineeObj = (manualPairingData.trainees || []).find(t => t.name === tName);
-      if (traineeObj && traineeObj.isGoneHome) {
-          isTraineeGoneHome = true;
-      }
-  }
+ const tName = isVol ? pairedName : item.name;
+ const vName = isVol ? item.name : pairedName;
+ 
+ let isTraineeGoneHome = false;
+ if (isVol) {
+     const traineeObj = (manualPairingData.trainees || []).find(t => t.name === tName);
+     if (traineeObj && traineeObj.isGoneHome) {
+         isTraineeGoneHome = true;
+     }
+ }
 
-  pairedPills += generatePairingPillHtml(pairedName, tName, vName, isTraineeGoneHome);
+ pairedPills += generatePairingPillHtml(pairedName, tName, vName, isTraineeGoneHome);
 });
 
 const safeName = item.name.replace(/'/g, "\\'");
@@ -139,42 +139,45 @@ let sysBadge = '';
 let opacityClass = '';
 
 if (isGoneHome) {
-  sysBadge = `<i class="fa-solid fa-house-user text-blue-500 dark:text-blue-400 shrink-0 text-[10px] md:text-xs ml-0.5" title="Gone Home"></i>`;
-  opacityClass = 'opacity-50 grayscale pointer-events-none';
+ sysBadge = `<i class="fa-solid fa-house-user text-blue-500 dark:text-blue-400 shrink-0 text-[10px] md:text-xs ml-0.5" title="Gone Home"></i>`;
+ opacityClass = 'opacity-50 grayscale pointer-events-none';
 } else if (item.isAttendingUnknown) {
-  sysBadge = `<span class="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 text-[8px] uppercase font-black tracking-wider px-1 py-0.5 rounded shrink-0 shadow-sm pointer-events-none whitespace-nowrap">? ATTENDING</span>`;
+ sysBadge = `<span class="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 text-[8px] uppercase font-black tracking-wider px-1 py-0.5 rounded shrink-0 shadow-sm pointer-events-none whitespace-nowrap">? ATTENDING</span>`;
 }
 
 let cgBadge = '';
 if (!isVol && item.caregivers > 0) {
-  cgBadge = `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm">${item.caregivers > 1 ? item.caregivers + 'C' : 'C'}</span>`;
+ cgBadge = `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm">${item.caregivers > 1 ? item.caregivers + 'C' : 'C'}</span>`;
 }
 
 let projectInfo = '';
 if (item.project) {
-  projectInfo = `<span class="text-[10px] text-gray-500 dark:text-gray-400 font-medium">${item.project} ${!isVol && item.group ? '• Grp ' + item.group : ''}</span>`;
+ projectInfo = `<span class="text-[10px] text-gray-500 dark:text-gray-400 font-medium">${item.project}</span>`;
+ if (!isVol && item.group) {
+     projectInfo += `<span class="ml-1.5 bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800 border px-1.5 py-0.5 rounded font-black text-[8px] uppercase shadow-sm whitespace-nowrap">Grp ${item.group}</span>`;
+ }
 } else if (!isVol && item.group) {
-  projectInfo = `<span class="text-[10px] text-gray-500 dark:text-gray-400 font-medium">Grp ${item.group}</span>`;
+ projectInfo = `<span class="bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800 border px-1.5 py-0.5 rounded font-black text-[8px] uppercase shadow-sm whitespace-nowrap">Grp ${item.group}</span>`;
 }
 
 const addBtnHtml = isGoneHome ? '' : `<button class="shrink-0 text-xs text-gray-500 dark:text-gray-400 hover:text-primary transition-colors bg-gray-50 dark:bg-black hover:bg-gray-100 dark:hover:bg-zinc-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-sm pointer-events-auto flex items-center justify-center font-bold" onclick="event.stopPropagation(); openQuickPairModal('${safeName}', '${item.role}')">+${isVol ? 'Trn' : 'Vol'}</button>`;
 
 return `
 <div class="dnd-draggable dnd-dropzone bg-white dark:bg-zinc-900 p-2 rounded-md border border-gray-200 dark:border-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-grab active:cursor-grabbing hover:border-primary transition select-none flex flex-col min-h-[70px] gap-1.5 ${opacityClass}" data-name="${safeName}" data-role="${item.role}" data-source-array="${isVol ? 'volunteers' : 'trainees'}">
-  <div class="flex justify-between items-center w-full gap-2">
-      <div class="main-name-pill font-extrabold text-[11px] md:text-[12px] text-gray-900 dark:text-white leading-tight break-words whitespace-normal flex items-start gap-1 min-w-0 flex-1">
-          <span class="break-words">${displayName}</span>
-          ${cgBadge}
-          ${sysBadge}
-      </div>
-      ${addBtnHtml}
-  </div>
-  <div class="flex flex-col w-full">
-      ${projectInfo}
-  </div>
-  <div class="flex flex-col pointer-events-auto bg-gray-50/50 dark:bg-black/50 p-1.5 rounded min-h-[36px] border border-dashed border-gray-200 dark:border-zinc-700 mt-1 w-full gap-1.5">
-      ${pairedPills || `<span class="text-[9px] md:text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-0.5 pointer-events-none text-center w-full py-1">Drop ${isVol ? 'trainee' : 'volunteer'} here</span>`}
-  </div>
+ <div class="flex justify-between items-center w-full gap-2">
+     <div class="main-name-pill font-extrabold text-[11px] md:text-[12px] text-gray-900 dark:text-white leading-tight break-words whitespace-normal flex items-start gap-1 min-w-0 flex-1">
+         <span class="break-words">${displayName}</span>
+         ${cgBadge}
+         ${sysBadge}
+     </div>
+     ${addBtnHtml}
+ </div>
+ <div class="flex flex-row items-center w-full mt-0.5">
+     ${projectInfo}
+ </div>
+ <div class="flex flex-col pointer-events-auto bg-gray-50/50 dark:bg-black/50 p-1.5 rounded min-h-[36px] border border-dashed border-gray-200 dark:border-zinc-700 mt-1 w-full gap-1.5">
+     ${pairedPills || `<span class="text-[9px] md:text-[10px] font-medium text-gray-400 dark:text-gray-500 mt-0.5 pointer-events-none text-center w-full py-1">Drop ${isVol ? 'trainee' : 'volunteer'} here</span>`}
+ </div>
 </div>
 `;
 }
@@ -182,8 +185,8 @@ return `
 function renderManualPairings() {
 // STRICT FILTERING: Exclude any trainees that do not have explicitly 'Y' or 'y' in the attending column
 let trainees = (manualPairingData.trainees || []).filter(t => {
-  const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
-  return att === 'y';
+ const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
+ return att === 'y';
 });
 
 let vols = [...(manualPairingData.volunteers || [])]; 
@@ -193,29 +196,29 @@ const volSearchQuery = document.getElementById('pairingVolSearch')?.value.toLowe
 const traSearchQuery = document.getElementById('pairingTraineeSearch')?.value.toLowerCase().trim() || "";
 
 if (volSearchQuery) {
-  vols = vols.filter(v => 
-      v.name.toLowerCase().includes(volSearchQuery) || 
-      (v.project && v.project.toLowerCase().includes(volSearchQuery))
-  );
+ vols = vols.filter(v => 
+     v.name.toLowerCase().includes(volSearchQuery) || 
+     (v.project && v.project.toLowerCase().includes(volSearchQuery))
+ );
 }
 if (traSearchQuery) {
-  trainees = trainees.filter(t => 
-      t.name.toLowerCase().includes(traSearchQuery) || 
-      (t.project && t.project.toLowerCase().includes(traSearchQuery)) ||
-      (t.group && String(t.group).toLowerCase().includes(traSearchQuery))
-  );
+ trainees = trainees.filter(t => 
+     t.name.toLowerCase().includes(traSearchQuery) || 
+     (t.project && t.project.toLowerCase().includes(traSearchQuery)) ||
+     (t.group && String(t.group).toLowerCase().includes(traSearchQuery))
+ );
 }
 
 // Sorting Logic: Project Alphabetical, followed by Name Alphabetical
 const sortFn = (a, b) => {
-  const projA = a.project ? a.project.toString().toLowerCase().trim() : "zzzz";
-  const projB = b.project ? b.project.toString().toLowerCase().trim() : "zzzz";
-  const projCmp = projA.localeCompare(projB);
-  if (projCmp !== 0) return projCmp;
+ const projA = a.project ? a.project.toString().toLowerCase().trim() : "zzzz";
+ const projB = b.project ? b.project.toString().toLowerCase().trim() : "zzzz";
+ const projCmp = projA.localeCompare(projB);
+ if (projCmp !== 0) return projCmp;
 
-  const nameA = a.name ? a.name.toString().toLowerCase().trim() : "";
-  const nameB = b.name ? b.name.toString().toLowerCase().trim() : "";
-  return nameA.localeCompare(nameB);
+ const nameA = a.name ? a.name.toString().toLowerCase().trim() : "";
+ const nameB = b.name ? b.name.toString().toLowerCase().trim() : "";
+ return nameA.localeCompare(nameB);
 };
 
 vols.sort(sortFn);
@@ -224,58 +227,58 @@ trainees.sort(sortFn);
 // Calculate unpaired trainees
 let unpairedCount = 0;
 (manualPairingData.trainees || []).forEach(t => {
-  if (!t.isGoneHome && (!t.volPaired || t.volPaired.trim() === '')) {
-      unpairedCount++;
-  }
+ if (!t.isGoneHome && (!t.volPaired || t.volPaired.trim() === '')) {
+     unpairedCount++;
+ }
 });
 updateUnpairedNotification(unpairedCount);
 
 // Build Volunteer Pairings Map
 const volPairingsMap = new Map();
 (manualPairingData.trainees || []).forEach(t => {
-  if (t.volPaired) {
-      const pairedVols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-      pairedVols.forEach(v => {
-          const cleanVol = v.toLowerCase();
-          if (!volPairingsMap.has(cleanVol)) volPairingsMap.set(cleanVol, []);
-          volPairingsMap.get(cleanVol).push(t.name);
-      });
-  }
+ if (t.volPaired) {
+     const pairedVols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+     pairedVols.forEach(v => {
+         const cleanVol = v.toLowerCase();
+         if (!volPairingsMap.has(cleanVol)) volPairingsMap.set(cleanVol, []);
+         volPairingsMap.get(cleanVol).push(t.name);
+     });
+ }
 });
 
 // If filtered mode is active, exclusively show Unpaired Trainees in the Target list
 // Enforce that Gone Home trainees never appear in the Target list during Filtered Mode
 if (isFilteredManualPairingMode) {
-  trainees = trainees.filter(t => !t.isGoneHome && (!t.volPaired || t.volPaired.trim() === ''));
+ trainees = trainees.filter(t => !t.isGoneHome && (!t.volPaired || t.volPaired.trim() === ''));
 }
 
 let sourceHtml = '';
 vols.forEach(item => { 
-  const myTrainees = volPairingsMap.get(item.name.toLowerCase()) || [];
-  sourceHtml += generatePairingCardHtml(item, myTrainees); 
+ const myTrainees = volPairingsMap.get(item.name.toLowerCase()) || [];
+ sourceHtml += generatePairingCardHtml(item, myTrainees); 
 });
 document.getElementById('dnd-source-pool').innerHTML = sourceHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active volunteers matching search.</p>';
 
 let targetHtml = '';
 trainees.forEach(item => { 
-  const myVols = item.volPaired ? item.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
-  targetHtml += generatePairingCardHtml(item, myVols); 
+ const myVols = item.volPaired ? item.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
+ targetHtml += generatePairingCardHtml(item, myVols); 
 });
 
 if (isFilteredManualPairingMode && targetHtml === '') {
-  document.getElementById('dnd-target-list').innerHTML = '<p class="text-[10px] text-green-500 font-bold p-2 text-center mt-2">All trainees are paired!</p>';
+ document.getElementById('dnd-target-list').innerHTML = '<p class="text-[10px] text-green-500 font-bold p-2 text-center mt-2">All trainees are paired!</p>';
 } else {
-  document.getElementById('dnd-target-list').innerHTML = targetHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active trainees matching search.</p>';
+ document.getElementById('dnd-target-list').innerHTML = targetHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active trainees matching search.</p>';
 }
 
 // Bind Long Press globally to items
 document.querySelectorAll('.dnd-draggable').forEach(el => {
-  uiBindLongPress(el, () => {
-      const name = el.getAttribute('data-name');
-      const arr = el.getAttribute('data-source-array');
-      const p = (manualPairingData[arr] || []).find(x => x.name.replace(/'/g, "\\'") === name);
-      if (p) showPersonInfo(p);
-  });
+ uiBindLongPress(el, () => {
+     const name = el.getAttribute('data-name');
+     const arr = el.getAttribute('data-source-array');
+     const p = (manualPairingData[arr] || []).find(x => x.name.replace(/'/g, "\\'") === name);
+     if (p) showPersonInfo(p);
+ });
 });
 }
 
@@ -293,20 +296,20 @@ let blockingTraineeName = null;
 
 // Find all trainees the volunteer is CURRENTLY paired to (or pending to be paired to)
 manualPairingData.trainees.forEach(otherT => {
-    if (otherT.name === traineeName || !otherT.volPaired) return;
-    const vols = otherT.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
-    if (vols.includes(cleanVolName)) {
-        const otherTGroup = String(otherT.group || "").trim();
-        // If both have groups assigned and they are different, block the pairing
-        if (tGroup !== "" && otherTGroup !== "" && tGroup !== otherTGroup) {
-            blockingTraineeName = otherT.name;
-        }
-    }
+   if (otherT.name === traineeName || !otherT.volPaired) return;
+   const vols = otherT.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+   if (vols.includes(cleanVolName)) {
+       const otherTGroup = String(otherT.group || "").trim();
+       // If both have groups assigned and they are different, block the pairing
+       if (tGroup !== "" && otherTGroup !== "" && tGroup !== otherTGroup) {
+           blockingTraineeName = otherT.name;
+       }
+   }
 });
 
 if (blockingTraineeName) {
-    showFlashMessage('commGlobalStatus', `Cannot pair! ${volName} is already paired with ${blockingTraineeName} in a different group.`, 'error');
-    return;
+   showFlashMessage('commGlobalStatus', `Cannot pair! ${volName} is already paired with ${blockingTraineeName} in a different group.`, 'error');
+   return;
 }
 
 // Check if already paired
@@ -314,22 +317,22 @@ const currentVols = trainee.volPaired ? trainee.volPaired.split(/[,|\n]+/).map(v
 const exists = currentVols.some(v => v.toLowerCase() === cleanVolName);
 
 if (!exists) {
-  currentVols.push(volName);
-  trainee.volPaired = currentVols.join(', ');
-  
-  // Add to pending updates map
-  const updateIndex = pendingPairingUpdates.findIndex(u => u.traineeName === traineeName);
-  if (updateIndex > -1) {
-      pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
-  } else {
-      pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
-  }
+ currentVols.push(volName);
+ trainee.volPaired = currentVols.join(', ');
+ 
+ // Add to pending updates map
+ const updateIndex = pendingPairingUpdates.findIndex(u => u.traineeName === traineeName);
+ if (updateIndex > -1) {
+     pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
+ } else {
+     pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
+ }
 
-  renderManualPairings(); 
-  triggerManualPairingPulse(sourceName, targetName, true);
-  triggerManualPairingSync();
+ renderManualPairings(); 
+ triggerManualPairingPulse(sourceName, targetName, true);
+ triggerManualPairingSync();
 } else {
-  showFlashMessage('commGlobalStatus', "Already paired!", 'error');
+ showFlashMessage('commGlobalStatus', "Already paired!", 'error');
 }
 }
 
@@ -346,9 +349,9 @@ trainee.volPaired = currentVols.join(', ');
 // Add to pending updates map
 const updateIndex = pendingPairingUpdates.findIndex(u => u.traineeName === traineeName);
 if (updateIndex > -1) {
-  pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
+ pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
 } else {
-  pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
+ pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
 }
 
 renderManualPairings(); 
@@ -366,21 +369,21 @@ btn.className = "text-[10px] md:text-xs px-1.5 py-1 rounded font-bold transition
 spinner.className = "fa-solid fa-circle-notch fa-spin btn-spinner ml-1 hidden"; 
 
 if (state === 'loading' || state === 'saving') { 
-  btn.classList.add('bg-yellow-50', 'text-yellow-700', 'border-yellow-200', 'dark:bg-yellow-900/30', 'dark:text-yellow-400', 'dark:border-yellow-800'); 
-  textSpan.textContent = state === 'loading' ? "Loading..." : "Saving..."; 
-  spinner.classList.remove('hidden'); 
+ btn.classList.add('bg-yellow-50', 'text-yellow-700', 'border-yellow-200', 'dark:bg-yellow-900/30', 'dark:text-yellow-400', 'dark:border-yellow-800'); 
+ textSpan.textContent = state === 'loading' ? "Loading..." : "Saving..."; 
+ spinner.classList.remove('hidden'); 
 } else if (state === 'saved') { 
-  btn.classList.add('bg-green-50', 'text-green-700', 'border-green-200', 'dark:bg-green-900/30', 'dark:text-green-400', 'dark:border-green-800'); 
-  textSpan.textContent = "Saved"; 
-  setTimeout(() => {
-      if (pendingPairingUpdates.length === 0) {
-          btn.className = "text-[10px] md:text-xs px-1.5 py-1 rounded font-bold transition flex items-center border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 shadow-sm focus:outline-none shrink-0";
-          textSpan.textContent = "Saved";
-      }
-  }, 2000);
+ btn.classList.add('bg-green-50', 'text-green-700', 'border-green-200', 'dark:bg-green-900/30', 'dark:text-green-400', 'dark:border-green-800'); 
+ textSpan.textContent = "Saved"; 
+ setTimeout(() => {
+     if (pendingPairingUpdates.length === 0) {
+         btn.className = "text-[10px] md:text-xs px-1.5 py-1 rounded font-bold transition flex items-center border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 shadow-sm focus:outline-none shrink-0";
+         textSpan.textContent = "Saved";
+     }
+ }, 2000);
 } else if (state === 'error') { 
-  btn.classList.add('bg-red-50', 'text-red-700', 'border-red-200', 'dark:bg-red-900/30', 'dark:text-red-400', 'dark:border-red-800'); 
-  textSpan.textContent = "Save Failed"; 
+ btn.classList.add('bg-red-50', 'text-red-700', 'border-red-200', 'dark:bg-red-900/30', 'dark:text-red-400', 'dark:border-red-800'); 
+ textSpan.textContent = "Save Failed"; 
 }
 }
 
@@ -388,7 +391,7 @@ function triggerManualPairingSync() {
 setManualPairingSyncButtonState('saving');
 if (manualPairingSyncTimeout) clearTimeout(manualPairingSyncTimeout);
 manualPairingSyncTimeout = setTimeout(() => {
-  executeManualPairingSync();
+ executeManualPairingSync();
 }, 800); 
 }
 
@@ -402,23 +405,23 @@ const updatesToSync = [...pendingPairingUpdates];
 pendingPairingUpdates = [];
 
 try {
-  const res = await apiCall('syncManualPairingUpdates', { sheetUrl: currentManualPairingSheetUrl, updates: updatesToSync });
+ const res = await apiCall('syncManualPairingUpdates', { sheetUrl: currentManualPairingSheetUrl, updates: updatesToSync });
 
-  if (res.success) {
-      setManualPairingSyncButtonState('saved');
-  } else {
-      throw new Error(res.message);
-  }
+ if (res.success) {
+     setManualPairingSyncButtonState('saved');
+ } else {
+     throw new Error(res.message);
+ }
 } catch(e) {
-  console.error(e);
-  setManualPairingSyncButtonState('error');
-  // Push back failed updates
-  updatesToSync.forEach(u => {
-      const idx = pendingPairingUpdates.findIndex(p => p.traineeName === u.traineeName);
-      if (idx === -1) pendingPairingUpdates.push(u);
-  });
+ console.error(e);
+ setManualPairingSyncButtonState('error');
+ // Push back failed updates
+ updatesToSync.forEach(u => {
+     const idx = pendingPairingUpdates.findIndex(p => p.traineeName === u.traineeName);
+     if (idx === -1) pendingPairingUpdates.push(u);
+ });
 } finally {
-  isManualPairingSyncing = false;
+ isManualPairingSyncing = false;
 }
 }
 
@@ -426,27 +429,27 @@ function startManualPairingPolling() {
 if (manualPairingPollInterval) clearInterval(manualPairingPollInterval);
 
 manualPairingPollInterval = setInterval(async () => {
-  const view = document.getElementById('view-manual-pairing');
-  if(!view || view.classList.contains('hidden') || isManualPairingSyncing || (dndState.el || dndState.isDragging)) return;
+ const view = document.getElementById('view-manual-pairing');
+ if(!view || view.classList.contains('hidden') || isManualPairingSyncing || (dndState.el || dndState.isDragging)) return;
 
-  try {
-      const res = await apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl });
-      if(res.success && !isManualPairingSyncing && pendingPairingUpdates.length === 0) {
-          const newDataStr = JSON.stringify(res.data);
-          const oldDataStr = JSON.stringify(manualPairingData);
-          
-          if (newDataStr !== oldDataStr) {
-              manualPairingData = res.data;
-              renderManualPairings();
-          }
-      }
-  } catch(e) { }
+ try {
+     const res = await apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl });
+     if(res.success && !isManualPairingSyncing && pendingPairingUpdates.length === 0) {
+         const newDataStr = JSON.stringify(res.data);
+         const oldDataStr = JSON.stringify(manualPairingData);
+         
+         if (newDataStr !== oldDataStr) {
+             manualPairingData = res.data;
+             renderManualPairings();
+         }
+     }
+ } catch(e) { }
 }, 8000);
 }
 
 async function manualSyncManualPairing() {
 if (pendingPairingUpdates.length > 0) {
-  await executeManualPairingSync();
+ await executeManualPairingSync();
 }
 
 setManualPairingSyncButtonState('loading');
@@ -454,18 +457,18 @@ const overlay = document.getElementById('manualPairingLoadingOverlay');
 overlay.classList.remove('hidden');
 
 try {
-  const res = await apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl });
-  overlay.classList.add('hidden');
-  if (res.success) {
-      manualPairingData = res.data;
-      renderManualPairings();
-      setManualPairingSyncButtonState('saved');
-  } else {
-      setManualPairingSyncButtonState('error');
-  }
+ const res = await apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl });
+ overlay.classList.add('hidden');
+ if (res.success) {
+     manualPairingData = res.data;
+     renderManualPairings();
+     setManualPairingSyncButtonState('saved');
+ } else {
+     setManualPairingSyncButtonState('error');
+ }
 } catch (e) {
-  overlay.classList.add('hidden');
-  setManualPairingSyncButtonState('error');
+ overlay.classList.add('hidden');
+ setManualPairingSyncButtonState('error');
 }
 }
 
@@ -487,31 +490,31 @@ input.value = '';
 
 // Sorting Logic for Modal: Project Alphabetical, followed by Name Alphabetical
 const sortFn = (a, b) => {
-  const projA = a.project ? a.project.toString().toLowerCase().trim() : "zzzz";
-  const projB = b.project ? b.project.toString().toLowerCase().trim() : "zzzz";
-  const projCmp = projA.localeCompare(projB);
-  if (projCmp !== 0) return projCmp;
+ const projA = a.project ? a.project.toString().toLowerCase().trim() : "zzzz";
+ const projB = b.project ? b.project.toString().toLowerCase().trim() : "zzzz";
+ const projCmp = projA.localeCompare(projB);
+ if (projCmp !== 0) return projCmp;
 
-  const nameA = a.name ? a.name.toString().toLowerCase().trim() : "";
-  const nameB = b.name ? b.name.toString().toLowerCase().trim() : "";
-  return nameA.localeCompare(nameB);
+ const nameA = a.name ? a.name.toString().toLowerCase().trim() : "";
+ const nameB = b.name ? b.name.toString().toLowerCase().trim() : "";
+ return nameA.localeCompare(nameB);
 };
 
 // Build target list
 if (sourceRole === 'VOLUNTEER') {
-  // Search Trainees (Strictly 'Y' and not gone home)
-  quickPairContext.targetList = (manualPairingData.trainees || [])
-      .filter(t => {
-          const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
-          return att === 'y' && !t.isGoneHome;
-      })
-      .sort(sortFn)
-      .map(t => t.name);
+ // Search Trainees (Strictly 'Y' and not gone home)
+ quickPairContext.targetList = (manualPairingData.trainees || [])
+     .filter(t => {
+         const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
+         return att === 'y' && !t.isGoneHome;
+     })
+     .sort(sortFn)
+     .map(t => t.name);
 } else {
-  // Search Volunteers
-  quickPairContext.targetList = (manualPairingData.volunteers || [])
-      .sort(sortFn)
-      .map(v => v.name);
+ // Search Volunteers
+ quickPairContext.targetList = (manualPairingData.volunteers || [])
+     .sort(sortFn)
+     .map(v => v.name);
 }
 
 filterQuickPairList();
@@ -531,33 +534,33 @@ listEl.innerHTML = '';
 const matches = quickPairContext.targetList.filter(name => name.toLowerCase().includes(input));
 
 if (matches.length === 0) {
-  listEl.innerHTML = '<li class="text-xs text-gray-500 p-2 text-center">No matches found</li>';
-  return;
+ listEl.innerHTML = '<li class="text-xs text-gray-500 p-2 text-center">No matches found</li>';
+ return;
 }
 
 matches.forEach(name => {
-  // Check if already paired
-  let isPaired = false;
-  const traineeName = quickPairContext.sourceRole === 'TRAINEE' ? quickPairContext.sourceName : name;
-  const volName = quickPairContext.sourceRole === 'VOLUNTEER' ? quickPairContext.sourceName : name;
-  
-  const trainee = manualPairingData.trainees.find(t => t.name === traineeName);
-  if (trainee && trainee.volPaired) {
-      const vols = trainee.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-      isPaired = vols.some(v => v.toLowerCase() === volName.toLowerCase());
-  }
-  
-  const li = document.createElement('li');
-  li.className = `p-3 rounded border text-sm font-bold flex justify-between items-center transition-colors ${isPaired ? 'bg-gray-100 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 opacity-60 cursor-not-allowed' : 'bg-white dark:bg-black border-gray-200 dark:border-zinc-700 hover:border-primary cursor-pointer'}`;
-  
-  li.innerHTML = `<span>${name}</span> ${isPaired ? '<i class="fa-solid fa-check text-green-500"></i>' : ''}`;
-  
-  if (!isPaired) {
-      li.onclick = () => {
-          handleManualPairingDrop(quickPairContext.sourceName, quickPairContext.sourceRole, name);
-          closeQuickPairModal();
-      };
-  }
-  listEl.appendChild(li);
+ // Check if already paired
+ let isPaired = false;
+ const traineeName = quickPairContext.sourceRole === 'TRAINEE' ? quickPairContext.sourceName : name;
+ const volName = quickPairContext.sourceRole === 'VOLUNTEER' ? quickPairContext.sourceName : name;
+ 
+ const trainee = manualPairingData.trainees.find(t => t.name === traineeName);
+ if (trainee && trainee.volPaired) {
+     const vols = trainee.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+     isPaired = vols.some(v => v.toLowerCase() === volName.toLowerCase());
+ }
+ 
+ const li = document.createElement('li');
+ li.className = `p-3 rounded border text-sm font-bold flex justify-between items-center transition-colors ${isPaired ? 'bg-gray-100 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 opacity-60 cursor-not-allowed' : 'bg-white dark:bg-black border-gray-200 dark:border-zinc-700 hover:border-primary cursor-pointer'}`;
+ 
+ li.innerHTML = `<span>${name}</span> ${isPaired ? '<i class="fa-solid fa-check text-green-500"></i>' : ''}`;
+ 
+ if (!isPaired) {
+     li.onclick = () => {
+         handleManualPairingDrop(quickPairContext.sourceName, quickPairContext.sourceRole, name);
+         closeQuickPairModal();
+     };
+ }
+ listEl.appendChild(li);
 });
 }

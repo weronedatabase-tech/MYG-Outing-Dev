@@ -290,6 +290,7 @@ primary: '#3b82f6',
       <button onclick="closeTableExportModal()" class="text-gray-400 dark:text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors ml-2"><i class="fa-solid fa-xmark text-xl"></i></button>
   </div>
   <div class="p-2 md:p-4 flex-grow overflow-x-hidden overflow-y-auto custom-scrollbar bg-gray-100 dark:bg-black" style="color: black !important; background-color: #f3f4f6 !important;">
+      <div id="exportTablePreview" class="w-full"></div>
       <div id="exportTableContainer" class="bg-white p-2 md:p-4 shadow-sm w-full"></div>
   </div>
   <div class="p-3 md:p-4 border-t border-gray-200 dark:border-zinc-800 flex justify-end gap-3 shrink-0">
@@ -300,6 +301,21 @@ primary: '#3b82f6',
   </div>
 </div>
 </div>
+
+<!-- Monkey Patch for ensuring consistent Reset of Export Table Button -->
+<script>
+    const originalOpenTableExportModal = window.openTableExportModal;
+    window.openTableExportModal = function() {
+        if(typeof originalOpenTableExportModal === 'function') originalOpenTableExportModal();
+        const btn = document.getElementById('shareTableBtn');
+        if(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-share-nodes"></i> Share';
+            btn.className = 'px-4 md:px-5 py-2 md:py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold flex items-center gap-2 shadow-sm transition-colors';
+            btn.onclick = window.shareExportTable;
+            btn.disabled = false;
+        }
+    };
+</script>
 
 <!-- QUICK PAIR MODAL -->
 <div id="quickPairModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-[60] flex items-start justify-center pt-12 md:pt-24 p-4 transition-opacity duration-300">

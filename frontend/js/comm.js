@@ -711,7 +711,7 @@ locHtml += `<span class="text-[9px] md:text-[11px] text-purple-700 dark:text-pur
 locHtml += '</div>';
 }
 
-const groupBadge = p.group ? `<span class="text-[9px] md:text-[11px] bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 px-1.5 md:px-2 py-0.5 md:py-1 rounded border border-gray-200 dark:border-zinc-700 whitespace-nowrap">Grp ${p.group}</span>` : '';
+const groupBadge = p.group ? `<span class="bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800 border px-1.5 md:px-2 py-0.5 md:py-1 rounded font-black text-[9px] md:text-[11px] uppercase shadow-sm whitespace-nowrap">Grp ${p.group}</span>` : '';
 
 const homeBtnClass = isGoneHome ? 'bg-blue-500 text-white border-blue-600 shadow-inner' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-zinc-700 hover:text-blue-500 dark:hover:text-blue-400 hover:border-blue-500';
 const checkBtnClass = isChecked ? 'bg-green-500 border-green-600 text-white shadow-inner' : 'bg-gray-50 dark:bg-black border-gray-300 dark:border-zinc-600 text-transparent';
@@ -1129,7 +1129,7 @@ locHtml += '</div>';
 }
 
 const caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] md:min-w-[20px] h-4 md:h-5 px-1 bg-red-500 rounded-full text-[9px] md:text-[11px] font-black text-white shadow-sm mt-px" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
-const groupBadge = p.group ? `<span class="text-[9px] md:text-[11px] bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 whitespace-nowrap">Grp ${p.group}</span>` : '';
+const groupBadge = p.group ? `<span class="bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800 border px-1.5 py-0.5 rounded font-black text-[9px] md:text-[11px] uppercase shadow-sm whitespace-nowrap">Grp ${p.group}</span>` : '';
 
 html += `
 <li class="px-3 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex flex-col gap-1.5 border-b border-gray-200 dark:border-zinc-800 last:border-0 transition" onclick="selectFromCommAttSearch('${safeName}')">
