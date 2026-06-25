@@ -53,6 +53,9 @@ break;
 case 'createOuting':
 result = createOuting(payload);
 break;
+case 'updateOuting':
+result = updateOuting(payload);
+break;
 case 'runAutoPairing':
 result = runAutoPairing(payload);
 break;
@@ -257,6 +260,23 @@ return { success: false, message: "Error: " + e.toString() };
 }
 }
 
+function updateOuting(payload) {
+try {
+  const { sheetUrl, form } = payload;
+  const rawDate = new Date(form.eventDate);
+  const yyyy = rawDate.getFullYear();
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const mmm = monthNames[rawDate.getMonth()];
+  const formattedDate = `${String(rawDate.getDate()).padStart(2, '0')} ${mmm} ${yyyy}`;
+  
+  const ss = SpreadsheetApp.openByUrl(sheetUrl);
+  updateSpecificCells(ss.getId(), form, formattedDate);
+  return { success: true, message: "Outing Details Updated!" };
+} catch (e) {
+  return { success: false, message: e.toString() };
+}
+}
+
 function updateSpecificCells(spreadsheetId, form, formattedDate) {
 const ss = SpreadsheetApp.openById(spreadsheetId);
 let sheet = ss.getSheetByName("OutingInformation");
@@ -379,15 +399,74 @@ return { success: false, message: e.toString() };
 }
 
 /* =========================================
-FEATURE: GET DETAILED STATS & REMINDERS
+FEATURE: GET DETAILED STATS & CONFIGURATIONS
 ========================================= */
 function getOutingDetails(sheetUrl) {
 try {
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
 const tSheet = ss.getSheetByName("Trainee Attendance");
 const vSheet = ss.getSheetByName("Volunteer Attendance");
+const infoSheet = ss.getSheetByName("OutingInformation");
 
 if(!tSheet || !vSheet) return { success: false, message: "Missing Tabs" };
+
+// Extract Edit Configurations & Messages from OutingInformation
+let outingMessage = "";
+let outingConfig = {};
+
+if (infoSheet) {
+const maxInfoRow = Math.min(infoSheet.getLastRow(), 25);
+if(maxInfoRow >= 2) {
+   outingMessage = infoSheet.getRange(2, 2, maxInfoRow - 1, 1).getDisplayValues()
+       .map(r => r[0])
+       .join('\n')
+       .trim();
+}
+
+const getVal = (keyword) => {
+   const found = infoSheet.createTextFinder(keyword).matchSubstring(true).findNext();
+   return found ? found.offset(0, 1).getDisplayValue() : "";
+};
+const getList = (keyword, stopKeyword) => {
+   const found = infoSheet.createTextFinder(keyword).matchSubstring(true).findNext();
+   const locs = [], times = [];
+   if (found) {
+       const row = found.getRow() + 1;
+       const col = found.getColumn();
+       const maxRows = infoSheet.getLastRow() - row + 1;
+       if (maxRows > 0) {
+           const vals = infoSheet.getRange(row, col, Math.min(10, maxRows), 2).getDisplayValues();
+           for(let r of vals) {
+               const val = String(r[0]).trim();
+               if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
+               locs.push(val);
+               times.push(String(r[1]).trim());
+           }
+       }
+   }
+   return { locs, times };
+};
+
+outingConfig.eventName = getVal("Name of Outing");
+
+const dateCell = infoSheet.createTextFinder("Date").matchSubstring(true).findNext();
+if(dateCell) {
+   const dVal = dateCell.offset(0,1).getValue();
+   if (dVal instanceof Date) {
+       outingConfig.eventDate = Utilities.formatDate(dVal, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
+   } else {
+       outingConfig.eventDate = getVal("Date"); 
+   }
+}
+
+const meet = getList("Meeting Location", "Dismissal");
+outingConfig.meetingLocs = meet.locs;
+outingConfig.meetingTimes = meet.times;
+
+const dis = getList("Dismissal Location", "Timeline");
+outingConfig.dismissalLocs = dis.locs;
+outingConfig.dismissalTimes = dis.times;
+}
 
 const stats = {};
 const pendingTrainees = [];
@@ -462,7 +541,9 @@ pendingTrainees.sort();
 return {
 success: true,
 stats: stats,
-pending: pendingTrainees
+pending: pendingTrainees,
+outingConfig: outingConfig,
+outingMessage: outingMessage
 };
 
 } catch(e) {
@@ -569,7 +650,7 @@ vData.forEach(row => {
        const name = row[vNameIdx] ? row[vNameIdx].toString().trim() : "";
        if (name) {
            const project = (vProjIdx > -1 && row[vProjIdx]) ? row[vProjIdx].toString().trim() : "";
-           const groupIC = (vGroupICIdx > -1 && row[vGroupICIdx]) ? row[vGroupICIdx].toString().trim() : "";
+           const groupIC = (vGroupICIdx > -1 && row[vGroupICIdx]) ? (String(row[vGroupICIdx]).toLowerCase() === 'true' || String(row[vGroupICIdx]).toLowerCase() === 'y') : false;
            volunteers.push({
                name: name,
                role: 'VOLUNTEER',
@@ -722,7 +803,7 @@ if (tUpdates.length > 0) {
     }
 }
 
-// --- Process Volunteers ---
+// --- Process Volunteers (Group IC Boolean toggles) ---
 const vUpdates = updates.filter(u => u.role === 'VOLUNTEER');
 if (vUpdates.length > 0) {
     const vSheet = ss.getSheetByName("Volunteer Attendance");
@@ -743,7 +824,7 @@ if (vUpdates.length > 0) {
             const vFormulas = vRange.getFormulas();
             
             const vUpdatesMap = {};
-            vUpdates.forEach(u => vUpdatesMap[u.name.trim().toLowerCase()] = u.groupIC);
+            vUpdates.forEach(u => vUpdatesMap[u.name.trim().toLowerCase()] = u.groupIC === true);
             
             let changed = false;
             for (let i = 0; i < vData.length; i++) {

@@ -7,7 +7,6 @@ let groupingPollInterval = null;
 let currentGroupingFilter = "ALL";
 let currentGroupingSearch = "";
 let currentGroupingTargetName = "";
-let currentGroupingTargetRole = "";
 
 const EXPORT_COLORS = [
     '#fef2f2', // red-50
@@ -72,19 +71,13 @@ renderGroupingList();
 function renderGroupingList() {
 const container = document.getElementById('groupingList');
 
+// Remove Volunteers from Manual Grouping - strictly Trainees now
 let activeTrainees = (groupingData.trainees || [])
-   .filter(t => t.attending === 'y' && !t.isGoneHome)
-   .map(t => ({...t, displayRole: 'TRAINEE'}));
-
-let activeVols = (groupingData.volunteers || [])
-   .map(v => ({...v, displayRole: 'VOLUNTEER'}));
-
-let combined = [...activeTrainees, ...activeVols];
+   .filter(t => t.attending === 'y' && !t.isGoneHome);
 
 let groupSet = new Set();
-combined.forEach(item => {
-   let g = item.displayRole === 'TRAINEE' ? item.group : item.groupIC;
-   g = String(g || "").trim();
+activeTrainees.forEach(item => {
+   let g = String(item.group || "").trim();
    if (g !== "") groupSet.add(g);
 });
 
@@ -105,30 +98,23 @@ if (["ALL", "UNASSIGNED", ...groups].includes(currentGroupingFilter)) {
 }
 
 if (currentGroupingSearch) {
-   combined = combined.filter(item => {
+   activeTrainees = activeTrainees.filter(item => {
        const nameMatch = item.name.toLowerCase().includes(currentGroupingSearch);
-       const volMatch = item.displayRole === 'TRAINEE' && item.volPaired && item.volPaired.toLowerCase().includes(currentGroupingSearch);
-       const g = String(item.displayRole === 'TRAINEE' ? item.group : item.groupIC || "");
-       const groupMatch = g.toLowerCase().includes(currentGroupingSearch);
+       const volMatch = item.volPaired && item.volPaired.toLowerCase().includes(currentGroupingSearch);
+       const groupMatch = String(item.group || "").toLowerCase().includes(currentGroupingSearch);
        return nameMatch || volMatch || groupMatch;
    });
 }
 
 if (currentGroupingFilter === "UNASSIGNED") {
-   combined = combined.filter(item => {
-       const g = String(item.displayRole === 'TRAINEE' ? item.group : item.groupIC || "").trim();
-       return g === "";
-   });
+   activeTrainees = activeTrainees.filter(item => String(item.group || "").trim() === "");
 } else if (currentGroupingFilter !== "ALL") {
-   combined = combined.filter(item => {
-       const g = String(item.displayRole === 'TRAINEE' ? item.group : item.groupIC || "").trim();
-       return g === currentGroupingFilter;
-   });
+   activeTrainees = activeTrainees.filter(item => String(item.group || "").trim() === currentGroupingFilter);
 }
 
-combined.sort((a, b) => {
-   const groupA = String(a.displayRole === 'TRAINEE' ? a.group : a.groupIC || "").trim();
-   const groupB = String(b.displayRole === 'TRAINEE' ? b.group : b.groupIC || "").trim();
+activeTrainees.sort((a, b) => {
+   const groupA = String(a.group || "").trim();
+   const groupB = String(b.group || "").trim();
 
    if (groupA === "" && groupB !== "") return -1;
    if (groupA !== "" && groupB === "") return 1;
@@ -147,31 +133,26 @@ combined.sort((a, b) => {
 
 let html = '';
 
-if (combined.length === 0) {
-   html = `<div class="p-4 text-center text-gray-500 dark:text-gray-400 font-bold text-xs italic">No members match the current filters.</div>`;
+if (activeTrainees.length === 0) {
+   html = `<div class="p-4 text-center text-gray-500 dark:text-gray-400 font-bold text-xs italic">No trainees match the current filters.</div>`;
 } else {
-   combined.forEach(item => {
-       const isTrainee = item.displayRole === 'TRAINEE';
-       const groupStr = String(isTrainee ? item.group : item.groupIC || "").trim();
-       const groupBadgeText = isTrainee ? (groupStr ? `Grp ${groupStr}` : 'Unassigned') : (groupStr ? `Grp ${groupStr} IC` : 'Unassigned');
-       
+   activeTrainees.forEach(item => {
+       const groupStr = String(item.group || "").trim();
        const groupBadgeClass = groupStr !== "" 
            ? `bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800` 
            : `bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50`;
            
-       const roleBadge = isTrainee 
-           ? `<span class="bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800 px-1 py-0.5 rounded text-[8px] uppercase font-black tracking-wider shadow-sm">Trainee</span>`
-           : `<span class="bg-green-50 text-green-600 border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800 px-1 py-0.5 rounded text-[8px] uppercase font-black tracking-wider shadow-sm">Volunteer</span>`;
+       const roleBadge = `<span class="bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800 px-1 py-0.5 rounded text-[8px] uppercase font-black tracking-wider shadow-sm">Trainee</span>`;
 
        let subInfo = '';
-       if (isTrainee && item.volPaired) {
+       if (item.volPaired) {
            subInfo = `<div class="text-[10px] text-teal-600 dark:text-teal-400 font-bold line-clamp-2 mt-1"><i class="fa-solid fa-handshake-angle opacity-80 mr-1"></i>${item.volPaired}</div>`;
        }
 
        const safeName = item.name.replace(/'/g, "\\'");
        
        html += `
-       <div class="bg-white dark:bg-zinc-900 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm cursor-pointer hover:border-orange-500 transition active:scale-[0.98] select-none" onclick="openQuickGroupModal('${safeName}', '${item.displayRole}')">
+       <div class="bg-white dark:bg-zinc-900 p-3 rounded-lg border border-gray-200 dark:border-zinc-700 shadow-sm cursor-pointer hover:border-orange-500 transition active:scale-[0.98] select-none" onclick="openQuickGroupModal('${safeName}')">
            <div class="flex justify-between items-start w-full gap-2">
                <div class="flex flex-col gap-1 min-w-0 flex-1">
                    <div class="flex items-center gap-2">
@@ -181,7 +162,7 @@ if (combined.length === 0) {
                    ${subInfo}
                </div>
                <div class="shrink-0 flex items-center justify-end">
-                   <span class="${groupBadgeClass} border px-2 py-0.5 rounded font-black text-[10px] uppercase shadow-sm">${groupBadgeText}</span>
+                   <span class="${groupBadgeClass} border px-2 py-0.5 rounded font-black text-[10px] uppercase shadow-sm">${groupStr ? `Grp ${groupStr}` : 'Unassigned'}</span>
                </div>
            </div>
        </div>
@@ -196,9 +177,8 @@ container.innerHTML = html;
 // QUICK GROUP MODAL (Vertical List Logic)
 // ==========================================
 
-function openQuickGroupModal(name, role) {
+function openQuickGroupModal(name) {
 currentGroupingTargetName = name;
-currentGroupingTargetRole = role;
 
 const title = document.getElementById('quickGroupModalTitle');
 title.innerHTML = `Assign <span class="text-orange-500">${name}</span>`;
@@ -206,31 +186,16 @@ title.innerHTML = `Assign <span class="text-orange-500">${name}</span>`;
 const grid = document.getElementById('quickGroupGrid');
 
 let currentGroup = "";
-if (role === 'TRAINEE') {
-   const t = groupingData.trainees.find(x => x.name === name);
-   if(t) currentGroup = String(t.group || "").trim();
-} else {
-   const v = groupingData.volunteers.find(x => x.name === name);
-   if(v) currentGroup = String(v.groupIC || "").trim();
-}
+const t = groupingData.trainees.find(x => x.name === name);
+if(t) currentGroup = String(t.group || "").trim();
 
-let activeTrainees = (groupingData.trainees || []).filter(t => t.attending === 'y');
-let activeVols = (groupingData.volunteers || []);
+let activeTrainees = (groupingData.trainees || []).filter(tr => tr.attending === 'y');
 
 let highest = 0;
 let groupSet = new Set();
 
-activeTrainees.forEach(t => {
-   const g = String(t.group || "").trim();
-   if (g !== "") {
-       groupSet.add(g);
-       const num = parseInt(g);
-       if (!isNaN(num) && num > highest) highest = num;
-   }
-});
-
-activeVols.forEach(v => {
-   const g = String(v.groupIC || "").trim();
+activeTrainees.forEach(tr => {
+   const g = String(tr.group || "").trim();
    if (g !== "") {
        groupSet.add(g);
        const num = parseInt(g);
@@ -262,15 +227,10 @@ document.getElementById('quickGroupModal').classList.add('hidden');
 
 function handleNewGroupSelection() {
 let activeTrainees = (groupingData.trainees || []).filter(t => t.attending === 'y');
-let activeVols = (groupingData.volunteers || []);
 
 let highest = 0;
 activeTrainees.forEach(t => {
    const num = parseInt(t.group);
-   if (!isNaN(num) && num > highest) highest = num;
-});
-activeVols.forEach(v => {
-   const num = parseInt(v.groupIC);
    if (!isNaN(num) && num > highest) highest = num;
 });
 
@@ -281,82 +241,64 @@ handleGroupSelection(newGroup);
 function handleGroupSelection(targetGroupRaw) {
 const targetGroup = targetGroupRaw === "UNASSIGNED" ? "" : targetGroupRaw;
 const name = currentGroupingTargetName;
-const role = currentGroupingTargetRole;
 
-if (role === 'TRAINEE') {
-   let trainee = groupingData.trainees.find(t => t.name === name);
-   if (!trainee) { closeQuickGroupModal(); return; }
+let trainee = groupingData.trainees.find(t => t.name === name);
+if (!trainee) { closeQuickGroupModal(); return; }
 
-   const currentGroup = String(trainee.group || "").trim();
-   if (currentGroup === targetGroup) { closeQuickGroupModal(); return; }
+const currentGroup = String(trainee.group || "").trim();
+if (currentGroup === targetGroup) { closeQuickGroupModal(); return; }
 
-   const traineesToMove = new Set([name]);
+const traineesToMove = new Set([name]);
 
-   if (targetGroup !== "" && trainee.volPaired) {
-       let changed = true;
-       while(changed) {
-           changed = false;
-           
-           let aggregateVols = new Set();
-           traineesToMove.forEach(tName => {
-               const t = groupingData.trainees.find(x => x.name === tName);
-               if (t && t.volPaired) {
-                   const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
-                   vols.forEach(v => aggregateVols.add(v));
-               }
-           });
-           
-           groupingData.trainees.forEach(otherT => {
-               if (traineesToMove.has(otherT.name) || !otherT.volPaired) return;
-               
-               const otherVols = otherT.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
-               const hasSharedVol = otherVols.some(v => aggregateVols.has(v));
-               
-               if (hasSharedVol) {
-                   traineesToMove.add(otherT.name);
-                   changed = true; 
-               }
-           });
-       }
-   }
-
-   traineesToMove.forEach(tName => {
-       let t = groupingData.trainees.find(x => x.name === tName);
-       if(t) {
-           t.group = targetGroup;
-           const updateIndex = pendingGroupingUpdates.findIndex(u => u.name === tName && u.role === 'TRAINEE');
-           if (updateIndex > -1) {
-               pendingGroupingUpdates[updateIndex].group = targetGroup;
-           } else {
-               pendingGroupingUpdates.push({ role: 'TRAINEE', name: tName, group: targetGroup });
+if (targetGroup !== "" && trainee.volPaired) {
+   let changed = true;
+   while(changed) {
+       changed = false;
+       
+       let aggregateVols = new Set();
+       traineesToMove.forEach(tName => {
+           const t = groupingData.trainees.find(x => x.name === tName);
+           if (t && t.volPaired) {
+               const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+               vols.forEach(v => aggregateVols.add(v));
            }
-       }
-   });
+       });
+       
+       groupingData.trainees.forEach(otherT => {
+           if (traineesToMove.has(otherT.name) || !otherT.volPaired) return;
+           
+           const otherVols = otherT.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+           const hasSharedVol = otherVols.some(v => aggregateVols.has(v));
+           
+           if (hasSharedVol) {
+               traineesToMove.add(otherT.name);
+               changed = true; 
+           }
+       });
+   }
+}
 
-   if (traineesToMove.size > 1 && targetGroup !== "") {
-       showFlashMessage('groupingGlobalStatus', `Auto-Grouped ${traineesToMove.size} trainees together due to shared volunteers.`, 'success');
+traineesToMove.forEach(tName => {
+   let t = groupingData.trainees.find(x => x.name === tName);
+   if(t) {
+       t.group = targetGroup;
+       const updateIndex = pendingGroupingUpdates.findIndex(u => u.name === tName && u.role === 'TRAINEE');
+       if (updateIndex > -1) {
+           pendingGroupingUpdates[updateIndex].group = targetGroup;
+       } else {
+           pendingGroupingUpdates.push({ role: 'TRAINEE', name: tName, group: targetGroup });
+       }
    }
-} else {
-   let v = groupingData.volunteers.find(x => x.name === name);
-   if(!v) { closeQuickGroupModal(); return; }
-   
-   const currentGroup = String(v.groupIC || "").trim();
-   if (currentGroup === targetGroup) { closeQuickGroupModal(); return; }
-   
-   v.groupIC = targetGroup;
-   const updateIndex = pendingGroupingUpdates.findIndex(u => u.name === name && u.role === 'VOLUNTEER');
-   if (updateIndex > -1) {
-       pendingGroupingUpdates[updateIndex].groupIC = targetGroup;
-   } else {
-       pendingGroupingUpdates.push({ role: 'VOLUNTEER', name: name, groupIC: targetGroup });
-   }
+});
+
+if (traineesToMove.size > 1 && targetGroup !== "") {
+   showFlashMessage('groupingGlobalStatus', `Auto-Grouped ${traineesToMove.size} trainees together due to shared volunteers.`, 'success');
 }
 
 renderGroupingList();
 triggerGroupingSync();
 closeQuickGroupModal();
 }
-
 
 function setGroupingSyncButtonState(state) {
 const btn = document.getElementById('btn-sync-manual-grouping');
@@ -483,27 +425,41 @@ function closeTableExportModal() {
     document.getElementById('exportTableModal').classList.add('hidden');
 }
 
+function toggleGroupIC(volName, isChecked) {
+    let v = groupingData.volunteers.find(x => x.name === volName);
+    if (v) {
+        v.groupIC = isChecked;
+        const updateIndex = pendingGroupingUpdates.findIndex(u => u.name === volName && u.role === 'VOLUNTEER');
+        if (updateIndex > -1) {
+            pendingGroupingUpdates[updateIndex].groupIC = isChecked;
+        } else {
+            pendingGroupingUpdates.push({ role: 'VOLUNTEER', name: volName, groupIC: isChecked });
+        }
+        triggerGroupingSync();
+        buildExportTable();
+    }
+}
+
 function buildExportTable() {
     const container = document.getElementById('exportTableContainer');
     
     let allGroups = new Set();
     groupingData.trainees.forEach(t => {
-        if (t.attending === 'y' && !t.isGoneHome && t.group) allGroups.add(String(t.group).trim());
-    });
-    groupingData.volunteers.forEach(v => {
-        if (v.groupIC) allGroups.add(String(v.groupIC).trim());
+        if (t.attending === 'y' && !t.isGoneHome && String(t.group).trim() !== "") {
+            allGroups.add(String(t.group).trim());
+        }
     });
     
     let sortedGroups = Array.from(allGroups).sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
     
     let html = `
-    <table class="w-full text-left border-collapse min-w-[600px] text-sm text-gray-800" style="font-family: Arial, sans-serif; border: 2px solid #333;">
+    <table class="w-full text-left border-collapse text-[10px] md:text-xs text-gray-800" style="font-family: Arial, sans-serif; border: 2px solid #333; table-layout: fixed; word-wrap: break-word;">
         <thead>
             <tr style="background-color: #333; color: #fff;">
-                <th style="padding: 10px; border: 1px solid #555; width: 25%;">Volunteer</th>
-                <th style="padding: 10px; border: 1px solid #555; width: 25%;">Paired Trainee(s)</th>
-                <th style="padding: 10px; border: 1px solid #555; width: 10%; text-align: center;">Group</th>
-                <th style="padding: 10px; border: 1px solid #555; width: 40%;">Remarks</th>
+                <th style="padding: 4px 6px; border: 1px solid #555; width: 28%;">Volunteer</th>
+                <th style="padding: 4px 6px; border: 1px solid #555; width: 27%;">Trainee(s)</th>
+                <th style="padding: 4px; border: 1px solid #555; width: 10%; text-align: center;">Grp</th>
+                <th style="padding: 4px 6px; border: 1px solid #555; width: 35%;">Remarks</th>
             </tr>
         </thead>
         <tbody>
@@ -513,23 +469,17 @@ function buildExportTable() {
         html += `<tr><td colspan="4" style="padding: 20px; text-align: center; font-style: italic;">No groups assigned yet.</td></tr>`;
     }
 
+    const volLookup = new Map();
+    groupingData.volunteers.forEach(v => {
+        volLookup.set(v.name.toLowerCase(), v);
+    });
+
     sortedGroups.forEach((g, index) => {
         const bgColor = EXPORT_COLORS[index % EXPORT_COLORS.length];
         
         let tList = groupingData.trainees.filter(t => t.attending === 'y' && !t.isGoneHome && String(t.group).trim() === g);
-        let icList = groupingData.volunteers.filter(v => String(v.groupIC).trim() === g);
         
         let volMap = new Map();
-        
-        icList.forEach(ic => {
-            volMap.set(ic.name.toLowerCase(), {
-                name: ic.name,
-                isIC: true,
-                trainees: [],
-                remarks: []
-            });
-        });
-        
         let unpairedTrainees = [];
         
         tList.forEach(t => {
@@ -539,9 +489,10 @@ function buildExportTable() {
                 vols.forEach(v => {
                     const vKey = v.toLowerCase();
                     if (!volMap.has(vKey)) {
+                        const vObj = volLookup.get(vKey);
                         volMap.set(vKey, {
-                            name: v,
-                            isIC: false,
+                            name: vObj ? vObj.name : v, // Preserve actual casing if available
+                            isIC: vObj ? vObj.groupIC === true : false,
                             trainees: [],
                             remarks: []
                         });
@@ -565,33 +516,37 @@ function buildExportTable() {
         
         if (rows.length === 0 && unpairedTrainees.length === 0) {
             html += `<tr style="background-color: ${bgColor};">
-                <td colspan="2" style="padding: 8px; border: 1px solid #ccc; font-style: italic;">No assignments</td>
-                <td style="padding: 8px; border: 1px solid #ccc; text-align: center; font-weight: bold;">${g}</td>
-                <td style="padding: 8px; border: 1px solid #ccc;"></td>
+                <td colspan="2" style="padding: 4px 6px; border: 1px solid #ccc; font-style: italic;">No assignments</td>
+                <td style="padding: 4px; border: 1px solid #ccc; text-align: center; font-weight: bold;">${g}</td>
+                <td style="padding: 4px 6px; border: 1px solid #ccc;"></td>
             </tr>`;
         }
         
         rows.forEach(r => {
-            let volDisplay = r.name;
-            if (r.isIC) volDisplay += ` <strong style="color: #0369a1;">(Grp ${g} IC)</strong>`;
+            const safeName = r.name.replace(/'/g, "\\'");
+            const toggleHtml = `<label class="flex items-center gap-1 mt-1 text-[9px] md:text-[10px] font-normal text-gray-500 ic-toggle-container select-none cursor-pointer"><input type="checkbox" onchange="toggleGroupIC('${safeName}', this.checked)" ${r.isIC ? 'checked' : ''} class="accent-blue-500 w-3 h-3"> Group IC</label>`;
+            
+            let volDisplay = `<span style="font-weight: bold;">${r.name}</span>`;
+            if (r.isIC) volDisplay += `<br><strong style="color: #0369a1; font-size: 0.9em;">(Grp ${g} IC)</strong>`;
+            volDisplay += toggleHtml;
             
             let tDisplay = r.trainees.length > 0 ? r.trainees.join('<br>') : '-';
             let rDisplay = r.remarks.join('<br><br>');
             
             html += `<tr style="background-color: ${bgColor};">
-                <td style="padding: 8px; border: 1px solid #ccc; font-weight: bold;">${volDisplay}</td>
-                <td style="padding: 8px; border: 1px solid #ccc;">${tDisplay}</td>
-                <td style="padding: 8px; border: 1px solid #ccc; text-align: center; font-weight: bold;">${g}</td>
-                <td contenteditable="true" style="padding: 8px; border: 1px solid #ccc; outline: none; transition: background 0.2s;" onfocus="this.style.backgroundColor='#fff'" onblur="this.style.backgroundColor='transparent'">${rDisplay}</td>
+                <td style="padding: 4px 6px; border: 1px solid #ccc; vertical-align: top;">${volDisplay}</td>
+                <td style="padding: 4px 6px; border: 1px solid #ccc; vertical-align: top;">${tDisplay}</td>
+                <td style="padding: 4px; border: 1px solid #ccc; text-align: center; font-weight: bold; vertical-align: top;">${g}</td>
+                <td contenteditable="true" style="padding: 4px 6px; border: 1px solid #ccc; outline: none; transition: background 0.2s; vertical-align: top;" onfocus="this.style.backgroundColor='#fff'" onblur="this.style.backgroundColor='transparent'">${rDisplay}</td>
             </tr>`;
         });
         
         unpairedTrainees.forEach(ut => {
             html += `<tr style="background-color: ${bgColor};">
-                <td style="padding: 8px; border: 1px solid #ccc; font-weight: bold; color: #dc2626; text-align: center;">-</td>
-                <td style="padding: 8px; border: 1px solid #ccc;">${ut.name}</td>
-                <td style="padding: 8px; border: 1px solid #ccc; text-align: center; font-weight: bold;">${g}</td>
-                <td contenteditable="true" style="padding: 8px; border: 1px solid #ccc; outline: none; transition: background 0.2s;" onfocus="this.style.backgroundColor='#fff'" onblur="this.style.backgroundColor='transparent'">${ut.remarks}</td>
+                <td style="padding: 4px 6px; border: 1px solid #ccc; font-weight: bold; color: #dc2626; text-align: center; vertical-align: top;">-</td>
+                <td style="padding: 4px 6px; border: 1px solid #ccc; vertical-align: top;">${ut.name}</td>
+                <td style="padding: 4px; border: 1px solid #ccc; text-align: center; font-weight: bold; vertical-align: top;">${g}</td>
+                <td contenteditable="true" style="padding: 4px 6px; border: 1px solid #ccc; outline: none; transition: background 0.2s; vertical-align: top;" onfocus="this.style.backgroundColor='#fff'" onblur="this.style.backgroundColor='transparent'">${ut.remarks}</td>
             </tr>`;
         });
     });
@@ -600,37 +555,63 @@ function buildExportTable() {
     container.innerHTML = html;
 }
 
-async function copyExportTable() {
-    const tableContainer = document.getElementById('exportTableContainer');
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = tableContainer.innerHTML;
-    tempDiv.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+async function shareExportTable() {
+    const container = document.getElementById('exportTableContainer');
+    const btn = document.getElementById('shareTableBtn');
+    if(!container || !btn) return;
     
-    const htmlString = tempDiv.innerHTML;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating...';
+    btn.disabled = true;
+
+    // Temporarily hide UI elements for clean image
+    const toggles = container.querySelectorAll('.ic-toggle-container');
+    toggles.forEach(t => t.style.display = 'none');
     
+    container.querySelectorAll('[contenteditable]').forEach(el => {
+        el.style.outline = 'none';
+    });
+
     try {
-        if (navigator.clipboard && window.ClipboardItem) {
-            const blob = new Blob([htmlString], { type: 'text/html' });
-            const data = [new ClipboardItem({ 'text/html': blob })];
-            await navigator.clipboard.write(data);
-            showFlashMessage('groupingGlobalStatus', "Table copied to clipboard!", 'success');
-        } else {
-            throw new Error("Clipboard API not supported");
-        }
+        if (typeof html2canvas === 'undefined') throw new Error("html2canvas not loaded");
+        
+        const canvas = await html2canvas(container, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true
+        });
+        
+        canvas.toBlob(async (blob) => {
+            if (!blob) throw new Error("Canvas generation failed");
+            const file = new File([blob], 'outing-groups.png', { type: 'image/png' });
+            
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    title: 'Outing Groups',
+                    files: [file]
+                });
+            } else {
+                // Fallback to clipboard if share not supported
+                if (navigator.clipboard && window.ClipboardItem) {
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    showFlashMessage('groupingGlobalStatus', "Table copied to clipboard!", 'success');
+                } else {
+                    // Ultimate fallback to download
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'outing-groups.png';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            }
+        }, 'image/png');
     } catch (e) {
-        document.body.appendChild(tempDiv);
-        const range = document.createRange();
-        range.selectNode(tempDiv);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-        try {
-            document.execCommand('copy');
-            showFlashMessage('groupingGlobalStatus', "Table copied to clipboard!", 'success');
-        } catch (err) {
-            alert('Failed to copy table.');
-        }
-        selection.removeAllRanges();
-        document.body.removeChild(tempDiv);
+        console.error(e);
+        alert("Failed to share table.");
+    } finally {
+        toggles.forEach(t => t.style.display = 'flex');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }

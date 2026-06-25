@@ -12,6 +12,10 @@ let commAttSyncTimeout = null;
 let commAttPollInterval = null;
 let commAttFiltersChanged = false;
 
+// Caches for Outing Message and Config
+let outingDetailsCache = {};
+let currentEditSheetUrl = null;
+
 function hasPendingUpdates() {
 for(let junc in pendingCommAttUpdates) {
 if(Object.keys(pendingCommAttUpdates[junc]).length > 0) return true;
@@ -61,56 +65,63 @@ if (res.success) {
 if(viewId === 'comm' && listContainer) {
 listContainer.innerHTML = '';
 outingReminders = {}; 
-if(res.data.length > 0) {
-    // Re-enable action buttons now that we have data
-    document.getElementById('scrubBtn').disabled = false;
-    document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-    document.getElementById('manualPairBtn').disabled = false;
-    document.getElementById('manualPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-    document.getElementById('groupBtn').disabled = false;
-    document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-    document.getElementById('manualGroupBtn').disabled = false;
-    document.getElementById('manualGroupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+outingDetailsCache = {};
 
-    let allCards = '';
-    res.data.forEach((item, index) => {
-        allCards += `
-        <div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
-           <div class="flex justify-between items-start">
-             <div>
-                 <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
-                 <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
-                 <div id="pending-badge-${index}" class="mt-1 hidden"></div>
-             </div>
-             <div class="flex gap-2 text-xs"><a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a><a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a></div>
-           </div>
-           <div id="stats-${index}" class="text-xs text-gray-400 dark:text-gray-500 animate-pulse mt-2">Loading stats...</div>
-           <div id="btn-group-${index}" class="hidden flex gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
-               <button onclick="openReminderModal('${index}')" class="flex-1 bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 text-xs py-2 px-3 rounded border border-gray-200 dark:border-zinc-700 transition-colors"><i class="fa-regular fa-message mr-1"></i> Reminder Message</button>
-               <button onclick="copyReminderDirect('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-xs py-2 px-3 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors"><i class="fa-regular fa-copy"></i></button>
-           </div>
-        </div>`;
-    });
-    listContainer.innerHTML = allCards;
-    res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
+if(res.data.length > 0) {
+   // Re-enable action buttons now that we have data
+   document.getElementById('scrubBtn').disabled = false;
+   document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+   document.getElementById('manualPairBtn').disabled = false;
+   document.getElementById('manualPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+   document.getElementById('groupBtn').disabled = false;
+   document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+   document.getElementById('manualGroupBtn').disabled = false;
+   document.getElementById('manualGroupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+
+   let allCards = '';
+   res.data.forEach((item, index) => {
+       allCards += `
+       <div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
+          <div class="flex justify-between items-start">
+            <div>
+                <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
+                <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
+                <div id="pending-badge-${index}" class="mt-1 hidden"></div>
+            </div>
+            <div class="flex gap-2 text-xs">
+                <button onclick="openEditOutingModal(${index})" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors" title="Edit Outing"><i class="fa-solid fa-pen text-base"></i></button>
+                <a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a>
+                <a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a>
+            </div>
+          </div>
+          <div id="stats-${index}" class="text-xs text-gray-400 dark:text-gray-500 animate-pulse mt-2">Loading stats...</div>
+          <div id="btn-group-${index}" class="hidden grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+              <button onclick="openReminderModal('${index}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 text-[10px] md:text-xs py-2 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors truncate"><i class="fa-solid fa-bell mr-1"></i>Remind</button>
+              <button onclick="copyOutingMessage('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 text-[10px] md:text-xs py-2 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors truncate"><i class="fa-regular fa-copy mr-1"></i>Copy Info</button>
+              <button onclick="openShareTableFromComm('${item.sheetUrl}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-[10px] md:text-xs py-2 px-1 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors truncate"><i class="fa-solid fa-share-nodes mr-1"></i>Share Table</button>
+          </div>
+       </div>`;
+   });
+   listContainer.innerHTML = allCards;
+   res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
 } else {
-    listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
+   listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
 }
 }
 if(res.data.length > 0) {
 window.currentSheetList = res.data;
 res.data.forEach(item => {
-    let opt = document.createElement('option');
-    opt.value = item.sheetUrl;
-    opt.text = item.displayName;
-    selector.appendChild(opt);
+   let opt = document.createElement('option');
+   opt.value = item.sheetUrl;
+   opt.text = item.displayName;
+   selector.appendChild(opt);
 });
 selector.selectedIndex = 0;
 
 if(viewId === 'volunteer') {
-    resetVolForm();
+   resetVolForm();
 } else if (viewId === 'actual-attendance' && res.data.length === 1) {
-    setTimeout(() => openLiveAttendance(), 100);
+   setTimeout(() => openLiveAttendance(), 100);
 }
 } else {
 selector.innerHTML = '<option disabled selected>No upcoming events</option>';
@@ -129,14 +140,16 @@ apiCall('getOutingDetails', url).then(res => {
 const container = document.getElementById(`stats-${index}`);
 const btnGroup = document.getElementById(`btn-group-${index}`);
 if(res.success) {
+outingDetailsCache[index] = { config: res.outingConfig, message: res.outingMessage };
+
 let html = '<table class="w-full text-[10px] text-left border-collapse"><tr class="text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-zinc-700"><th>Proj</th><th class="text-center">Trainees</th><th class="text-center">CG</th><th class="text-center">Vols</th></tr>';
 const sortedKeys = Object.keys(res.stats).sort();
 if(sortedKeys.length === 0) {
 html += '<tr><td colspan="4" class="text-center py-2 text-gray-400 dark:text-gray-500 italic">No data yet</td></tr>';
 } else {
 for(const proj of sortedKeys) {
-    const d = res.stats[proj];
-    html += `<tr class="border-b border-gray-100 dark:border-zinc-800/50 last:border-0"><td class="py-1 font-bold text-gray-700 dark:text-gray-300">${proj}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.tY}</span>/${d.tTot}</td><td class="text-center text-gray-900 dark:text-white">${d.cY}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.vY}</span>/${d.vTot}</td></tr>`;
+   const d = res.stats[proj];
+   html += `<tr class="border-b border-gray-100 dark:border-zinc-800/50 last:border-0"><td class="py-1 font-bold text-gray-700 dark:text-gray-300">${proj}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.tY}</span>/${d.tTot}</td><td class="text-center text-gray-900 dark:text-white">${d.cY}</td><td class="text-center text-gray-500 dark:text-gray-400"><span class="text-gray-900 dark:text-white">${d.vY}</span>/${d.vTot}</td></tr>`;
 }
 }
 html += '</table>';
@@ -167,7 +180,13 @@ document.getElementById('reminderModal').classList.remove('hidden');
 
 function closeReminderModal() { document.getElementById('reminderModal').classList.add('hidden'); }
 function copyFromModal(btn) { performCopy(document.getElementById('modalReminderText').value, btn); }
-function copyReminderDirect(index, btn) { performCopy(outingReminders[index], btn); }
+
+function copyOutingMessage(index, btn) {
+const cache = outingDetailsCache[index];
+if(cache && cache.message) {
+    performCopy(cache.message, btn);
+}
+}
 
 function performCopy(text, btn) {
 navigator.clipboard.writeText(text).then(() => {
@@ -209,6 +228,20 @@ showFlashMessage('scrubStatus', res.message, res.success ? 'success' : 'error');
 }); 
 }
 
+function openShareTableFromComm(sheetUrl) {
+    showOverlay('loading', 'Generating Table...');
+    apiCall('fetchManualPairingData', { sheetUrl: sheetUrl }).then(res => {
+        closeOverlay();
+        if (res.success) {
+            groupingData = res.data;
+            openTableExportModal();
+        } else {
+            alert("Error: " + res.message);
+        }
+    });
+}
+
+// === CREATE OUTING LOGIC ===
 function openModal() { 
 const modal = document.getElementById('createModal'); 
 const modalPanel = document.getElementById('modalPanel');
@@ -257,6 +290,81 @@ showOverlay('error', res.message);
 }); 
 }
 
+// === EDIT OUTING LOGIC ===
+function openEditOutingModal(index) {
+    const cache = outingDetailsCache[index];
+    if(!cache || !cache.config) return;
+    const config = cache.config;
+    
+    document.getElementById('editEventName').value = config.eventName || "";
+    document.getElementById('editEventDate').value = config.eventDate || "";
+    
+    const mLocs = document.getElementsByName('editMeetingLoc');
+    const mTimes = document.getElementsByName('editMeetingTime');
+    for(let i=0; i<4; i++) {
+        mLocs[i].value = config.meetingLocs[i] || "";
+        mTimes[i].value = config.meetingTimes[i] || "";
+    }
+    
+    const dLocs = document.getElementsByName('editDismissalLoc');
+    const dTimes = document.getElementsByName('editDismissalTime');
+    for(let i=0; i<4; i++) {
+        dLocs[i].value = config.dismissalLocs[i] || "";
+        dTimes[i].value = config.dismissalTimes[i] || "";
+    }
+    
+    currentEditSheetUrl = window.currentSheetList[index].sheetUrl;
+    
+    const modal = document.getElementById('editModal'); 
+    const modalPanel = document.getElementById('editModalPanel');
+    modal.classList.remove('hidden'); 
+    setTimeout(() => { 
+        modal.classList.remove('opacity-0'); 
+        modalPanel.classList.remove('scale-95'); 
+        modalPanel.classList.add('scale-100'); 
+    }, 10); 
+}
+
+function closeEditModal() {
+    const modal = document.getElementById('editModal'); 
+    const modalPanel = document.getElementById('editModalPanel');
+    modal.classList.add('opacity-0'); 
+    modalPanel.classList.remove('scale-100'); 
+    modalPanel.classList.add('scale-95'); 
+    setTimeout(() => { 
+        modal.classList.add('hidden'); 
+    }, 300); 
+}
+
+function handleEditSubmit(e) {
+    e.preventDefault();
+    if(!currentEditSheetUrl) return;
+
+    showOverlay('loading', 'Updating Outing Details...');
+
+    const formData = { 
+        eventName: document.getElementById('editEventName').value, 
+        eventDate: document.getElementById('editEventDate').value, 
+        meetingLocs: Array.from(document.getElementsByName('editMeetingLoc')).map(i=>i.value), 
+        meetingTimes: Array.from(document.getElementsByName('editMeetingTime')).map(i=>i.value), 
+        dismissalLocs: Array.from(document.getElementsByName('editDismissalLoc')).map(i=>i.value), 
+        dismissalTimes: Array.from(document.getElementsByName('editDismissalTime')).map(i=>i.value), 
+    }; 
+
+    apiCall('updateOuting', { sheetUrl: currentEditSheetUrl, form: formData }).then(res => { 
+        if(res.success) { 
+            showOverlay('success', 'Outing Details Updated!');
+            closeEditModal(); 
+            loadSheets('comm'); 
+            showFlashMessage('commGlobalStatus', "Outing Updated Successfully!", 'success');
+        } else { 
+            showOverlay('error', res.message);
+        } 
+    }); 
+}
+
+
+// === LIVE ATTENDANCE ===
 function openLiveAttendance() {
 const selector = document.getElementById('actualSheetSelector');
 const url = selector.value;
@@ -341,14 +449,14 @@ if (availableItems.length === 0) {
 html += `<div class="p-2 text-center text-xs text-gray-500 dark:text-gray-400 italic">No options</div>`;
 } else {
 availableItems.forEach(item => {
-   const isChecked = selectedArray.includes(item);
-   html += `
-   <div class="px-3 py-2 border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-between transition-colors" onclick="toggleCommAttFilterItem('${type}', '${item.replace(/'/g, "\\'")}', event)">
-       <span class="text-xs text-gray-700 dark:text-gray-300 font-bold break-words pr-2">${type === 'group' ? 'Grp ' + item : item}</span>
-       <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-blue-500 border-blue-600 text-white' : 'bg-gray-100 border-gray-300 dark:bg-black dark:border-zinc-600 text-transparent'}">
-           <i class="fa-solid fa-check text-[10px]"></i>
-       </div>
-   </div>`;
+  const isChecked = selectedArray.includes(item);
+  html += `
+  <div class="px-3 py-2 border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-between transition-colors" onclick="toggleCommAttFilterItem('${type}', '${item.replace(/'/g, "\\'")}', event)">
+      <span class="text-xs text-gray-700 dark:text-gray-300 font-bold break-words pr-2">${type === 'group' ? 'Grp ' + item : item}</span>
+      <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-blue-500 border-blue-600 text-white' : 'bg-gray-100 border-gray-300 dark:bg-black dark:border-zinc-600 text-transparent'}">
+          <i class="fa-solid fa-check text-[10px]"></i>
+      </div>
+  </div>`;
 });
 }
 
@@ -385,12 +493,12 @@ commAttFiltersChanged = false;
 
 document.addEventListener('click', function(e) {
 const isDropdownClick = e.target.closest('#commAttGroupDropdown') || 
-                   e.target.closest('#commAttMeetDropdown') || 
-                   e.target.closest('#commAttDismissDropdown');
+                  e.target.closest('#commAttMeetDropdown') || 
+                  e.target.closest('#commAttDismissDropdown');
 
 const isBtnClick = e.target.closest('#commAttGroupBtn') || 
-              e.target.closest('#commAttMeetBtn') || 
-              e.target.closest('#commAttDismissBtn');
+             e.target.closest('#commAttMeetBtn') || 
+             e.target.closest('#commAttDismissBtn');
 
 if (!isDropdownClick && !isBtnClick) {
 closeAllCommAttFilters();
@@ -477,11 +585,11 @@ let participants = commAttData.participants || [];
 
 // SORTING: By Group (numeric) then Name (alphabetical)
 participants.sort((a, b) => {
-  const grpA = a.group ? a.group.toString().toLowerCase() : "zzzz";
-  const grpB = b.group ? b.group.toString().toLowerCase() : "zzzz";
-  const groupCmp = grpA.localeCompare(grpB, undefined, {numeric: true});
-  if (groupCmp !== 0) return groupCmp;
-  return a.name.localeCompare(b.name);
+ const grpA = a.group ? a.group.toString().toLowerCase() : "zzzz";
+ const grpB = b.group ? b.group.toString().toLowerCase() : "zzzz";
+ const groupCmp = grpA.localeCompare(grpB, undefined, {numeric: true});
+ if (groupCmp !== 0) return groupCmp;
+ return a.name.localeCompare(b.name);
 });
 
 if (commAttState.selectedGroups.length > 0) {
@@ -533,11 +641,11 @@ goneHomeList.scrollTop = scrollGH;
 
 // Bind Long Press logic after rendering
 document.querySelectorAll('.comm-att-card').forEach(el => {
-  uiBindLongPress(el, () => {
-      const name = el.getAttribute('data-name');
-      const p = (commAttData.participants || []).find(x => x.name.replace(/'/g, "\\'") === name);
-      if (p) showPersonInfo(p);
-  });
+ uiBindLongPress(el, () => {
+     const name = el.getAttribute('data-name');
+     const p = (commAttData.participants || []).find(x => x.name.replace(/'/g, "\\'") === name);
+     if (p) showPersonInfo(p);
+ });
 });
 }
 
@@ -585,15 +693,15 @@ ${caregiverBadge}
 </div>
 <div class="flex justify-between items-center w-full">
 <div class="shrink-0 flex items-center">
- ${groupBadge}
+${groupBadge}
 </div>
 <div class="shrink-0 flex items-center gap-1.5 md:gap-2">
- <button onclick="toggleGoneHomeStatus('${safeName}', ${!isGoneHome}, event)" class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
-     <i class="fa-solid fa-house-user text-[10px] md:text-xs"></i>
- </button>
- <div class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
-     <i class="fa-solid fa-check text-xs md:text-sm"></i>
- </div>
+<button onclick="toggleGoneHomeStatus('${safeName}', ${!isGoneHome}, event)" class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
+    <i class="fa-solid fa-house-user text-[10px] md:text-xs"></i>
+</button>
+<div class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
+    <i class="fa-solid fa-check text-xs md:text-sm"></i>
+</div>
 </div>
 </div>
 ${volHtml ? `<div class="flex flex-col gap-1 md:gap-1.5 w-full">${volHtml}</div>` : ''}
@@ -640,37 +748,37 @@ triggerSync();
 function triggerCommAttPulse(name, stateType) {
 setTimeout(() => {
 requestAnimationFrame(() => {
-   const id = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
-   const card = document.getElementById(id);
-   if (card) {
-       const container = card.parentElement;
-       if (container) {
-           const containerRect = container.getBoundingClientRect();
-           const cardRect = card.getBoundingClientRect();
-           
-           if (cardRect.height > 0) {
-               const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
-               
-               container.scrollTo({
-                   top: scrollTop,
-                   behavior: 'smooth'
-               });
-           }
-       }
-       
-       let pulseClass = 'pulse-red';
-       
-       if (stateType === 'checked') {
-           pulseClass = 'pulse-green';
-       } else if (stateType === 'gonehome') {
-           pulseClass = 'pulse-blue';
-       }
-       
-       card.classList.add(pulseClass);
-       setTimeout(() => {
-           card.classList.remove(pulseClass);
-       }, 800);
-   }
+  const id = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const card = document.getElementById(id);
+  if (card) {
+      const container = card.parentElement;
+      if (container) {
+          const containerRect = container.getBoundingClientRect();
+          const cardRect = card.getBoundingClientRect();
+          
+          if (cardRect.height > 0) {
+              const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
+              
+              container.scrollTo({
+                  top: scrollTop,
+                  behavior: 'smooth'
+              });
+          }
+      }
+      
+      let pulseClass = 'pulse-red';
+      
+      if (stateType === 'checked') {
+          pulseClass = 'pulse-green';
+      } else if (stateType === 'gonehome') {
+          pulseClass = 'pulse-blue';
+      }
+      
+      card.classList.add(pulseClass);
+      setTimeout(() => {
+          card.classList.remove(pulseClass);
+      }, 800);
+  }
 });
 }, 150);
 }
@@ -685,23 +793,23 @@ if (columnType === 'checked') listTitle = "PRESENT";
 if (columnType === 'goneHome') listTitle = "GONE HOME";
 
 if (commAttState.selectedGroups.length > 0) {
-   participants = participants.filter(p => commAttState.selectedGroups.includes(String(p.group)));
+  participants = participants.filter(p => commAttState.selectedGroups.includes(String(p.group)));
 }
 if (commAttState.selectedMeets.length > 0) {
-   participants = participants.filter(p => commAttState.selectedMeets.includes(String(p.meetingLoc)));
+  participants = participants.filter(p => commAttState.selectedMeets.includes(String(p.meetingLoc)));
 }
 if (commAttState.selectedDismissals.length > 0) {
-   participants = participants.filter(p => commAttState.selectedDismissals.includes(String(p.dismissalLoc)));
+  participants = participants.filter(p => commAttState.selectedDismissals.includes(String(p.dismissalLoc)));
 }
 
 const targetNames = [];
 participants.forEach(p => {
-   const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
-   const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
-   
-   if (columnType === 'goneHome' && isGoneHome) targetNames.push(p.name);
-   else if (columnType === 'checked' && !isGoneHome && isChecked) targetNames.push(p.name);
-   else if (columnType === 'notChecked' && !isGoneHome && !isChecked) targetNames.push(p.name);
+  const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
+  const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
+  
+  if (columnType === 'goneHome' && isGoneHome) targetNames.push(p.name);
+  else if (columnType === 'checked' && !isGoneHome && isChecked) targetNames.push(p.name);
+  else if (columnType === 'notChecked' && !isGoneHome && !isChecked) targetNames.push(p.name);
 });
 
 const groupsStr = commAttState.selectedGroups.length > 0 ? "Grp: " + commAttState.selectedGroups.join(", ") : "All Groups";
@@ -711,11 +819,11 @@ const dismissStr = commAttState.selectedDismissals.length > 0 ? "Dismissal: " + 
 let format = (window.appSettings && window.appSettings.shareFormat) ? window.appSettings.shareFormat : DEF_SHARE_FORMAT;
 
 const formattedText = format
-   .replace(/\{\{Groups\}\}/gi, groupsStr)
-   .replace(/\{\{Meetings\}\}/gi, meetsStr)
-   .replace(/\{\{Dismissals\}\}/gi, dismissStr)
-   .replace(/\{\{Count\}\}/gi, targetNames.length)
-   .replace(/\{\{List\}\}/gi, targetNames.join('\n'));
+  .replace(/\{\{Groups\}\}/gi, groupsStr)
+  .replace(/\{\{Meetings\}\}/gi, meetsStr)
+  .replace(/\{\{Dismissals\}\}/gi, dismissStr)
+  .replace(/\{\{Count\}\}/gi, targetNames.length)
+  .replace(/\{\{List\}\}/gi, targetNames.join('\n'));
 
 return `[${listTitle}]\n${formattedText}`;
 }
@@ -723,9 +831,9 @@ return `[${listTitle}]\n${formattedText}`;
 function copyColumnData(columnType) {
 const finalMessage = generateColumnText(columnType);
 navigator.clipboard.writeText(finalMessage).then(() => {
-   showFlashMessage('commGlobalStatus', "List copied to clipboard!", 'success');
+  showFlashMessage('commGlobalStatus', "List copied to clipboard!", 'success');
 }).catch(() => {
-   alert("Failed to copy list. Clipboard access denied.");
+  alert("Failed to copy list. Clipboard access denied.");
 });
 }
 
@@ -734,14 +842,14 @@ const finalMessage = generateColumnText(columnType);
 const listTitle = finalMessage.split('\n')[0].replace(/\[|\]/g, '');
 
 if (navigator.share) {
-   navigator.share({
-       title: `${listTitle} List`,
-       text: finalMessage
-   }).catch(err => {
-       console.error("Share failed", err);
-   });
+  navigator.share({
+      title: `${listTitle} List`,
+      text: finalMessage
+  }).catch(err => {
+      console.error("Share failed", err);
+  });
 } else {
-   copyColumnData(columnType);
+  copyColumnData(columnType);
 }
 }
 
@@ -775,7 +883,7 @@ setCommAttBtnState('error');
 for (let junc in batchBackup) {
 if(!pendingCommAttUpdates[junc]) pendingCommAttUpdates[junc] = {};
 for (let name in batchBackup[junc]) {
- pendingCommAttUpdates[junc][name] = batchBackup[junc][name];
+pendingCommAttUpdates[junc][name] = batchBackup[junc][name];
 }
 }
 } finally {
@@ -790,7 +898,6 @@ if (!btn) return;
 const textSpan = btn.querySelector('.btn-text');
 const spinner = btn.querySelector('.btn-spinner');
 
-// Updated base classes to align with the new Title Bar placement
 btn.className = "text-[10px] md:text-xs px-1.5 py-1 flex items-center justify-center rounded font-bold transition border border-gray-300 dark:border-zinc-700 focus:outline-none shadow-sm shrink-0";
 spinner.classList.add('hidden');
 
@@ -803,9 +910,9 @@ btn.classList.add('bg-green-50', 'dark:bg-green-900/30', 'text-green-700', 'dark
 textSpan.textContent = "Saved";
 setTimeout(() => {
 if (!hasPendingUpdates()) {
- btn.classList.remove('bg-green-50', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400', 'border-green-200', 'dark:border-green-800');
- btn.classList.add('bg-white', 'dark:bg-zinc-800', 'text-gray-700', 'dark:text-gray-300');
- textSpan.textContent = "Saved";
+btn.classList.remove('bg-green-50', 'dark:bg-green-900/30', 'text-green-700', 'dark:text-green-400', 'border-green-200', 'dark:border-green-800');
+btn.classList.add('bg-white', 'dark:bg-zinc-800', 'text-gray-700', 'dark:text-gray-300');
+textSpan.textContent = "Saved";
 }
 }, 2000);
 } else if (state === 'error') {
@@ -894,23 +1001,23 @@ if (isCommAttSyncing || hasPendingUpdates()) return;
 
 apiCall('fetchCommAttendance', { sheetUrl: currentCommAttSheetUrl }).then(res => {
 if (res.success && !isCommAttSyncing && !hasPendingUpdates()) {
- const oldJunctures = JSON.stringify(commAttData.junctures);
- const oldParticipants = JSON.stringify(commAttData.participants);
- const oldAttendance = JSON.stringify(commAttData.attendance);
+const oldJunctures = JSON.stringify(commAttData.junctures);
+const oldParticipants = JSON.stringify(commAttData.participants);
+const oldAttendance = JSON.stringify(commAttData.attendance);
 
- commAttData = res;
- if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
- 
- const newJunctures = JSON.stringify(commAttData.junctures);
- const newParticipants = JSON.stringify(commAttData.participants);
- const newAttendance = JSON.stringify(commAttData.attendance);
+commAttData = res;
+if(!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
 
- if (oldJunctures !== newJunctures || oldParticipants !== newParticipants) {
-     renderCommAttFilters();
-     renderCommAttJunctures();
- } else if (oldAttendance !== newAttendance) {
-     renderCommAttLists();
- }
+const newJunctures = JSON.stringify(commAttData.junctures);
+const newParticipants = JSON.stringify(commAttData.participants);
+const newAttendance = JSON.stringify(commAttData.attendance);
+
+if (oldJunctures !== newJunctures || oldParticipants !== newParticipants) {
+    renderCommAttFilters();
+    renderCommAttJunctures();
+} else if (oldAttendance !== newAttendance) {
+    renderCommAttLists();
+}
 }
 });
 }, 8000);
@@ -969,7 +1076,7 @@ let volHtml = '';
 if (p.volPaired) {
 const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
 if (vols.length > 0) {
- volHtml = vols.map(v => `<span class="text-[9px] md:text-[11px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
+volHtml = vols.map(v => `<span class="text-[9px] md:text-[11px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
 }
 } else if (!isGoneHome) {
 volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
@@ -979,10 +1086,10 @@ let locHtml = '';
 if (p.meetingLoc || p.dismissalLoc) {
 locHtml = '<div class="flex flex-col gap-1 w-full mt-1 border-t border-gray-100 dark:border-zinc-700/60 pt-1.5">';
 if (p.meetingLoc) {
- locHtml += `<span class="text-[9px] md:text-[11px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
+locHtml += `<span class="text-[9px] md:text-[11px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
 }
 if (p.dismissalLoc) {
- locHtml += `<span class="text-[9px] md:text-[11px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
+locHtml += `<span class="text-[9px] md:text-[11px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
 }
 locHtml += '</div>';
 }
@@ -993,14 +1100,14 @@ const groupBadge = p.group ? `<span class="text-[9px] md:text-[11px] bg-gray-100
 html += `
 <li class="px-3 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex flex-col gap-1.5 border-b border-gray-200 dark:border-zinc-800 last:border-0 transition" onclick="selectFromCommAttSearch('${safeName}')">
 <div class="flex items-start gap-1.5 w-full">
- <span class="font-bold text-xs md:text-sm text-gray-900 dark:text-white break-words leading-tight">${p.name}</span>
- ${caregiverBadge}
+<span class="font-bold text-xs md:text-sm text-gray-900 dark:text-white break-words leading-tight">${p.name}</span>
+${caregiverBadge}
 </div>
 <div class="flex justify-between items-center w-full">
- <div class="shrink-0 flex items-center">
-     ${groupBadge}
- </div>
- <div class="shrink-0">${statusBadge}</div>
+<div class="shrink-0 flex items-center">
+    ${groupBadge}
+</div>
+<div class="shrink-0">${statusBadge}</div>
 </div>
 ${volHtml ? `<div class="flex flex-col gap-1 w-full">${volHtml}</div>` : ''}
 ${locHtml}
