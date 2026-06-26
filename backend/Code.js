@@ -139,9 +139,12 @@ return h.toString().toLowerCase().replace(/[^a-z0-9]/g, "").includes(key);
 }
 
 function getGroupingSheet(ss) {
-let sheet = ss.getSheetByName("Groupings");
-if (!sheet) sheet = ss.getSheetByName("Grouping");
-return sheet;
+const variations = ["Groupings", "Grouping", "Groupings ", "Grouping "];
+for (let v of variations) {
+let sheet = ss.getSheetByName(v);
+if (sheet) return sheet;
+}
+return null;
 }
 
 // --- SHARED HELPER: EXTRA DATA EXTRACTOR ---
@@ -1725,52 +1728,60 @@ if (attendingStatus === 'n') {
     }
     // 2. Delete row from Groupings
     if (gSheet) {
-        const gLastRow = gSheet.getLastRow();
-        if (gLastRow >= 2) {
-            const gData = gSheet.getRange(1, 2, gLastRow, 1).getValues(); 
-            const nameClean = name.toLowerCase();
-            for (let k = gLastRow - 1; k >= 1; k--) {
-                const gName = gData[k][0] ? gData[k][0].toString().trim().toLowerCase() : "";
-                if (gName === nameClean) {
-                    gSheet.deleteRow(k + 1);
-                }
+        const bValues = gSheet.getRange("B:B").getValues();
+        const nameClean = name.toLowerCase();
+        for (let i = bValues.length - 1; i >= 2; i--) {
+            if (bValues[i][0] && bValues[i][0].toString().trim().toLowerCase() === nameClean) {
+                gSheet.deleteRow(i + 1);
             }
         }
     }
 } else if (attendingStatus === 'y') {
     // Add row to Groupings if they don't exist
     if (gSheet) {
-        const gLastRow = gSheet.getLastRow();
+        const bValues = gSheet.getRange("B:B").getValues();
+        const nameClean = name.toLowerCase();
         let found = false;
-        if (gLastRow >= 2) {
-            const gData = gSheet.getRange(1, 2, gLastRow, 1).getValues();
-            const nameClean = name.toLowerCase();
-            for (let k = 1; k < gLastRow; k++) {
-                const gName = gData[k][0] ? gData[k][0].toString().trim().toLowerCase() : "";
-                if (gName === nameClean) {
-                    found = true;
-                    break;
-                }
+        
+        for (let i = 2; i < bValues.length; i++) {
+            if (bValues[i][0] && bValues[i][0].toString().trim().toLowerCase() === nameClean) {
+                found = true;
+                break;
             }
         }
         
         if (!found) {
-            const newRow = gLastRow + 1;
-            gSheet.getRange(newRow, 2).setValue(name);
+            let insertRow = -1;
+            for (let i = 2; i < bValues.length; i++) {
+                if (!bValues[i][0] || bValues[i][0].toString().trim() === "") {
+                    insertRow = i + 1;
+                    break;
+                }
+            }
+            if (insertRow === -1) {
+                insertRow = gSheet.getLastRow() + 1;
+            }
+            if (insertRow < 3) insertRow = 3;
             
-            gSheet.getRange(newRow, 1).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!L:L,"Not Found")`);
-            gSheet.getRange(newRow, 3).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!O:O,"Not Found")`);
-            gSheet.getRange(newRow, 4).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!C:C,"Not Found")`);
-            gSheet.getRange(newRow, 5).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!D:D,"Not Found")`);
+            const tSheetName = tSheet ? tSheet.getName() : "Trainee Attendance";
+            const mSheet = ss.getSheetByName("MISC PriVol");
+            const mSheetName = mSheet ? mSheet.getName() : "MISC PriVol";
             
-            gSheet.getRange(newRow, 6, 1, 7).insertCheckboxes();
+            gSheet.getRange(insertRow, 2).setValue(name);
             
-            gSheet.getRange(newRow, 13).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!H:H,"Not Found")`);
-            gSheet.getRange(newRow, 14).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!G:G,"Not Found")`);
-            gSheet.getRange(newRow, 15).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!I:I,"Not Found")`);
-            gSheet.getRange(newRow, 16).setFormula(`=XLOOKUP(B${newRow}, 'MISC PriVol'!A:A,'MISC PriVol'!D:D,"Not Found")`);
-            gSheet.getRange(newRow, 17).setFormula(`=XLOOKUP(B${newRow}, 'MISC PriVol'!A:A,'MISC PriVol'!B:B,"Not Found")`);
-            gSheet.getRange(newRow, 18).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!J:J,"Not Found")`);
+            gSheet.getRange(insertRow, 1).setFormula(`=XLOOKUP(B${insertRow},'${tSheetName}'!A:A,'${tSheetName}'!L:L,"Not Found")`);
+            gSheet.getRange(insertRow, 3).setFormula(`=XLOOKUP(B${insertRow},'${tSheetName}'!A:A,'${tSheetName}'!O:O,"Not Found")`);
+            gSheet.getRange(insertRow, 4).setFormula(`=XLOOKUP(B${insertRow},'${tSheetName}'!A:A,'${tSheetName}'!C:C,"Not Found")`);
+            gSheet.getRange(insertRow, 5).setFormula(`=XLOOKUP(B${insertRow},'${tSheetName}'!A:A,'${tSheetName}'!D:D,"Not Found")`);
+            
+            gSheet.getRange(insertRow, 6, 1, 7).insertCheckboxes();
+            
+            gSheet.getRange(insertRow, 13).setFormula(`=XLOOKUP(B${insertRow},'${tSheetName}'!A:A,'${tSheetName}'!H:H,"Not Found")`);
+            gSheet.getRange(insertRow, 14).setFormula(`=XLOOKUP(B${insertRow},'${tSheetName}'!A:A,'${tSheetName}'!G:G,"Not Found")`);
+            gSheet.getRange(insertRow, 15).setFormula(`=XLOOKUP(B${insertRow},'${tSheetName}'!A:A,'${tSheetName}'!I:I,"Not Found")`);
+            gSheet.getRange(insertRow, 16).setFormula(`=XLOOKUP(B${insertRow}, '${mSheetName}'!A:A,'${mSheetName}'!D:D,"Not Found")`);
+            gSheet.getRange(insertRow, 17).setFormula(`=XLOOKUP(B${insertRow}, '${mSheetName}'!A:A,'${mSheetName}'!B:B,"Not Found")`);
+            gSheet.getRange(insertRow, 18).setFormula(`=XLOOKUP(B${insertRow},'${tSheetName}'!A:A,'${tSheetName}'!J:J,"Not Found")`);
         }
     }
 }
