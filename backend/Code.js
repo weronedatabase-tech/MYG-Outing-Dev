@@ -288,7 +288,9 @@ const maxCol = sheet.getMaxColumns();
 const maxRow = sheet.getMaxRows();
 
 const setVal = (keyword, val) => {
-const found = sheet.createTextFinder(keyword).findNext();
+let found = sheet.createTextFinder(keyword).matchEntireCell(true).findNext();
+if (!found) found = sheet.createTextFinder(keyword).findNext();
+
 if (found && found.getColumn() < maxCol) found.offset(0, 1).setValue(val);
 };
 
@@ -296,7 +298,9 @@ setVal("Name of Outing", form.eventName);
 setVal("Date", formattedDate);
 
 const updateList = (keyword, locs, times) => {
-const found = sheet.createTextFinder(keyword).findNext();
+let found = sheet.createTextFinder(keyword).matchEntireCell(true).findNext();
+if (!found) found = sheet.createTextFinder(keyword).findNext();
+
 if (found) {
 let row = found.getRow() + 1;
 let col = found.getColumn();
@@ -449,14 +453,18 @@ if (infoSheet) {
       }
 
       const getVal = (keyword) => {
-         const found = infoSheet.createTextFinder(keyword).findNext();
+         let found = infoSheet.createTextFinder(keyword).matchEntireCell(true).findNext();
+         if (!found) found = infoSheet.createTextFinder(keyword).findNext();
+
          if (!found || found.getColumn() >= maxInfoCol) return "";
          return found.offset(0, 1).getDisplayValue();
       };
 
       const getList = (keyword, stopKeyword) => {
          const locs = [], times = [];
-         const found = infoSheet.createTextFinder(keyword).findNext();
+         let found = infoSheet.createTextFinder(keyword).matchEntireCell(true).findNext();
+         if (!found) found = infoSheet.createTextFinder(keyword).findNext();
+
          if (found) {
              const row = found.getRow() + 1;
              const col = found.getColumn();
