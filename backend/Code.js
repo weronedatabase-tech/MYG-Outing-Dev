@@ -268,12 +268,27 @@ try {
 const { sheetUrl, form } = payload;
 const rawDate = new Date(form.eventDate);
 const yyyy = rawDate.getFullYear();
+const mm = String(rawDate.getMonth() + 1).padStart(2, '0');
+const dd = String(rawDate.getDate()).padStart(2, '0');
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const mmm = monthNames[rawDate.getMonth()];
-const formattedDate = `${String(rawDate.getDate()).padStart(2, '0')} ${mmm} ${yyyy}`;
+const formattedDate = `${dd} ${mmm} ${yyyy}`;
+
+const newFolderName = `${yyyy}${mm}${dd}_${form.eventName}`;
+const newFileName = `${form.eventName} ${formattedDate}`;
 
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
 updateSpecificCells(ss.getId(), form, formattedDate);
+
+const file = DriveApp.getFileById(ss.getId());
+file.setName(newFileName);
+
+const parents = file.getParents();
+if (parents.hasNext()) {
+const folder = parents.next();
+folder.setName(newFolderName);
+}
+
 return { success: true, message: "Outing Details Updated!" };
 } catch (e) {
 return { success: false, message: e.toString() };
@@ -294,7 +309,7 @@ if (found && found.getColumn() < maxCol) found.offset(0, 1).setValue(val);
 };
 
 setVal("Name of Outing", form.eventName);
-setVal("Date", formattedDate);
+sheet.getRange("G5").setValue(formattedDate);
 
 const updateList = (keyword, locs, times) => {
 let found = sheet.createTextFinder(keyword).findNext();
@@ -1693,76 +1708,100 @@ break;
 }
 }
 
-// --- LOGICAL CASCADE: If 'N' attending, unpair globally ---
-if (attendingStatus === 'n') {
+// --- LOGICAL CASCADE: Check Attendance Status ---
+if (form.type === 'trainee') {
 let tSheet = ss.getSheetByName("Trainee Attendance");
 if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
-
-if (form.type === 'trainee') {
-// Trainee is not attending -> Clear their volunteer paired
-const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
-const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
-if (tVolPairedIdx > -1) {
-    tSheet.getRange(targetRow, tVolPairedIdx + 1).setValue("");
-}
-// Also clear in Groupings
 const gSheet = getGroupingSheet(ss);
-if (gSheet) {
-    const gLastRow = gSheet.getLastRow();
-    if (gLastRow > 2) {
-        const gHeaders = gSheet.getRange(2, 1, 1, gSheet.getLastColumn()).getValues()[0];
-        let gNameIdx = getColIndex(gHeaders, "traineename");
-        if (gNameIdx === -1) gNameIdx = getColIndex(gHeaders, "trainee");
-        if (gNameIdx === -1) gNameIdx = getColIndex(gHeaders, "name");
-        if (gNameIdx === -1) gNameIdx = 0;
-        const gVolIdx = getColIndex(gHeaders, "volunteerpaired");
-        
-        if (gVolIdx > -1) {
-            const gRange = gSheet.getRange(3, 1, gLastRow - 2, gSheet.getLastColumn());
-            const gData = gRange.getValues();
-            let gChanged = false;
-            
+
+if (attendingStatus === 'n') {
+    // 1. Clear their volunteer paired globally in Trainee Attendance
+    if (tSheet) {
+        const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
+        const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
+        if (tVolPairedIdx > -1) {
+            tSheet.getRange(targetRow, tVolPairedIdx + 1).setValue("");
+        }
+    }
+    // 2. Delete row from Groupings
+    if (gSheet) {
+        const gLastRow = gSheet.getLastRow();
+        if (gLastRow >= 2) {
+            const gData = gSheet.getRange(1, 2, gLastRow, 1).getValues(); 
             const nameClean = name.toLowerCase();
-            for(let k=0; k<gData.length; k++){
-                const gName = gData[k][gNameIdx] ? gData[k][gNameIdx].toString().trim().toLowerCase() : "";
+            for (let k = gLastRow - 1; k >= 1; k--) {
+                const gName = gData[k][0] ? gData[k][0].toString().trim().toLowerCase() : "";
                 if (gName === nameClean) {
-                    if(gData[k][gVolIdx] !== "") {
-                        gData[k][gVolIdx] = "";
-                        gChanged = true;
-                    }
+                    gSheet.deleteRow(k + 1);
                 }
             }
-            if (gChanged) gRange.setValues(gData);
+        }
+    }
+} else if (attendingStatus === 'y') {
+    // Add row to Groupings if they don't exist
+    if (gSheet) {
+        const gLastRow = gSheet.getLastRow();
+        let found = false;
+        if (gLastRow >= 2) {
+            const gData = gSheet.getRange(1, 2, gLastRow, 1).getValues();
+            const nameClean = name.toLowerCase();
+            for (let k = 1; k < gLastRow; k++) {
+                const gName = gData[k][0] ? gData[k][0].toString().trim().toLowerCase() : "";
+                if (gName === nameClean) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!found) {
+            const newRow = gLastRow + 1;
+            gSheet.getRange(newRow, 2).setValue(name);
+            
+            gSheet.getRange(newRow, 1).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!L:L,"Not Found")`);
+            gSheet.getRange(newRow, 3).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!O:O,"Not Found")`);
+            gSheet.getRange(newRow, 4).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!C:C,"Not Found")`);
+            gSheet.getRange(newRow, 5).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!D:D,"Not Found")`);
+            
+            gSheet.getRange(newRow, 6, 1, 7).insertCheckboxes();
+            
+            gSheet.getRange(newRow, 13).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!H:H,"Not Found")`);
+            gSheet.getRange(newRow, 14).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!G:G,"Not Found")`);
+            gSheet.getRange(newRow, 15).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!I:I,"Not Found")`);
+            gSheet.getRange(newRow, 16).setFormula(`=XLOOKUP(B${newRow}, 'MISC PriVol'!A:A,'MISC PriVol'!D:D,"Not Found")`);
+            gSheet.getRange(newRow, 17).setFormula(`=XLOOKUP(B${newRow}, 'MISC PriVol'!A:A,'MISC PriVol'!B:B,"Not Found")`);
+            gSheet.getRange(newRow, 18).setFormula(`=XLOOKUP(B${newRow},'Trainee Attendance'!A:A,'Trainee Attendance'!J:J,"Not Found")`);
         }
     }
 }
 } else if (form.type === 'volunteer') {
-// Volunteer is not attending -> Strip them from ANY trainee's 'vol paired' column
-if (tSheet) {
-    const tLastRow = tSheet.getLastRow();
-    if (tLastRow > 1) {
-        const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
-        const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
-        if (tVolPairedIdx > -1) {
-            const tRange = tSheet.getRange(2, 1, tLastRow - 1, tSheet.getLastColumn());
-            const tData = tRange.getValues();
-            let tChanged = false;
-            
-            const nameClean = name.toLowerCase();
-            for(let k=0; k<tData.length; k++){
-                const currentPaired = tData[k][tVolPairedIdx] ? tData[k][tVolPairedIdx].toString() : "";
-                if (currentPaired.toLowerCase().includes(nameClean)) {
-                    // Splice the name out
-                    const vols = currentPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-                    const updatedVols = vols.filter(v => v.toLowerCase() !== nameClean);
-                    tData[k][tVolPairedIdx] = updatedVols.join(', ');
-                    tChanged = true;
+if (attendingStatus === 'n') {
+    let tSheet = ss.getSheetByName("Trainee Attendance");
+    if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
+    if (tSheet) {
+        const tLastRow = tSheet.getLastRow();
+        if (tLastRow > 1) {
+            const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
+            const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
+            if (tVolPairedIdx > -1) {
+                const tRange = tSheet.getRange(2, 1, tLastRow - 1, tSheet.getLastColumn());
+                const tData = tRange.getValues();
+                let tChanged = false;
+                
+                const nameClean = name.toLowerCase();
+                for(let k=0; k<tData.length; k++){
+                    const currentPaired = tData[k][tVolPairedIdx] ? tData[k][tVolPairedIdx].toString() : "";
+                    if (currentPaired.toLowerCase().includes(nameClean)) {
+                        const vols = currentPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+                        const updatedVols = vols.filter(v => v.toLowerCase() !== nameClean);
+                        tData[k][tVolPairedIdx] = updatedVols.join(', ');
+                        tChanged = true;
+                    }
                 }
+                if (tChanged) tRange.setValues(tData);
             }
-            if (tChanged) tRange.setValues(tData);
         }
     }
-}
 }
 }
 
