@@ -808,42 +808,7 @@ if (tData[i][tVolPairedIdx] !== updatesMap[name]) {
 if (changed) {
 let tOutput = tData.map((vals, i) => vals.map((v, c) => tFormulas[i][c] !== "" ? tFormulas[i][c] : v));
 tRange.setValues(tOutput);
-
-// Also mirror to Groupings tab if active
-const gSheet = getGroupingSheet(ss);
-if (gSheet) {
-const gLastRow = gSheet.getLastRow();
-if (gLastRow > 2) {
-  const gHeaders = gSheet.getRange(2, 1, 1, gSheet.getLastColumn()).getValues()[0];
-  let gNameIdx = getColIndex(gHeaders, "traineename");
-  if (gNameIdx === -1) gNameIdx = getColIndex(gHeaders, "trainee");
-  if (gNameIdx === -1) gNameIdx = getColIndex(gHeaders, "name");
-  if (gNameIdx === -1) gNameIdx = 0;
-  const gVolIdx = getColIndex(gHeaders, "volunteerpaired");
-  
-  if (gVolIdx > -1) {
-      const gRange = gSheet.getRange(3, 1, gLastRow - 2, gSheet.getLastColumn());
-      const gData = gRange.getValues();
-      const gFormulas = gRange.getFormulas();
-      let gChanged = false;
-      
-      for(let j=0; j<gData.length; j++) {
-          const gName = gData[j][gNameIdx] ? gData[j][gNameIdx].toString().trim().toLowerCase() : "";
-          if (gName && updatesMap.hasOwnProperty(gName)) {
-              if(gData[j][gVolIdx] !== updatesMap[gName]) {
-                  gData[j][gVolIdx] = updatesMap[gName];
-                  gFormulas[j][gVolIdx] = "";
-                  gChanged = true;
-              }
-          }
-      }
-      if (gChanged) {
-          let gOutput = gData.map((vals, i) => vals.map((v, c) => gFormulas[i][c] !== "" ? gFormulas[i][c] : v));
-          gRange.setValues(gOutput);
-      }
-  }
-}
-}
+SpreadsheetApp.flush(); // Ensure formulas in Groupings tab recalculate immediately natively based on this update
 }
 
 return { success: true };
@@ -1032,38 +997,7 @@ volPairedValues[k][0] = assignmentInfo.secondary;
 }
 
 volPairedRange.setValues(volPairedValues);
-
-// Mirror to Grouping Tab
-const gSheet = getGroupingSheet(ss);
-if (gSheet) {
-const gLastRow = gSheet.getLastRow();
-if (gLastRow > 2) {
-const gHeaders = gSheet.getRange(2, 1, 1, gSheet.getLastColumn()).getValues()[0];
-let gNameIdx = getColIndex(gHeaders, "traineename");
-if (gNameIdx === -1) gNameIdx = getColIndex(gHeaders, "trainee");
-if (gNameIdx === -1) gNameIdx = getColIndex(gHeaders, "name");
-if (gNameIdx === -1) gNameIdx = 0;
-const gVolIdx = getColIndex(gHeaders, "volunteerpaired");
-
-if (gVolIdx > -1) {
-  const gRange = gSheet.getRange(3, gVolIdx + 1, gLastRow - 2, 1);
-  const gNamesData = gSheet.getRange(3, gNameIdx + 1, gLastRow - 2, 1).getValues();
-  let gVolValues = gRange.getValues();
-  
-  for(let j=0; j<gNamesData.length; j++) {
-      const gName = gNamesData[j][0] ? gNamesData[j][0].toString().toLowerCase().trim() : "";
-      for(let k=0; k<tFullData.length; k++){
-           const tName = tFullData[k][tNameIdx] ? tFullData[k][tNameIdx].toString().toLowerCase().trim() : "";
-           if(gName === tName) {
-               gVolValues[j][0] = volPairedValues[k][0];
-               break;
-           }
-      }
-  }
-  gRange.setValues(gVolValues);
-}
-}
-}
+SpreadsheetApp.flush(); // Ensure formulas in Groupings tab recalculate instantly based on this edit
 }
 }
 return { success: true, message: "✅ Auto Pairing Complete!\nVolunteer Paired column updated." };
