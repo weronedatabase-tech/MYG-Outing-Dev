@@ -288,8 +288,10 @@ const traineesToMove = new Set([name]);
 
 if (targetGroup !== "" && trainee.volPaired) {
 let changed = true;
-while(changed) {
+let iterationCount = 0; // Prevent infinite loop safety net
+while(changed && iterationCount < 100) {
     changed = false;
+    iterationCount++;
     
     let aggregateVols = new Set();
     traineesToMove.forEach(tName => {
@@ -542,10 +544,20 @@ function buildExportTable() {
                  }
                  const vData = volMap.get(vKey);
                  vData.trainees.push(t.name);
-                 if (remarks) vData.remarks.push(`${t.name}: ${remarks}`);
+                 
+                 // Include volunteer remarks only once per volunteer per group
+                 const volObj = volLookup.get(vKey);
+                 if (volObj && volObj.remarks && volObj.remarks.trim()) {
+                     const cleanVolRem = `[Vol: ${vData.name}] ${volObj.remarks.trim()}`;
+                     if (!vData.remarks.includes(cleanVolRem)) {
+                         vData.remarks.push(cleanVolRem);
+                     }
+                 }
+                 
+                 if (remarks) vData.remarks.push(`[Trn: ${t.name}] ${remarks}`);
              });
          } else {
-             unpairedTrainees.push({ name: t.name, remarks: remarks });
+             unpairedTrainees.push({ name: t.name, remarks: remarks ? `[Trn: ${t.name}] ${remarks}` : '' });
          }
      });
      

@@ -153,7 +153,7 @@ cgBadge = `<span class="inline-flex shrink-0 items-center justify-center min-w-[
 
 let remarksBadge = '';
 if (isVol) {
-const remarks = item.extra?.remarks || item.extra?.remark || '';
+const remarks = item.remarks || item.extra?.remarks || item.extra?.remark || '';
 if (remarks.trim()) {
     remarksBadge = `<i class="fa-solid fa-comment-dots text-blue-500 ml-1 text-xs" title="${remarks.replace(/"/g, '&quot;')}"></i>`;
 }
