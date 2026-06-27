@@ -173,6 +173,13 @@ primary: '#3b82f6',
         <label class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold mb-1 block flex items-center gap-1">Select Event <span id="commSheetLoading" class="hidden"><i class="fa-solid fa-circle-notch fa-spin text-teal-500"></i></span></label>
         <select id="commSheetSelector" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-2 px-3 text-sm focus:border-teal-500 outline-none text-gray-900 dark:text-white"><option disabled selected>Loading...</option></select>
     </div>
+
+    <div class="flex gap-1 w-full">
+        <button id="scrubBtn" onclick="handlePair()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-teal-50 dark:hover:bg-zinc-700 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-700 font-bold py-2 rounded-xl transition-all text-[9px] md:text-xs whitespace-nowrap px-0.5 shadow-sm leading-tight">Auto Pair</button>
+        <button id="manualPairBtn" onclick="openManualPairing()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 font-bold py-2 rounded-xl transition-all text-[9px] md:text-xs whitespace-nowrap px-0.5 shadow-sm leading-tight">Manual Pair</button>
+        <button id="groupBtn" onclick="handleGroup()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-purple-50 dark:hover:bg-zinc-700 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-700 font-bold py-2 rounded-xl transition-all text-[9px] md:text-xs whitespace-nowrap px-0.5 shadow-sm leading-tight">Auto Group</button>
+        <button id="manualGroupBtn" onclick="openManualGrouping()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-orange-50 dark:hover:bg-zinc-700 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-700 font-bold py-2 rounded-xl transition-all text-[9px] md:text-xs whitespace-nowrap px-0.5 shadow-sm leading-tight">Manual Group</button>
+    </div>
     
     <!-- IC Assignment Button (New) -->
     <div class="mt-3 w-full">
@@ -181,12 +188,6 @@ primary: '#3b82f6',
         </button>
     </div>
 
-    <div class="flex gap-1 w-full">
-        <button id="scrubBtn" onclick="handlePair()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-teal-50 dark:hover:bg-zinc-700 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-700 font-bold py-2 rounded-xl transition-all text-[9px] md:text-xs whitespace-nowrap px-0.5 shadow-sm leading-tight">Auto Pair</button>
-        <button id="manualPairBtn" onclick="openManualPairing()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-zinc-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 font-bold py-2 rounded-xl transition-all text-[9px] md:text-xs whitespace-nowrap px-0.5 shadow-sm leading-tight">Manual Pair</button>
-        <button id="groupBtn" onclick="handleGroup()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-purple-50 dark:hover:bg-zinc-700 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-700 font-bold py-2 rounded-xl transition-all text-[9px] md:text-xs whitespace-nowrap px-0.5 shadow-sm leading-tight">Auto Group</button>
-        <button id="manualGroupBtn" onclick="openManualGrouping()" class="flex-1 bg-white dark:bg-zinc-800 hover:bg-orange-50 dark:hover:bg-zinc-700 text-orange-600 dark:text-orange-400 border border-orange-200 dark:border-orange-700 font-bold py-2 rounded-xl transition-all text-[9px] md:text-xs whitespace-nowrap px-0.5 shadow-sm leading-tight">Manual Group</button>
-    </div>
     <div id="scrubStatus" class="hidden mt-4 p-3 bg-gray-50 dark:bg-black rounded-xl text-xs whitespace-pre-wrap font-mono border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-gray-100"></div>
 </div>
 </div>

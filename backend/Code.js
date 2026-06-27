@@ -657,8 +657,23 @@ const gSheet = getGroupingSheet(ss);
 
 if (!tSheet || !vSheet || !gSheet) return { success: false, message: "Missing Tabs" };
 
-// Global Extra Data Map for Long Press Modals
+// Global Extra Data Map for Long Press Modals & Remarks logic
 const extraDataMap = buildExtraDataMap(ss);
+
+// Setup Meeting and Dismissal Location Extraction directly from OutingInformation
+let meetingLocs = [];
+let dismissalLocs = [];
+const infoSheet = ss.getSheetByName("OutingInformation");
+if (infoSheet) {
+   try {
+       const meetVals = infoSheet.getRange("F7:F10").getValues();
+       for (let r of meetVals) { if (String(r[0]).trim()) meetingLocs.push(String(r[0]).trim()); }
+       const disVals = infoSheet.getRange("F12:F15").getValues();
+       for (let r of disVals) { if (String(r[0]).trim()) dismissalLocs.push(String(r[0]).trim()); }
+   } catch (e) {
+       console.log("Failed extracting locations in fetchManualPairingData: " + e.toString());
+   }
+}
 
 // 1. Get Trainees & Active Volunteers
 const trainees = [];
@@ -765,7 +780,12 @@ if (att === 'y') {
 
 return { 
 success: true, 
-data: { trainees: trainees, volunteers: volunteers } 
+data: { 
+   trainees: trainees, 
+   volunteers: volunteers,
+   meetingLocs: meetingLocs,
+   dismissalLocs: dismissalLocs
+} 
 };
 } catch(e) {
 return { success: false, message: e.toString() };
@@ -827,6 +847,10 @@ lock.releaseLock();
 }
 
 function syncManualGroupingUpdates(sheetUrl, updates) {
+// ARCHITECTURAL NOTE: 
+// This function strictly edits columns in the "Trainee Attendance" and "Volunteer Attendance" tabs.
+// IT NEVER issues a setValues() command to the "Groupings" sheet, thereby ensuring that
+// Groupings formulaic logic naturally derives and cascades without overwrite risk.
 const lock = LockService.getScriptLock();
 try {
 lock.waitLock(10000);
@@ -1307,6 +1331,10 @@ lock.releaseLock();
 }
 
 function syncCommAttendance(sheetUrl, multipleUpdates) {
+// ARCHITECTURAL NOTE: 
+// This function strictly edits checkbox columns in the "Groupings" tab dynamically 
+// and adds row checks natively without ever touching or overriding columns A-E and M-R
+// which are mapped natively via XLOOKUP in the template design.
 const lock = LockService.getScriptLock();
 try {
 lock.waitLock(10000);
@@ -1707,7 +1735,7 @@ if (attendingStatus === 'n') {
          tSheet.getRange(targetRow, tVolPairedIdx + 1).setValue("");
      }
  }
- // 2. Delete row from Groupings
+ // 2. Delete row from Groupings natively
  if (gSheet) {
      const bValues = gSheet.getRange("B:B").getValues();
      const nameClean = name.toLowerCase();
@@ -1718,7 +1746,7 @@ if (attendingStatus === 'n') {
      }
  }
 } else if (attendingStatus === 'y') {
- // Add row to Groupings if they don't exist
+ // Add row to Groupings natively if they don't exist
  if (gSheet) {
      const bValues = gSheet.getRange("B:B").getValues();
      const nameClean = name.toLowerCase();
