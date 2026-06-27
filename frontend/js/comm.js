@@ -39,6 +39,7 @@ document.getElementById('groupBtn').disabled = true;
 document.getElementById('groupBtn').classList.add('opacity-50', 'cursor-not-allowed');
 document.getElementById('manualGroupBtn').disabled = true;
 document.getElementById('manualGroupBtn').classList.add('opacity-50', 'cursor-not-allowed');
+document.getElementById('icAssignBtn').disabled = true;
 
 } else if (viewId === 'actual-attendance') {
 selectorId = 'actualSheetSelector'; 
@@ -78,39 +79,40 @@ document.getElementById('groupBtn').disabled = false;
 document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
 document.getElementById('manualGroupBtn').disabled = false;
 document.getElementById('manualGroupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+document.getElementById('icAssignBtn').disabled = false;
 
 let allCards = '';
 res.data.forEach((item, index) => {
-   allCards += `
-   <div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
-      <div class="flex justify-between items-start">
-        <div>
-            <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
-            <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
-            <div id="pending-badge-${index}" class="mt-1 hidden"></div>
-        </div>
-        <div class="flex gap-2 text-xs">
-            <button onclick="openEditOutingModal(${index})" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors" title="Edit Outing"><i class="fa-solid fa-pen text-base"></i></button>
-            <a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a>
-            <a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a>
-        </div>
-      </div>
-      <div id="stats-${index}" class="text-xs text-gray-400 dark:text-gray-500 animate-pulse mt-2">Loading stats...</div>
-      <div id="btn-group-${index}" class="hidden grid grid-cols-3 gap-1.5 md:gap-2 mt-2 pt-3 border-t border-gray-100 dark:border-zinc-800">
-          <button onclick="openReminderModal('${index}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Remind">
-             <i class="fa-solid fa-bell text-sm md:text-base shrink-0"></i>
-             <span class="text-[10px] md:text-[11px] font-semibold truncate">Remind</span>
-          </button>
-          <button onclick="copyOutingMessage('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Copy Info">
-             <i class="fa-regular fa-copy text-sm md:text-base shrink-0"></i>
-             <span class="text-[10px] md:text-[11px] font-semibold truncate">Copy Info</span>
-          </button>
-          <button onclick="openShareTableFromComm('${item.sheetUrl}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Share Pairing/Grouping Screenshot">
-             <i class="fa-solid fa-share-nodes text-sm md:text-base shrink-0"></i>
-             <span class="text-[9px] md:text-[11px] font-semibold leading-tight text-center whitespace-normal">Share Pairing/Grouping Screenshot</span>
-          </button>
-      </div>
-   </div>`;
+  allCards += `
+  <div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
+     <div class="flex justify-between items-start">
+       <div>
+           <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
+           <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
+           <div id="pending-badge-${index}" class="mt-1 hidden"></div>
+       </div>
+       <div class="flex gap-2 text-xs">
+           <button onclick="openEditOutingModal(${index})" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors" title="Edit Outing"><i class="fa-solid fa-pen text-base"></i></button>
+           <a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a>
+           <a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a>
+       </div>
+     </div>
+     <div id="stats-${index}" class="text-xs text-gray-400 dark:text-gray-500 animate-pulse mt-2">Loading stats...</div>
+     <div id="btn-group-${index}" class="hidden grid grid-cols-3 gap-1.5 md:gap-2 mt-2 pt-3 border-t border-gray-100 dark:border-zinc-800">
+         <button onclick="openReminderModal('${index}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Remind">
+            <i class="fa-solid fa-bell text-sm md:text-base shrink-0"></i>
+            <span class="text-[10px] md:text-[11px] font-semibold truncate">Remind</span>
+         </button>
+         <button onclick="copyOutingMessage('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Copy Info">
+            <i class="fa-regular fa-copy text-sm md:text-base shrink-0"></i>
+            <span class="text-[10px] md:text-[11px] font-semibold truncate">Copy Info</span>
+         </button>
+         <button onclick="openShareTableFromComm('${item.sheetUrl}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Share Pairing/Grouping Screenshot">
+            <i class="fa-solid fa-share-nodes text-sm md:text-base shrink-0"></i>
+            <span class="text-[9px] md:text-[11px] font-semibold leading-tight text-center whitespace-normal">Share Pairing/Grouping Screenshot</span>
+         </button>
+     </div>
+  </div>`;
 });
 listContainer.innerHTML = allCards;
 res.data.forEach((item, index) => fetchOutingStats(item.sheetUrl, index));
@@ -265,14 +267,14 @@ showFlashMessage('scrubStatus', res.message, res.success ? 'success' : 'error');
 function openShareTableFromComm(sheetUrl) {
 showOverlay('loading', 'Generating Table...');
 apiCall('fetchManualPairingData', { sheetUrl: sheetUrl }).then(res => {
-    closeOverlay();
-    if (res.success) {
-        groupingData = res.data;
-        currentGroupingSheetUrl = sheetUrl; // Bind globally for image export Context
-        openTableExportModal();
-    } else {
-        alert("Error: " + res.message);
-    }
+   closeOverlay();
+   if (res.success) {
+       groupingData = res.data;
+       currentGroupingSheetUrl = sheetUrl; // Bind globally for image export Context
+       openTableExportModal();
+   } else {
+       alert("Error: " + res.message);
+   }
 });
 }
 
@@ -337,15 +339,15 @@ document.getElementById('editEventDate').value = config.eventDate || "";
 const mLocs = document.getElementsByName('editMeetingLoc');
 const mTimes = document.getElementsByName('editMeetingTime');
 for(let i=0; i<4; i++) {
-    mLocs[i].value = config.meetingLocs[i] || "";
-    mTimes[i].value = config.meetingTimes[i] || "";
+   mLocs[i].value = config.meetingLocs[i] || "";
+   mTimes[i].value = config.meetingTimes[i] || "";
 }
 
 const dLocs = document.getElementsByName('editDismissalLoc');
 const dTimes = document.getElementsByName('editDismissalTime');
 for(let i=0; i<4; i++) {
-    dLocs[i].value = config.dismissalLocs[i] || "";
-    dTimes[i].value = config.dismissalTimes[i] || "";
+   dLocs[i].value = config.dismissalLocs[i] || "";
+   dTimes[i].value = config.dismissalTimes[i] || "";
 }
 
 currentEditSheetUrl = window.currentSheetList[index].sheetUrl;
@@ -354,9 +356,9 @@ const modal = document.getElementById('editModal');
 const modalPanel = document.getElementById('editModalPanel');
 modal.classList.remove('hidden'); 
 setTimeout(() => { 
-    modal.classList.remove('opacity-0'); 
-    modalPanel.classList.remove('scale-95'); 
-    modalPanel.classList.add('scale-100'); 
+   modal.classList.remove('opacity-0'); 
+   modalPanel.classList.remove('scale-95'); 
+   modalPanel.classList.add('scale-100'); 
 }, 10); 
 }
 
@@ -367,7 +369,7 @@ modal.classList.add('opacity-0');
 modalPanel.classList.remove('scale-100'); 
 modalPanel.classList.add('scale-95'); 
 setTimeout(() => { 
-    modal.classList.add('hidden'); 
+   modal.classList.add('hidden'); 
 }, 300); 
 }
 
@@ -378,24 +380,194 @@ if(!currentEditSheetUrl) return;
 showOverlay('loading', 'Updating Outing Details...');
 
 const formData = { 
-    eventName: document.getElementById('editEventName').value, 
-    eventDate: document.getElementById('editEventDate').value, 
-    meetingLocs: Array.from(document.getElementsByName('editMeetingLoc')).map(i=>i.value), 
-    meetingTimes: Array.from(document.getElementsByName('editMeetingTime')).map(i=>i.value), 
-    dismissalLocs: Array.from(document.getElementsByName('editDismissalLoc')).map(i=>i.value), 
-    dismissalTimes: Array.from(document.getElementsByName('editDismissalTime')).map(i=>i.value), 
+   eventName: document.getElementById('editEventName').value, 
+   eventDate: document.getElementById('editEventDate').value, 
+   meetingLocs: Array.from(document.getElementsByName('editMeetingLoc')).map(i=>i.value), 
+   meetingTimes: Array.from(document.getElementsByName('editMeetingTime')).map(i=>i.value), 
+   dismissalLocs: Array.from(document.getElementsByName('editDismissalLoc')).map(i=>i.value), 
+   dismissalTimes: Array.from(document.getElementsByName('editDismissalTime')).map(i=>i.value), 
 }; 
 
 apiCall('updateOuting', { sheetUrl: currentEditSheetUrl, form: formData }).then(res => { 
-    if(res.success) { 
-        showOverlay('success', 'Outing Details Updated!');
-        closeEditModal(); 
-        loadSheets('comm'); 
-        showFlashMessage('commGlobalStatus', "Outing Updated Successfully!", 'success');
-    } else { 
-        showOverlay('error', res.message);
-    } 
+   if(res.success) { 
+       showOverlay('success', 'Outing Details Updated!');
+       closeEditModal(); 
+       loadSheets('comm'); 
+       showFlashMessage('commGlobalStatus', "Outing Updated Successfully!", 'success');
+   } else { 
+       showOverlay('error', res.message);
+   } 
 }); 
+}
+
+// === IC ASSIGNMENT LOGIC ===
+let icAssignmentData = { trainees: [], volunteers: [] };
+let icCurrentSheetUrl = null;
+
+function openICAssignmentModal() {
+const selector = document.getElementById('commSheetSelector');
+const url = selector.value;
+if(!url || url.includes("Select") || url.includes("Loading") || url.includes("Error")) return alert("Select an event first");
+
+icCurrentSheetUrl = url;
+const btn = document.getElementById('icAssignBtn');
+const originalHtml = btn.innerHTML;
+btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading...';
+btn.disabled = true;
+
+apiCall('fetchManualPairingData', { sheetUrl: url }).then(res => {
+    btn.innerHTML = originalHtml;
+    btn.disabled = false;
+    if (res.success) {
+        icAssignmentData = res.data;
+        document.getElementById('icAssignmentModal').classList.remove('hidden');
+        renderICAssignments();
+    } else {
+        alert("Error: " + res.message);
+    }
+});
+}
+
+function closeICAssignmentModal() {
+document.getElementById('icAssignmentModal').classList.add('hidden');
+}
+
+function renderICAssignments() {
+const tList = icAssignmentData.trainees.filter(t => t.attending === 'y' && !t.isGoneHome);
+const vList = icAssignmentData.volunteers;
+
+const groups = new Set();
+const meets = new Set();
+const dismissals = new Set();
+
+const volGroupMap = {};
+const volMeetMap = {};
+const volDismissMap = {};
+
+const addVolToMap = (map, key, volName) => {
+    if (!map[key]) map[key] = new Set();
+    map[key].add(volName.toLowerCase());
+};
+
+tList.forEach(t => {
+    const g = String(t.group || "").trim();
+    const m = String(t.meetingLoc || "").trim();
+    const d = String(t.dismissalLoc || "").trim();
+
+    if (g) groups.add(g);
+    if (m) meets.add(m);
+    if (d) dismissals.add(d);
+
+    if (t.volPaired) {
+        const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+        vols.forEach(vName => {
+            if (g) addVolToMap(volGroupMap, g, vName);
+            if (m) addVolToMap(volMeetMap, m, vName);
+            if (d) addVolToMap(volDismissMap, d, vName);
+        });
+    }
+});
+
+const currentGroupICs = {};
+const currentMeetICs = {};
+const currentDismissICs = {};
+
+vList.forEach(v => {
+    if (v.groupIC) currentGroupICs[v.name.toLowerCase()] = v;
+    if (v.meetIC) currentMeetICs[v.name.toLowerCase()] = v;
+    if (v.dismissIC) currentDismissICs[v.name.toLowerCase()] = v;
+});
+
+const buildSection = (itemsSet, volMap, currentICs, typePrefix) => {
+    const items = Array.from(itemsSet).sort((a,b) => a.localeCompare(b, undefined, {numeric:true}));
+    if (items.length === 0) return '<p class="text-xs italic text-gray-500 dark:text-gray-400">None available</p>';
+
+    let html = '';
+    items.forEach(item => {
+        const availableVols = Array.from(volMap[item] || []);
+        const volOptions = availableVols.map(vName => {
+            return vList.find(v => v.name.toLowerCase() === vName);
+        }).filter(Boolean);
+
+        let selectedVol = volOptions.find(v => currentICs[v.name.toLowerCase()]);
+
+        html += `
+        <div class="bg-gray-50 dark:bg-black p-3 rounded-lg border border-gray-200 dark:border-zinc-800">
+            <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">${typePrefix === 'group' ? 'Group ' + item : item}</label>
+            <select class="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded p-2 text-xs text-gray-900 dark:text-white outline-none focus:border-indigo-500 ic-select" data-type="${typePrefix}" data-item="${item}" onchange="handleICChange(this)">
+                <option value="">-- Select IC --</option>
+                ${volOptions.map(v => `<option value="${v.name.replace(/'/g, "\\'")}" ${selectedVol && selectedVol.name === v.name ? 'selected' : ''}>${v.name}</option>`).join('')}
+            </select>
+            <div class="ic-remarks mt-2 text-[10px] text-gray-500 dark:text-gray-400 hidden"></div>
+        </div>`;
+    });
+    return html;
+};
+
+document.getElementById('icGroupContainer').innerHTML = buildSection(groups, volGroupMap, currentGroupICs, 'group');
+document.getElementById('icMeetContainer').innerHTML = buildSection(meets, volMeetMap, currentMeetICs, 'meet');
+document.getElementById('icDismissContainer').innerHTML = buildSection(dismissals, volDismissMap, currentDismissICs, 'dismiss');
+
+document.querySelectorAll('.ic-select').forEach(sel => handleICChange(sel));
+}
+
+function handleICChange(selectElement) {
+const remarksContainer = selectElement.nextElementSibling;
+const volName = selectElement.value;
+
+if (!volName) {
+    remarksContainer.innerHTML = '';
+    remarksContainer.classList.add('hidden');
+    return;
+}
+
+const vol = icAssignmentData.volunteers.find(v => v.name.replace(/'/g, "\\'") === volName);
+const remarks = vol && vol.extra ? (vol.extra.remarks || vol.extra.remark || '') : '';
+
+if (remarks.trim()) {
+    remarksContainer.innerHTML = `<span class="font-bold text-indigo-500">Remarks:</span> ${remarks}`;
+    remarksContainer.classList.remove('hidden');
+} else {
+    remarksContainer.innerHTML = '';
+    remarksContainer.classList.add('hidden');
+}
+}
+
+function saveICAssignments() {
+const overlay = document.getElementById('icAssignmentLoadingOverlay');
+overlay.classList.remove('hidden');
+
+const updatesMap = {}; 
+icAssignmentData.volunteers.forEach(v => {
+    updatesMap[v.name] = { role: 'VOLUNTEER', name: v.name, groupIC: false, meetIC: false, dismissIC: false };
+});
+
+document.querySelectorAll('.ic-select').forEach(sel => {
+    const volName = sel.value;
+    const type = sel.getAttribute('data-type');
+    
+    if (volName) {
+        // Reverse escape from value mapping
+        const actualVol = icAssignmentData.volunteers.find(v => v.name.replace(/'/g, "\\'") === volName);
+        if (actualVol && updatesMap[actualVol.name]) {
+            if (type === 'group') updatesMap[actualVol.name].groupIC = true;
+            if (type === 'meet') updatesMap[actualVol.name].meetIC = true;
+            if (type === 'dismiss') updatesMap[actualVol.name].dismissIC = true;
+        }
+    }
+});
+
+const updates = Object.values(updatesMap);
+
+apiCall('syncManualGroupingUpdates', { sheetUrl: icCurrentSheetUrl, updates: updates }).then(res => {
+    overlay.classList.add('hidden');
+    if (res.success) {
+        showFlashMessage('commGlobalStatus', "IC Assignments saved successfully!", 'success');
+        closeICAssignmentModal();
+    } else {
+        alert("Failed to save: " + res.message);
+    }
+});
 }
 
 
@@ -487,10 +659,10 @@ availableItems.forEach(item => {
 const isChecked = selectedArray.includes(item);
 html += `
 <div class="px-3 py-2 border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex items-center justify-between transition-colors" onclick="toggleCommAttFilterItem('${type}', '${item.replace(/'/g, "\\'")}', event)">
-  <span class="text-xs text-gray-700 dark:text-gray-300 font-bold break-words pr-2">${type === 'group' ? 'Grp ' + item : item}</span>
-  <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-blue-500 border-blue-600 text-white' : 'bg-gray-100 border-gray-300 dark:bg-black dark:border-zinc-600 text-transparent'}">
-      <i class="fa-solid fa-check text-[10px]"></i>
-  </div>
+ <span class="text-xs text-gray-700 dark:text-gray-300 font-bold break-words pr-2">${type === 'group' ? 'Grp ' + item : item}</span>
+ <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${isChecked ? 'bg-blue-500 border-blue-600 text-white' : 'bg-gray-100 border-gray-300 dark:bg-black dark:border-zinc-600 text-transparent'}">
+     <i class="fa-solid fa-check text-[10px]"></i>
+ </div>
 </div>`;
 });
 }
@@ -528,12 +700,12 @@ commAttFiltersChanged = false;
 
 document.addEventListener('click', function(e) {
 const isDropdownClick = e.target.closest('#commAttGroupDropdown') || 
-              e.target.closest('#commAttMeetDropdown') || 
-              e.target.closest('#commAttDismissDropdown');
+             e.target.closest('#commAttMeetDropdown') || 
+             e.target.closest('#commAttDismissDropdown');
 
 const isBtnClick = e.target.closest('#commAttGroupBtn') || 
-         e.target.closest('#commAttMeetBtn') || 
-         e.target.closest('#commAttDismissBtn');
+        e.target.closest('#commAttMeetBtn') || 
+        e.target.closest('#commAttDismissBtn');
 
 if (!isDropdownClick && !isBtnClick) {
 closeAllCommAttFilters();
@@ -620,10 +792,10 @@ let participants = commAttData.participants || [];
 // Calculate global unpaired BEFORE filters
 let globalUnpairedCount = 0;
 participants.forEach(p => {
-  const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
-  if (!isGoneHome && (!p.volPaired || p.volPaired.trim() === '')) {
-    globalUnpairedCount++;
-  }
+ const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
+ if (!isGoneHome && (!p.volPaired || p.volPaired.trim() === '')) {
+   globalUnpairedCount++;
+ }
 });
 updateUnpairedNotification(globalUnpairedCount);
 
@@ -679,9 +851,9 @@ goneHomeList.scrollTop = scrollGH;
 // Bind Long Press logic after rendering
 document.querySelectorAll('.comm-att-card').forEach(el => {
 uiBindLongPress(el, () => {
- const name = el.getAttribute('data-name');
- const p = (commAttData.participants || []).find(x => x.name.replace(/'/g, "\\'") === name);
- if (p) showPersonInfo(p);
+const name = el.getAttribute('data-name');
+const p = (commAttData.participants || []).find(x => x.name.replace(/'/g, "\\'") === name);
+if (p) showPersonInfo(p);
 });
 });
 }
@@ -791,33 +963,33 @@ requestAnimationFrame(() => {
 const id = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
 const card = document.getElementById(id);
 if (card) {
-  const container = card.parentElement;
-  if (container) {
-      const containerRect = container.getBoundingClientRect();
-      const cardRect = card.getBoundingClientRect();
-      
-      if (cardRect.height > 0) {
-          const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
-          
-          container.scrollTo({
-              top: scrollTop,
-              behavior: 'smooth'
-          });
-      }
-  }
-  
-  let pulseClass = 'pulse-red';
-  
-  if (stateType === 'checked') {
-      pulseClass = 'pulse-green';
-  } else if (stateType === 'gonehome') {
-      pulseClass = 'pulse-blue';
-  }
-  
-  card.classList.add(pulseClass);
-  setTimeout(() => {
-      card.classList.remove(pulseClass);
-  }, 800);
+ const container = card.parentElement;
+ if (container) {
+     const containerRect = container.getBoundingClientRect();
+     const cardRect = card.getBoundingClientRect();
+     
+     if (cardRect.height > 0) {
+         const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
+         
+         container.scrollTo({
+             top: scrollTop,
+             behavior: 'smooth'
+         });
+     }
+ }
+ 
+ let pulseClass = 'pulse-red';
+ 
+ if (stateType === 'checked') {
+     pulseClass = 'pulse-green';
+ } else if (stateType === 'gonehome') {
+     pulseClass = 'pulse-blue';
+ }
+ 
+ card.classList.add(pulseClass);
+ setTimeout(() => {
+     card.classList.remove(pulseClass);
+ }, 800);
 }
 });
 }, 150);
@@ -883,10 +1055,10 @@ const listTitle = finalMessage.split('\n')[0].replace(/\[|\]/g, '');
 
 if (navigator.share) {
 navigator.share({
-  title: `${listTitle} List`,
-  text: finalMessage
+ title: `${listTitle} List`,
+ text: finalMessage
 }).catch(err => {
-  console.error("Share failed", err);
+ console.error("Share failed", err);
 });
 } else {
 copyColumnData(columnType);
