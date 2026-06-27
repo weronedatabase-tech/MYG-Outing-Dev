@@ -401,7 +401,7 @@ apiCall('updateOuting', { sheetUrl: currentEditSheetUrl, form: formData }).then(
 }
 
 // === IC ASSIGNMENT LOGIC ===
-let icAssignmentData = { trainees: [], volunteers: [], meetingLocs: [], dismissalLocs: [] };
+let icAssignmentData = { trainees: [], volunteers: [] };
 let icCurrentSheetUrl = null;
 
 function openICAssignmentModal() {
@@ -437,9 +437,8 @@ const tList = icAssignmentData.trainees.filter(t => t.attending === 'y' && !t.is
 const vList = icAssignmentData.volunteers;
 
 const groups = new Set();
-// Pull exactly from OutingInformation mapped config via backend
-const meets = new Set(icAssignmentData.meetingLocs || []);
-const dismissals = new Set(icAssignmentData.dismissalLocs || []);
+const meets = new Set();
+const dismissals = new Set();
 
 const volGroupMap = {};
 const volMeetMap = {};
@@ -456,8 +455,9 @@ tList.forEach(t => {
     const d = String(t.dismissalLoc || "").trim();
 
     if (g) groups.add(g);
+    if (m) meets.add(m);
+    if (d) dismissals.add(d);
 
-    // Map volunteers assigned to trainees to their respective groups/locations
     if (t.volPaired) {
         const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
         vols.forEach(vName => {
@@ -494,11 +494,11 @@ const buildSection = (itemsSet, volMap, currentICs, typePrefix) => {
         html += `
         <div class="bg-gray-50 dark:bg-black p-3 rounded-lg border border-gray-200 dark:border-zinc-800">
             <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">${typePrefix === 'group' ? 'Group ' + item : item}</label>
-            <select class="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded p-2 text-xs text-gray-900 dark:text-white outline-none focus:border-indigo-500 ic-select shadow-sm" data-type="${typePrefix}" data-item="${item}" onchange="handleICChange(this)">
+            <select class="w-full bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded p-2 text-xs text-gray-900 dark:text-white outline-none focus:border-indigo-500 ic-select" data-type="${typePrefix}" data-item="${item}" onchange="handleICChange(this)">
                 <option value="">-- Select IC --</option>
                 ${volOptions.map(v => `<option value="${v.name.replace(/'/g, "\\'")}" ${selectedVol && selectedVol.name === v.name ? 'selected' : ''}>${v.name}</option>`).join('')}
             </select>
-            <div class="ic-remarks mt-2 text-[10px] text-gray-500 dark:text-gray-400 hidden bg-white dark:bg-zinc-900 p-2 rounded border border-gray-200 dark:border-zinc-700 shadow-inner"></div>
+            <div class="ic-remarks mt-2 text-[10px] text-gray-500 dark:text-gray-400 hidden"></div>
         </div>`;
     });
     return html;
@@ -525,7 +525,7 @@ const vol = icAssignmentData.volunteers.find(v => v.name.replace(/'/g, "\\'") ==
 const remarks = vol && vol.extra ? (vol.extra.remarks || vol.extra.remark || '') : '';
 
 if (remarks.trim()) {
-    remarksContainer.innerHTML = `<div class="font-bold text-indigo-500 mb-0.5"><i class="fa-solid fa-comment-dots mr-1"></i>Remarks:</div>${remarks}`;
+    remarksContainer.innerHTML = `<span class="font-bold text-indigo-500">Remarks:</span> ${remarks}`;
     remarksContainer.classList.remove('hidden');
 } else {
     remarksContainer.innerHTML = '';
