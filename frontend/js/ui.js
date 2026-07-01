@@ -5,8 +5,8 @@ const viewElement = document.getElementById('view-' + viewId);
 if (viewElement) viewElement.classList.remove('hidden'); 
 
 ['volFormStatus', 'scrubStatus', 'commGlobalStatus', 'settingsStatus', 'pairingGlobalStatus'].forEach(id => {
- const el = document.getElementById(id);
- if (el) el.classList.add('hidden');
+const el = document.getElementById(id);
+if (el) el.classList.add('hidden');
 });
 
 const mainContainer = document.getElementById('mainContainer');
@@ -16,16 +16,16 @@ document.documentElement.classList.add('overflow-hidden', 'overscroll-none');
 document.body.classList.add('overflow-hidden', 'overscroll-none');
 document.body.classList.remove('pb-20');
 if(mainContainer) {
- mainContainer.classList.remove('p-4', 'mt-2');
- mainContainer.classList.add('p-1', 'mt-1');
+mainContainer.classList.remove('p-4', 'mt-2');
+mainContainer.classList.add('p-1', 'mt-1');
 }
 } else {
 document.documentElement.classList.remove('overflow-hidden', 'overscroll-none');
 document.body.classList.remove('overflow-hidden', 'overscroll-none');
 document.body.classList.add('pb-20');
 if(mainContainer) {
- mainContainer.classList.remove('p-1', 'mt-1');
- mainContainer.classList.add('p-4', 'mt-2');
+mainContainer.classList.remove('p-1', 'mt-1');
+mainContainer.classList.add('p-4', 'mt-2');
 }
 }
 
@@ -55,13 +55,13 @@ commAttActions.classList.remove('flex');
 
 if (viewId === 'comm') {
 if(titleEl) {
- titleEl.innerText = 'Comm Dashboard';
- titleEl.className = 'text-base md:text-lg font-extrabold text-blue-600 dark:text-blue-400 leading-tight break-words whitespace-normal';
+titleEl.innerText = 'Comm Dashboard';
+titleEl.className = 'text-base md:text-lg font-extrabold text-blue-600 dark:text-blue-400 leading-tight break-words whitespace-normal';
 }
 } else if (viewId === 'actual-attendance') {
 if(titleEl) {
- titleEl.innerText = 'Select Event for Tracker';
- titleEl.className = 'text-base md:text-lg font-extrabold text-teal-600 dark:text-teal-400 leading-tight break-words whitespace-normal';
+titleEl.innerText = 'Select Event for Tracker';
+titleEl.className = 'text-base md:text-lg font-extrabold text-teal-600 dark:text-teal-400 leading-tight break-words whitespace-normal';
 }
 } else if (viewId === 'comm-attendance') {
 // Title is updated dynamically in loadCommAttendanceData
@@ -86,13 +86,13 @@ manualGroupingActions.classList.add('flex');
 }
 } else if (viewId === 'volunteer') {
 if(titleEl) {
- titleEl.innerText = 'Attendance Update';
- titleEl.className = 'text-base md:text-lg font-extrabold text-green-600 dark:text-green-400 leading-tight break-words whitespace-normal';
+titleEl.innerText = 'Attendance Update';
+titleEl.className = 'text-base md:text-lg font-extrabold text-green-600 dark:text-green-400 leading-tight break-words whitespace-normal';
 }
 } else if (viewId === 'settings') {
 if(titleEl) {
- titleEl.innerText = 'Field Configuration';
- titleEl.className = 'text-base md:text-lg font-extrabold text-purple-600 dark:text-purple-400 leading-tight break-words whitespace-normal';
+titleEl.innerText = 'Field Configuration';
+titleEl.className = 'text-base md:text-lg font-extrabold text-purple-600 dark:text-purple-400 leading-tight break-words whitespace-normal';
 }
 } else {
 // Landing page shows default logo
@@ -118,18 +118,18 @@ isFilteredManualPairingMode = false;
 let targetView = window.filteredManualPairingSourceView || 'comm';
 
 if (targetView === 'manual-pairing') {
-   // Re-initialize standard manual pairing to effectively exit filtered mode safely
-   openManualPairing();
+  // Re-initialize standard manual pairing to effectively exit filtered mode safely
+  openManualPairing();
 } else if (targetView === 'comm-attendance') {
-   // Restore Live Tracker title securely before showing
-   const selector = document.getElementById('actualSheetSelector');
-   if (selector && selector.options.length > 0 && selector.selectedIndex >= 0) {
-       const titleEl = document.getElementById('navContextTitle');
-       if(titleEl) titleEl.innerText = "Live: " + selector.options[selector.selectedIndex].text;
-   }
-   showView('comm-attendance');
+  // Restore Live Tracker title securely before showing
+  const selector = document.getElementById('actualSheetSelector');
+  if (selector && selector.options.length > 0 && selector.selectedIndex >= 0) {
+      const titleEl = document.getElementById('navContextTitle');
+      if(titleEl) titleEl.innerText = "Live: " + selector.options[selector.selectedIndex].text;
+  }
+  showView('comm-attendance');
 } else {
-   showView('comm');
+  showView('comm');
 }
 } else {
 showView('comm');
@@ -149,7 +149,7 @@ if(icon) icon.classList.add('fa-spin');
 if ('serviceWorker' in navigator) {
 navigator.serviceWorker.getRegistrations().then(regs => {
 for (let reg of regs) {
-   reg.update();
+  reg.update();
 }
 });
 }
@@ -158,7 +158,7 @@ for (let reg of regs) {
 if ('caches' in window) {
 caches.keys().then(names => {
 Promise.all(names.map(name => caches.delete(name))).then(() => {
-   window.location.reload(true);
+  window.location.reload(true);
 });
 });
 } else {
@@ -175,13 +175,13 @@ function togglePasswordVisibility(inputId) {
 const input = document.getElementById(inputId);
 const icon = document.getElementById(inputId + 'Icon');
 if(input.type === 'password') {
- input.type = 'text';
- icon.classList.remove('fa-eye');
- icon.classList.add('fa-eye-slash');
+input.type = 'text';
+icon.classList.remove('fa-eye');
+icon.classList.add('fa-eye-slash');
 } else {
- input.type = 'password';
- icon.classList.remove('fa-eye-slash');
- icon.classList.add('fa-eye');
+input.type = 'password';
+icon.classList.remove('fa-eye-slash');
+icon.classList.add('fa-eye');
 }
 }
 
@@ -192,8 +192,8 @@ if(!overlay) return;
 overlay.classList.remove('hidden');
 
 ['overlayLoading', 'overlaySuccess', 'overlayError'].forEach(id => {
- const el = document.getElementById(id);
- if(el) el.classList.add('hidden');
+const el = document.getElementById(id);
+if(el) el.classList.add('hidden');
 });
 
 if (type === 'loading') {
@@ -249,19 +249,19 @@ function updateUnpairedNotification(count) {
 // Update Comm Dashboard List
 if(window.currentSheetList) {
 window.currentSheetList.forEach((item, index) => {
- if (item.sheetUrl === currentCommAttSheetUrl || item.sheetUrl === currentManualPairingSheetUrl || (typeof currentGroupingSheetUrl !== 'undefined' && item.sheetUrl === currentGroupingSheetUrl)) {
-     const pendingDiv = document.getElementById(`pending-badge-${index}`);
-     if (pendingDiv) {
-         if (count > 0) {
-             pendingDiv.innerHTML = `<button onclick="openFilteredManualPairing('${item.sheetUrl}')" class="bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800 animate-pulse shadow-sm flex items-center justify-center w-fit pointer-events-auto cursor-pointer">${count} Unpaired</button>`;
-             pendingDiv.classList.remove('hidden');
-             pendingDiv.classList.add('flex');
-         } else {
-             pendingDiv.classList.add('hidden');
-             pendingDiv.classList.remove('flex');
-         }
-     }
- }
+if (item.sheetUrl === currentCommAttSheetUrl || item.sheetUrl === currentManualPairingSheetUrl || (typeof currentGroupingSheetUrl !== 'undefined' && item.sheetUrl === currentGroupingSheetUrl)) {
+    const pendingDiv = document.getElementById(`pending-badge-${index}`);
+    if (pendingDiv) {
+        if (count > 0) {
+            pendingDiv.innerHTML = `<button onclick="openFilteredManualPairing('${item.sheetUrl}')" class="bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800 animate-pulse shadow-sm flex items-center justify-center w-fit pointer-events-auto cursor-pointer">${count} Unpaired</button>`;
+            pendingDiv.classList.remove('hidden');
+            pendingDiv.classList.add('flex');
+        } else {
+            pendingDiv.classList.add('hidden');
+            pendingDiv.classList.remove('flex');
+        }
+    }
+}
 });
 }
 
@@ -270,12 +270,12 @@ const liveBadgeBtn = document.getElementById('liveUnpairedBtn');
 const liveBadgeCount = document.getElementById('liveUnpairedCount');
 if (liveBadgeBtn && liveBadgeCount) {
 if (count > 0) {
- liveBadgeCount.innerText = `${count} Unpaired`;
- liveBadgeBtn.classList.remove('hidden');
- liveBadgeBtn.classList.add('flex');
+liveBadgeCount.innerText = `${count} Unpaired`;
+liveBadgeBtn.classList.remove('hidden');
+liveBadgeBtn.classList.add('flex');
 } else {
- liveBadgeBtn.classList.add('hidden');
- liveBadgeBtn.classList.remove('flex');
+liveBadgeBtn.classList.add('hidden');
+liveBadgeBtn.classList.remove('flex');
 }
 }
 
@@ -283,12 +283,12 @@ if (count > 0) {
 const manualBadge = document.getElementById('manualPairingUnpairedCount');
 if (manualBadge) {
 if (count > 0) {
- manualBadge.innerText = `${count} Unpaired`;
- manualBadge.classList.remove('hidden');
- manualBadge.classList.add('flex');
+manualBadge.innerText = `${count} Unpaired`;
+manualBadge.classList.remove('hidden');
+manualBadge.classList.add('flex');
 } else {
- manualBadge.classList.add('hidden');
- manualBadge.classList.remove('flex');
+manualBadge.classList.add('hidden');
+manualBadge.classList.remove('flex');
 }
 }
 }
@@ -302,8 +302,8 @@ let hasFired = false;
 
 const clearTimer = () => {
 if (pressTimer !== null) {
-  clearTimeout(pressTimer);
-  pressTimer = null;
+ clearTimeout(pressTimer);
+ pressTimer = null;
 }
 };
 
@@ -312,19 +312,19 @@ if (e.button !== undefined && e.button !== 0) return; // Ignore right-click/midd
 
 hasFired = false;
 if (e.touches && e.touches.length > 0) {
-  startX = e.touches[0].clientX;
-  startY = e.touches[0].clientY;
+ startX = e.touches[0].clientX;
+ startY = e.touches[0].clientY;
 } else {
-  startX = e.clientX;
-  startY = e.clientY;
+ startX = e.clientX;
+ startY = e.clientY;
 }
 
 pressTimer = setTimeout(() => {
-  hasFired = true;
-  callback();
-  // Force visual reset on the element just in case it got stuck in active state
-  element.classList.remove('active:scale-95');
-  setTimeout(() => element.classList.add('active:scale-95'), 100);
+ hasFired = true;
+ callback();
+ // Force visual reset on the element just in case it got stuck in active state
+ element.classList.remove('active:scale-95');
+ setTimeout(() => element.classList.add('active:scale-95'), 100);
 }, 500); // 500ms threshold
 };
 
@@ -333,16 +333,16 @@ if (!pressTimer) return;
 let currentX, currentY;
 
 if (e.touches && e.touches.length > 0) {
-  currentX = e.touches[0].clientX;
-  currentY = e.touches[0].clientY;
+ currentX = e.touches[0].clientX;
+ currentY = e.touches[0].clientY;
 } else {
-  currentX = e.clientX;
-  currentY = e.clientY;
+ currentX = e.clientX;
+ currentY = e.clientY;
 }
 
 // Cancel if moved more than 10px
 if (Math.abs(currentX - startX) > 10 || Math.abs(currentY - startY) > 10) {
-  clearTimer();
+ clearTimer();
 }
 };
 
@@ -350,8 +350,8 @@ const handleEnd = (e) => {
 clearTimer();
 // Optional: If you want to swallow the click event immediately following a long press
 if (hasFired) {
-  e.preventDefault();
-  e.stopPropagation();
+ e.preventDefault();
+ e.stopPropagation();
 }
 };
 
@@ -375,28 +375,35 @@ try { window.navigator.vibrate(50); } catch(e){}
 
 if (!personObj) return;
 
-let format = (window.appSettings && window.appSettings.popupFormat) ? window.appSettings.popupFormat : DEF_POPUP_FORMAT;
+let formattedText = "";
+const ex = personObj.extra || {};
 
-const dataDict = {};
-dataDict['name'] = personObj.name || '';
-dataDict['group'] = personObj.group || '';
-dataDict['meetingloc'] = personObj.meetingLoc || '';
-dataDict['dismissalloc'] = personObj.dismissalLoc || '';
-dataDict['volpaired'] = personObj.volPaired || '';
-dataDict['caregivers'] = personObj.caregivers || '0';
+if (personObj.role === 'TRAINEE') {
+ const nameStr = personObj.name || '-';
+ const groupStr = personObj.group ? `Grp ${personObj.group}` : 'Unassigned';
+ 
+ const meetArr = ex.t_meet || '-';
+ const meetFetch = ex.t_meet_fetching || '-';
+ const disArr = ex.t_dismiss || '-';
+ const disFetch = ex.t_dismiss_fetching || '-';
+ 
+ const volPaired = ex.t_paired_vol || '-';
+ const dietary = ex.t_dietary || '-';
+ const cgContact = ex.m_cg_contact || '-';
+ const remarks = ex.remark || '-';
 
-if (personObj.extra) {
-for (const [key, val] of Object.entries(personObj.extra)) {
-  dataDict[key.toLowerCase().replace(/[^a-z0-9]/g, "")] = val || '';
+ formattedText = `${nameStr} | ${groupStr}\n\nMeet | Fetching arrangement: ${meetArr} | ${meetFetch}\n\nDismiss | Fetching arrangement: ${disArr} | ${disFetch}\n\nPaired Vol(s): ${volPaired}\n\nDietary: ${dietary}\n\nCaregiver's Contact: ${cgContact}\n\nRemarks: ${remarks}`;
+} else if (personObj.role === 'VOLUNTEER') {
+ const nameStr = personObj.name || '-';
+ const groupStr = ex.v_group ? `(Grp ${ex.v_group})` : '';
+ 
+ const meet = ex.v_meet || '-';
+ const dismiss = ex.v_dismiss || '-';
+ const pairedTrainees = ex.v_paired_trainee || '-';
+ const remarks = ex.remark || '-';
+
+ formattedText = `${nameStr} ${groupStr}\n\nMeet: ${meet}\n\nDismiss: ${dismiss}\n\nPaired Trainee(s): ${pairedTrainees}\n\nRemarks: ${remarks}`;
 }
-}
-
-const formattedText = format.replace(/\{\{([^}]+)\}\}/g, (match, p1) => {
-const cleanKey = p1.toLowerCase().replace(/[^a-z0-9]/g, "");
-return dataDict[cleanKey] !== undefined && dataDict[cleanKey] !== null && dataDict[cleanKey] !== "" 
-  ? dataDict[cleanKey] 
-  : "-";
-});
 
 const infoContent = document.getElementById('personInfoContent');
 if(infoContent) infoContent.textContent = formattedText;
