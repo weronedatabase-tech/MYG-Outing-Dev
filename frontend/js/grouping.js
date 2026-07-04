@@ -113,8 +113,11 @@ colTrainees.forEach(t => {
  }
 
  let extras = '';
- if (t.extra?.t_one_on_one?.toLowerCase() === 'y' || t.extra?.t_one_on_one?.toLowerCase() === 'yes') {
-     extras += `<i class="fa-solid fa-star text-yellow-500 text-[10px] ml-1" title="1-1 Required"></i>`;
+ if (t.extra?.t_one_on_one) {
+     const oneOnOneRaw = String(t.extra.t_one_on_one).trim().toLowerCase();
+     if (oneOnOneRaw !== '' && !['no', 'n', 'false', '0'].includes(oneOnOneRaw)) {
+         extras += `<i class="fa-solid fa-star text-yellow-500 text-[10px] ml-1" title="1-1 Required: ${String(t.extra.t_one_on_one).replace(/"/g, '&quot;')}"></i>`;
+     }
  }
  if (t.extra?.remark) {
      extras += `<i class="fa-solid fa-note-sticky text-yellow-500 text-[10px] ml-1 cursor-help" title="${t.extra.remark.replace(/"/g, '&quot;')}"></i>`;

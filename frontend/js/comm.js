@@ -734,8 +734,8 @@ volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400
 let starBadge = '';
 if (p.extra && p.extra.t_one_on_one) {
 const oneOnOneRaw = String(p.extra.t_one_on_one).trim().toLowerCase();
-if (oneOnOneRaw === 'yes' || oneOnOneRaw === 'y' || oneOnOneRaw === 'true') {
-starBadge = `<i class="fa-solid fa-star text-yellow-500 shrink-0 text-[10px] md:text-xs ml-1" title="1-1 Pairing Required"></i>`;
+if (oneOnOneRaw !== '' && !['no', 'n', 'false', '0'].includes(oneOnOneRaw)) {
+starBadge = `<i class="fa-solid fa-star text-yellow-500 shrink-0 text-[10px] md:text-xs ml-1" title="1-1 Pairing Required: ${String(p.extra.t_one_on_one).replace(/"/g, '&quot;')}"></i>`;
 }
 }
 
@@ -1185,8 +1185,8 @@ volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400
 let starBadge = '';
 if (p.extra && p.extra.t_one_on_one) {
 const oneOnOneRaw = String(p.extra.t_one_on_one).trim().toLowerCase();
-if (oneOnOneRaw === 'yes' || oneOnOneRaw === 'y' || oneOnOneRaw === 'true') {
-starBadge = `<i class="fa-solid fa-star text-yellow-500 shrink-0 text-[10px] md:text-xs ml-1" title="1-1 Pairing Required"></i>`;
+if (oneOnOneRaw !== '' && !['no', 'n', 'false', '0'].includes(oneOnOneRaw)) {
+starBadge = `<i class="fa-solid fa-star text-yellow-500 shrink-0 text-[10px] md:text-xs ml-1" title="1-1 Pairing Required: ${String(p.extra.t_one_on_one).replace(/"/g, '&quot;')}"></i>`;
 }
 }
 

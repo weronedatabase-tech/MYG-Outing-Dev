@@ -124,8 +124,8 @@ openManualPairing();
 // Restore Live Tracker title securely before showing
 const selector = document.getElementById('actualSheetSelector');
 if (selector && selector.options.length > 0 && selector.selectedIndex >= 0) {
-  const titleEl = document.getElementById('navContextTitle');
-  if(titleEl) titleEl.innerText = "Live: " + selector.options[selector.selectedIndex].text;
+ const titleEl = document.getElementById('navContextTitle');
+ if(titleEl) titleEl.innerText = "Live: " + selector.options[selector.selectedIndex].text;
 }
 showView('comm-attendance');
 } else {
@@ -251,9 +251,9 @@ const input = document.getElementById(inputId);
 const btn = document.getElementById('clearBtn-' + inputId);
 if (input && btn) {
 if (input.value.length > 0) {
-   btn.classList.remove('hidden');
+  btn.classList.remove('hidden');
 } else {
-   btn.classList.add('hidden');
+  btn.classList.add('hidden');
 }
 }
 }
@@ -268,7 +268,7 @@ input.focus();
 
 // Call the specific filter function for that input if provided
 if (filterCallbackName && typeof window[filterCallbackName] === 'function') {
-   window[filterCallbackName]();
+  window[filterCallbackName]();
 }
 }
 }
@@ -280,14 +280,14 @@ window.currentSheetList.forEach((item, index) => {
 if (item.sheetUrl === currentCommAttSheetUrl || item.sheetUrl === currentManualPairingSheetUrl || (typeof currentGroupingSheetUrl !== 'undefined' && item.sheetUrl === currentGroupingSheetUrl)) {
 const pendingDiv = document.getElementById(`pending-badge-${index}`);
 if (pendingDiv) {
-    if (count > 0) {
-        pendingDiv.innerHTML = `<button onclick="openFilteredManualPairing('${item.sheetUrl}')" class="bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800 animate-pulse shadow-sm flex items-center justify-center w-fit pointer-events-auto cursor-pointer">${count} Unpaired</button>`;
-        pendingDiv.classList.remove('hidden');
-        pendingDiv.classList.add('flex');
-    } else {
-        pendingDiv.classList.add('hidden');
-        pendingDiv.classList.remove('flex');
-    }
+   if (count > 0) {
+       pendingDiv.innerHTML = `<button onclick="openFilteredManualPairing('${item.sheetUrl}')" class="bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-400 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800 animate-pulse shadow-sm flex items-center justify-center w-fit pointer-events-auto cursor-pointer">${count} Unpaired</button>`;
+       pendingDiv.classList.remove('hidden');
+       pendingDiv.classList.add('flex');
+   } else {
+       pendingDiv.classList.add('hidden');
+       pendingDiv.classList.remove('flex');
+   }
 }
 }
 });
@@ -382,9 +382,9 @@ e.stopPropagation();
 
 // Block the next click event that normally fires after touch ends
 const preventClick = (clickEvent) => {
-   clickEvent.preventDefault();
-   clickEvent.stopPropagation();
-   element.removeEventListener('click', preventClick, true);
+  clickEvent.preventDefault();
+  clickEvent.stopPropagation();
+  element.removeEventListener('click', preventClick, true);
 };
 element.addEventListener('click', preventClick, true);
 setTimeout(() => element.removeEventListener('click', preventClick, true), 300);
@@ -439,49 +439,49 @@ const dietary = ex.t_dietary || '-';
 const cgContact = ex.m_cg_contact || '-';
 
 detailsHtml += `
- <div class="space-y-3 mt-4 text-sm text-gray-700 dark:text-gray-300">
-     <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
-         <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 shrink-0 mt-0.5"><i class="fa-solid fa-location-dot"></i></div>
-         <div class="flex-1 min-w-0">
-             <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Meeting</div>
-             <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${meetArr}</div>
-             ${meetFetch !== '-' && meetFetch !== '' ? `<div class="text-[11px] text-gray-500 break-words whitespace-pre-wrap mt-1"><i class="fa-solid fa-car-side mr-1 opacity-70"></i>Fetch: ${meetFetch}</div>` : ''}
-         </div>
-     </div>
+<div class="space-y-3 mt-4 text-sm text-gray-700 dark:text-gray-300">
+    <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
+        <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 shrink-0 mt-0.5"><i class="fa-solid fa-location-dot"></i></div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Meeting</div>
+            <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${meetArr}</div>
+            ${meetFetch !== '-' && meetFetch !== '' ? `<div class="text-[11px] text-gray-500 break-words whitespace-pre-wrap mt-1"><i class="fa-solid fa-car-side mr-1 opacity-70"></i>Fetch: ${meetFetch}</div>` : ''}
+        </div>
+    </div>
 
-     <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
-         <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 shrink-0 mt-0.5"><i class="fa-solid fa-flag-checkered"></i></div>
-         <div class="flex-1 min-w-0">
-             <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Dismissal</div>
-             <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${disArr}</div>
-             ${disFetch !== '-' && disFetch !== '' ? `<div class="text-[11px] text-gray-500 break-words whitespace-pre-wrap mt-1"><i class="fa-solid fa-car-side mr-1 opacity-70"></i>Fetch: ${disFetch}</div>` : ''}
-         </div>
-     </div>
+    <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
+        <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 shrink-0 mt-0.5"><i class="fa-solid fa-flag-checkered"></i></div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Dismissal</div>
+            <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${disArr}</div>
+            ${disFetch !== '-' && disFetch !== '' ? `<div class="text-[11px] text-gray-500 break-words whitespace-pre-wrap mt-1"><i class="fa-solid fa-car-side mr-1 opacity-70"></i>Fetch: ${disFetch}</div>` : ''}
+        </div>
+    </div>
 
-     <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
-         <div class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-500 shrink-0 mt-0.5"><i class="fa-solid fa-handshake-angle"></i></div>
-         <div class="flex-1 min-w-0">
-             <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Paired Vol(s)</div>
-             <div class="font-bold text-teal-700 dark:text-teal-400 break-words whitespace-pre-wrap">${volPaired}</div>
-         </div>
-     </div>
+    <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
+        <div class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-500 shrink-0 mt-0.5"><i class="fa-solid fa-handshake-angle"></i></div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Paired Vol(s)</div>
+            <div class="font-bold text-teal-700 dark:text-teal-400 break-words whitespace-pre-wrap">${volPaired}</div>
+        </div>
+    </div>
 
-     <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
-         <div class="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-500 shrink-0 mt-0.5"><i class="fa-solid fa-utensils"></i></div>
-         <div class="flex-1 min-w-0">
-             <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Dietary Restrictions</div>
-             <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${dietary}</div>
-         </div>
-     </div>
+    <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
+        <div class="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-500 shrink-0 mt-0.5"><i class="fa-solid fa-utensils"></i></div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Dietary Restrictions</div>
+            <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${dietary}</div>
+        </div>
+    </div>
 
-     <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
-         <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500 shrink-0 mt-0.5"><i class="fa-solid fa-phone"></i></div>
-         <div class="flex-1 min-w-0">
-             <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">CG Contact</div>
-             <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${cgContact}</div>
-         </div>
-     </div>
- </div>
+    <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
+        <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500 shrink-0 mt-0.5"><i class="fa-solid fa-phone"></i></div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">CG Contact</div>
+            <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${cgContact}</div>
+        </div>
+    </div>
+</div>
 `;
 } else if (role === 'VOLUNTEER') {
 const meet = ex.v_meet || '-';
@@ -489,56 +489,73 @@ const dismiss = ex.v_dismiss || '-';
 const pairedTrainees = ex.v_paired_trainee || '-';
 
 detailsHtml += `
- <div class="space-y-3 mt-4 text-sm text-gray-700 dark:text-gray-300">
-     <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
-         <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 shrink-0 mt-0.5"><i class="fa-solid fa-location-dot"></i></div>
-         <div class="flex-1 min-w-0">
-             <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Meeting</div>
-             <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${meet}</div>
-         </div>
-     </div>
+<div class="space-y-3 mt-4 text-sm text-gray-700 dark:text-gray-300">
+    <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
+        <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 shrink-0 mt-0.5"><i class="fa-solid fa-location-dot"></i></div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Meeting</div>
+            <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${meet}</div>
+        </div>
+    </div>
 
-     <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
-         <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 shrink-0 mt-0.5"><i class="fa-solid fa-flag-checkered"></i></div>
-         <div class="flex-1 min-w-0">
-             <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Dismissal</div>
-             <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${dismiss}</div>
-         </div>
-     </div>
+    <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
+        <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 shrink-0 mt-0.5"><i class="fa-solid fa-flag-checkered"></i></div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Dismissal</div>
+            <div class="font-medium text-gray-900 dark:text-white break-words whitespace-pre-wrap">${dismiss}</div>
+        </div>
+    </div>
 
-     <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
-         <div class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-500 shrink-0 mt-0.5"><i class="fa-solid fa-user-group"></i></div>
-         <div class="flex-1 min-w-0">
-             <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Paired Trainee(s)</div>
-             <div class="font-bold text-teal-700 dark:text-teal-400 break-words whitespace-pre-wrap">${pairedTrainees}</div>
-         </div>
-     </div>
- </div>
+    <div class="flex items-start gap-3 bg-gray-50 dark:bg-zinc-800/50 p-2.5 rounded-lg border border-gray-100 dark:border-zinc-800">
+        <div class="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-500 shrink-0 mt-0.5"><i class="fa-solid fa-user-group"></i></div>
+        <div class="flex-1 min-w-0">
+            <div class="text-[10px] uppercase tracking-wider font-bold text-gray-500 mb-0.5">Paired Trainee(s)</div>
+            <div class="font-bold text-teal-700 dark:text-teal-400 break-words whitespace-pre-wrap">${pairedTrainees}</div>
+        </div>
+    </div>
+</div>
 `;
 }
 
 let remarksHtml = "";
 if (remarks && remarks !== '-' && remarks.trim() !== '') {
 remarksHtml = `
- <div class="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 border-l-4 border-l-yellow-400 dark:border-l-yellow-500 p-3 rounded-r-lg shadow-sm">
-     <div class="flex items-center gap-2 mb-1">
-         <i class="fa-solid fa-triangle-exclamation text-yellow-600 dark:text-yellow-500 text-sm"></i>
-         <span class="font-black text-yellow-800 dark:text-yellow-400 text-[10px] uppercase tracking-wider">Remarks</span>
-     </div>
-     <p class="text-yellow-900 dark:text-yellow-100 text-sm whitespace-pre-wrap font-medium leading-relaxed">${remarks}</p>
- </div>
+<div class="mt-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 border-l-4 border-l-yellow-400 dark:border-l-yellow-500 p-3 rounded-r-lg shadow-sm">
+    <div class="flex items-center gap-2 mb-1">
+        <i class="fa-solid fa-triangle-exclamation text-yellow-600 dark:text-yellow-500 text-sm"></i>
+        <span class="font-black text-yellow-800 dark:text-yellow-400 text-[10px] uppercase tracking-wider">Remarks</span>
+    </div>
+    <p class="text-yellow-900 dark:text-yellow-100 text-sm whitespace-pre-wrap font-medium leading-relaxed">${remarks}</p>
+</div>
 `;
+}
+
+let pairingConsiderationsHtml = "";
+if (role === 'TRAINEE' && ex.t_one_on_one) {
+    const oneOnOneRaw = String(ex.t_one_on_one).trim().toLowerCase();
+    if (oneOnOneRaw !== '' && !['no', 'n', 'false', '0'].includes(oneOnOneRaw)) {
+        pairingConsiderationsHtml = `
+        <div class="mt-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 border-l-4 border-l-blue-400 dark:border-l-blue-500 p-3 rounded-r-lg shadow-sm">
+            <div class="flex items-center gap-2 mb-1">
+                <i class="fa-solid fa-star text-blue-600 dark:text-blue-500 text-sm"></i>
+                <span class="font-black text-blue-800 dark:text-blue-400 text-[10px] uppercase tracking-wider">Pairing Considerations</span>
+            </div>
+            <p class="text-blue-900 dark:text-blue-100 text-sm whitespace-pre-wrap font-medium leading-relaxed">${String(ex.t_one_on_one).trim()}</p>
+        </div>
+        `;
+    }
 }
 
 htmlContent = `
 <div class="flex flex-col gap-2 pb-2">
- <div class="flex items-start justify-between gap-2">
-     <h4 class="text-lg md:text-xl font-black text-gray-900 dark:text-white break-words leading-tight flex-1">${nameStr}</h4>
-     <div class="shrink-0 mt-0.5">${roleBadge}</div>
- </div>
- <div class="flex items-center">${groupBadge}</div>
+<div class="flex items-start justify-between gap-2">
+    <h4 class="text-lg md:text-xl font-black text-gray-900 dark:text-white break-words leading-tight flex-1">${nameStr}</h4>
+    <div class="shrink-0 mt-0.5">${roleBadge}</div>
+</div>
+<div class="flex items-center">${groupBadge}</div>
 </div>
 ${remarksHtml}
+${pairingConsiderationsHtml}
 ${detailsHtml}
 `;
 
