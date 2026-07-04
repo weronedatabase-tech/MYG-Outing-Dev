@@ -361,7 +361,9 @@ return { success: false, message: "Error: " + e.toString() };
 }
 
 function updateOuting(payload) {
+  const lock = LockService.getScriptLock();
 try {
+  lock.waitLock(15000);
 const { sheetUrl, form } = payload;
 const rawDate = new Date(form.eventDate);
 const yyyy = rawDate.getFullYear();
@@ -390,6 +392,8 @@ invalidateCaches(sheetUrl);
 return { success: true, message: "Outing Details Updated!" };
 } catch (e) {
 return { success: false, message: e.toString() };
+} finally {
+  lock.releaseLock();
 }
 }
 
@@ -1089,7 +1093,9 @@ CORE LOGIC 1: MANUAL PAIRING BUTTON
 (Updates STRICTLY "Vol Paired" Column ONLY)
 ========================================= */
 function runAutoPairing(sheetUrl) {
+  const lock = LockService.getScriptLock();
 try {
+  lock.waitLock(15000);
 if (!sheetUrl) throw new Error("Invalid URL");
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
 let tSheet = ss.getSheetByName("Trainee Attendance");
@@ -1165,7 +1171,11 @@ SpreadsheetApp.flush(); // Ensure formulas in Groupings tab recalculate instantl
 }
 invalidateCaches(sheetUrl);
 return { success: true, message: "✅ Auto Pairing Complete!\nVolunteer Paired column updated." };
-} catch (e) { return { success: false, message: e.toString() }; }
+} catch (e) { 
+  return { success: false, message: e.toString() }; 
+} finally {
+  lock.releaseLock();
+}
 }
 
 /* =========================================
@@ -1173,7 +1183,9 @@ CORE LOGIC 2: MANUAL GROUPING BUTTON
 (Strictly populates Outing Grouping only - PRESERVES FORMULAS)
 ========================================= */
 function runAutoGrouping(sheetUrl) {
+  const lock = LockService.getScriptLock();
 try {
+  lock.waitLock(15000);
 if (!sheetUrl) throw new Error("Invalid URL");
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
 let tSheet = ss.getSheetByName("Trainee Attendance");
@@ -1187,7 +1199,7 @@ const mGroupIdx = getColIndex(mHeaders, "group");
 const mData = mSheet.getDataRange().getValues();
 for(let j=1; j<mData.length; j++){
 if(mData[j][0] && mGroupIdx > -1) {
-groupMap.set(mData[j][0].toString().toLowerCase(), mData[j][mGroupIdx]);
+groupMap.set(mData[j][0].toString().toLowerCase().trim(), mData[j][mGroupIdx]);
 }
 }
 
@@ -1201,17 +1213,62 @@ const tHeaders = tSheet.getRange(1,1,1,tSheet.getLastColumn()).getValues()[0];
 const tNameIdx = 0;
 const tAttIdx = getColIndex(tHeaders, "attending");
 const tGroupIdx = getColIndex(tHeaders, "outing grouping");
+const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
 
 if (tGroupIdx > -1) {
-for(let k=0; k<tValues.length; k++){
-const name = tValues[k][tNameIdx] ? tValues[k][tNameIdx].toString().toLowerCase() : "";
-const att = (tAttIdx > -1 && tValues[k][tAttIdx]) ? tValues[k][tAttIdx].toString().toLowerCase().trim() : "";
+const volIntendedGroups = new Map();
+const traineeIntendedGroup = new Map();
 
-// Explicitly ensure attending is 'y' before auto-grouping applies
-if(name && att === 'y' && groupMap.has(name)) {
-tValues[k][tGroupIdx] = groupMap.get(name);
-tFormulas[k][tGroupIdx] = ""; // Clear formula
+// First Pass: Determine intended groups & map volunteers to these groups
+for(let k=0; k<tValues.length; k++){
+  const name = tValues[k][tNameIdx] ? tValues[k][tNameIdx].toString().toLowerCase().trim() : "";
+  const att = (tAttIdx > -1 && tValues[k][tAttIdx]) ? tValues[k][tAttIdx].toString().toLowerCase().trim() : "";
+  const volPairedStr = (tVolPairedIdx > -1 && tValues[k][tVolPairedIdx]) ? tValues[k][tVolPairedIdx].toString() : "";
+
+  if(name && att === 'y' && groupMap.has(name)) {
+    const intendedGroup = String(groupMap.get(name)).trim();
+    traineeIntendedGroup.set(name, intendedGroup);
+
+    if (volPairedStr) {
+      const vols = volPairedStr.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+      vols.forEach(v => {
+        if (!volIntendedGroups.has(v)) volIntendedGroups.set(v, new Set());
+        if (intendedGroup !== "") {
+          volIntendedGroups.get(v).add(intendedGroup);
+        }
+      });
+    }
+  }
 }
+
+// Second Pass: Apply groupings or leave unassigned on conflict
+for(let k=0; k<tValues.length; k++){
+  const name = tValues[k][tNameIdx] ? tValues[k][tNameIdx].toString().toLowerCase().trim() : "";
+  const att = (tAttIdx > -1 && tValues[k][tAttIdx]) ? tValues[k][tAttIdx].toString().toLowerCase().trim() : "";
+  const volPairedStr = (tVolPairedIdx > -1 && tValues[k][tVolPairedIdx]) ? tValues[k][tVolPairedIdx].toString() : "";
+
+  if(name && att === 'y' && traineeIntendedGroup.has(name)) {
+    const intendedGroup = traineeIntendedGroup.get(name);
+    let hasConflict = false;
+
+    if (volPairedStr) {
+      const vols = volPairedStr.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+      for (let v of vols) {
+        if (volIntendedGroups.has(v) && volIntendedGroups.get(v).size > 1) {
+          hasConflict = true;
+          break;
+        }
+      }
+    }
+
+    if (hasConflict) {
+      tValues[k][tGroupIdx] = "";
+      tFormulas[k][tGroupIdx] = "";
+    } else {
+      tValues[k][tGroupIdx] = intendedGroup;
+      tFormulas[k][tGroupIdx] = ""; // Clear formula
+    }
+  }
 }
 
 let output = tValues.map((vals, i) => vals.map((v, c) => tFormulas[i][c] !== "" ? tFormulas[i][c] : v));
@@ -1219,8 +1276,12 @@ tRange.setValues(output);
 }
 }
 invalidateCaches(sheetUrl);
-return { success: true, message: "✅ Auto Grouping Complete!\nOuting Grouping column updated." };
-} catch (e) { return { success: false, message: e.toString() }; }
+return { success: true, message: "✅ Auto Grouping Complete!\nOuting Grouping column updated. Conflicting pairings were left unassigned." };
+} catch (e) { 
+  return { success: false, message: e.toString() }; 
+} finally {
+  lock.releaseLock();
+}
 }
 
 /* =========================================
@@ -1720,6 +1781,25 @@ activeVolunteers: activeVolunteers
 }
 
 function submitAttendanceData(form) {
+  const lock = LockService.getScriptLock();
+  let res;
+  try {
+    lock.waitLock(15000);
+    res = _submitAttendanceDataInner(form);
+  } catch(e) {
+    return { success: false, message: e.toString() };
+  } finally {
+    lock.releaseLock();
+  }
+
+  if (res && res.success) {
+    runSheetMaintenance(form.sheetUrl);
+    invalidateCaches(form.sheetUrl);
+  }
+  return res;
+}
+
+function _submitAttendanceDataInner(form) {
 try {
 if (!form.sheetUrl || form.sheetUrl === "") return { success: false, message: "Invalid Sheet URL" };
 
@@ -1809,9 +1889,6 @@ tSheet.getRange(tInsertRow, tProjIdx + 1).setValue(projectVal);
 }
 }
 } catch (err) { console.log("Template update failed: " + err.toString()); }
-
-runSheetMaintenance(form.sheetUrl);
-invalidateCaches(form.sheetUrl);
 
 return { success: true, message: "New volunteer added successfully & Attendance updated!" };
 }
@@ -1945,9 +2022,6 @@ if (tSheet) {
 }
 }
 }
-
-runSheetMaintenance(form.sheetUrl);
-invalidateCaches(form.sheetUrl);
 
 return { success: true, message: "Attendance updated successfully!" };
 }

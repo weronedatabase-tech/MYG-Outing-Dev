@@ -6,6 +6,7 @@ let allProjects = [];
 let currentVolTypeRequest = null;
 let isAdminAuthenticated = false;
 let pendingView = "";
+let pendingAction = null;
 let currentActiveView = 'landing';
 let outingReminders = {};
 

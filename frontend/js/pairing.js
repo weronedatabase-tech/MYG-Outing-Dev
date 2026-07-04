@@ -29,6 +29,11 @@ function openFilteredManualPairing(overrideUrl = null) {
 const url = overrideUrl || currentCommAttSheetUrl || currentManualPairingSheetUrl;
 if(!url) return;
 
+if (!isAdminAuthenticated) {
+    requestAccess(null, () => openFilteredManualPairing(overrideUrl));
+    return;
+}
+
 // Capture the exact view we are coming from BEFORE we switch
 window.filteredManualPairingSourceView = window.currentActiveView;
 
