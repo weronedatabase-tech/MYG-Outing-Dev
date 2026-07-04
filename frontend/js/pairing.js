@@ -30,12 +30,12 @@ const url = overrideUrl || currentCommAttSheetUrl || currentManualPairingSheetUr
 if(!url) return;
 
 if (!isAdminAuthenticated) {
-    requestAccess(null, () => openFilteredManualPairing(overrideUrl));
-    return;
+   requestAccess(null, () => openFilteredManualPairing(overrideUrl));
+   return;
 }
 
 // Capture the exact view we are coming from BEFORE we switch
-window.filteredManualPairingSourceView = window.currentActiveView;
+window.filteredManualPairingSourceView = currentActiveView;
 
 isFilteredManualPairingMode = true;
 currentManualPairingSheetUrl = url;
@@ -58,9 +58,9 @@ startManualPairingPolling();
 } else {
 alert("Error: " + res.message);
 if (isFilteredManualPairingMode) {
-   showView('comm-attendance');
+  showView('comm-attendance');
 } else {
-   showView('comm');
+  showView('comm');
 }
 }
 });
@@ -73,35 +73,35 @@ renderManualPairings();
 function triggerManualPairingPulse(sourceName, targetName, isPaired) {
 setTimeout(() => {
 requestAnimationFrame(() => {
-  // Try to find the exact dropzone elements based on their data attributes
-  const sourceCard = document.querySelector(`.dnd-dropzone[data-name="${sourceName.replace(/'/g, "\\'")}"]`);
-  const targetCard = document.querySelector(`.dnd-dropzone[data-name="${targetName.replace(/'/g, "\\'")}"]`);
-  
-  [sourceCard, targetCard].forEach(card => {
-      if (card) {
-          const container = card.parentElement;
-          if (container) {
-              const containerRect = container.getBoundingClientRect();
-              const cardRect = card.getBoundingClientRect();
-              
-              if (cardRect.height > 0) {
-                  const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
-                  
-                  container.scrollTo({
-                      top: scrollTop,
-                      behavior: 'smooth'
-                  });
-              }
-          }
-          
-          const pulseClass = isPaired ? 'pulse-green' : 'pulse-red';
-          
-          card.classList.add(pulseClass);
-          setTimeout(() => {
-              card.classList.remove(pulseClass);
-          }, 800);
-      }
-  });
+ // Try to find the exact dropzone elements based on their data attributes
+ const sourceCard = document.querySelector(`.dnd-dropzone[data-name="${sourceName.replace(/'/g, "\\'")}"]`);
+ const targetCard = document.querySelector(`.dnd-dropzone[data-name="${targetName.replace(/'/g, "\\'")}"]`);
+ 
+ [sourceCard, targetCard].forEach(card => {
+     if (card) {
+         const container = card.parentElement;
+         if (container) {
+             const containerRect = container.getBoundingClientRect();
+             const cardRect = card.getBoundingClientRect();
+             
+             if (cardRect.height > 0) {
+                 const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
+                 
+                 container.scrollTo({
+                     top: scrollTop,
+                     behavior: 'smooth'
+                 });
+             }
+         }
+         
+         const pulseClass = isPaired ? 'pulse-green' : 'pulse-red';
+         
+         card.classList.add(pulseClass);
+         setTimeout(() => {
+             card.classList.remove(pulseClass);
+         }, 800);
+     }
+ });
 });
 }, 150);
 }
@@ -130,7 +130,7 @@ let isTraineeGoneHome = false;
 if (isVol) {
 const traineeObj = (manualPairingData.trainees || []).find(t => t.name === tName);
 if (traineeObj && traineeObj.isGoneHome) {
-   isTraineeGoneHome = true;
+  isTraineeGoneHome = true;
 }
 }
 
@@ -192,11 +192,11 @@ return `
 <div class="dnd-draggable dnd-dropzone bg-white dark:bg-zinc-900 p-2 rounded-md border border-gray-200 dark:border-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-grab active:cursor-grabbing hover:border-primary transition select-none flex flex-col min-h-[70px] gap-1.5 ${opacityClass}" data-name="${safeName}" data-role="${item.role}" data-source-array="${isVol ? 'volunteers' : 'trainees'}">
 <div class="flex justify-between items-center w-full gap-2">
 <div class="main-name-pill font-extrabold text-[11px] md:text-[12px] text-gray-900 dark:text-white leading-tight break-words whitespace-normal flex items-center gap-1 min-w-0 flex-1">
-   <span class="break-words">${displayName}</span>
-   ${starBadge}
-   ${remarksBadge}
-   ${cgBadge}
-   ${sysBadge}
+  <span class="break-words">${displayName}</span>
+  ${starBadge}
+  ${remarksBadge}
+  ${cgBadge}
+  ${sysBadge}
 </div>
 ${addBtnHtml}
 </div>
@@ -267,9 +267,9 @@ const volPairingsMap = new Map();
 if (t.volPaired) {
 const pairedVols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
 pairedVols.forEach(v => {
-   const cleanVol = v.toLowerCase();
-   if (!volPairingsMap.has(cleanVol)) volPairingsMap.set(cleanVol, []);
-   volPairingsMap.get(cleanVol).push(t.name);
+  const cleanVol = v.toLowerCase();
+  if (!volPairingsMap.has(cleanVol)) volPairingsMap.set(cleanVol, []);
+  volPairingsMap.get(cleanVol).push(t.name);
 });
 }
 });
@@ -329,11 +329,11 @@ manualPairingData.trainees.forEach(otherT => {
 if (otherT.name === traineeName || !otherT.volPaired) return;
 const vols = otherT.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
 if (vols.includes(cleanVolName)) {
- const otherTGroup = String(otherT.group || "").trim();
- // If both have groups assigned and they are different, block the pairing
- if (tGroup !== "" && otherTGroup !== "" && tGroup !== otherTGroup) {
-     blockingTraineeName = otherT.name;
- }
+const otherTGroup = String(otherT.group || "").trim();
+// If both have groups assigned and they are different, block the pairing
+if (tGroup !== "" && otherTGroup !== "" && tGroup !== otherTGroup) {
+    blockingTraineeName = otherT.name;
+}
 }
 });
 
@@ -409,8 +409,8 @@ btn.classList.add('bg-green-50', 'text-green-700', 'border-green-200', 'dark:bg-
 textSpan.textContent = "Saved"; 
 setTimeout(() => {
 if (pendingPairingUpdates.length === 0) {
-   btn.className = "text-[10px] md:text-xs px-1.5 py-1 rounded font-bold transition flex items-center border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 shadow-sm focus:outline-none shrink-0";
-   textSpan.textContent = "Saved";
+  btn.className = "text-[10px] md:text-xs px-1.5 py-1 rounded font-bold transition flex items-center border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-gray-700 dark:text-gray-300 shadow-sm focus:outline-none shrink-0";
+  textSpan.textContent = "Saved";
 }
 }, 2000);
 } else if (state === 'error') { 
@@ -471,15 +471,15 @@ const fetchStartTime = Date.now();
 try {
 const res = await apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl });
 if(res.success && !isManualPairingSyncing && pendingPairingUpdates.length === 0) {
-   if (lastPairingLocalChange > fetchStartTime) return;
+  if (lastPairingLocalChange > fetchStartTime) return;
 
-   const newDataStr = JSON.stringify(res.data);
-   const oldDataStr = JSON.stringify(manualPairingData);
-   
-   if (newDataStr !== oldDataStr) {
-       manualPairingData = res.data;
-       renderManualPairings();
-   }
+  const newDataStr = JSON.stringify(res.data);
+  const oldDataStr = JSON.stringify(manualPairingData);
+  
+  if (newDataStr !== oldDataStr) {
+      manualPairingData = res.data;
+      renderManualPairings();
+  }
 }
 } catch(e) { }
 }, 10000); // Backed off to 10 seconds
@@ -547,8 +547,8 @@ if (sourceRole === 'VOLUNTEER') {
 // Search Trainees (Strictly 'Y' and not gone home)
 quickPairContext.targetList = (manualPairingData.trainees || [])
 .filter(t => {
-   const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
-   return att === 'y' && !t.isGoneHome;
+  const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
+  return att === 'y' && !t.isGoneHome;
 })
 .sort(sortFn)
 .map(t => t.name);
@@ -599,8 +599,8 @@ li.innerHTML = `<span>${name}</span> ${isPaired ? '<i class="fa-solid fa-check t
 
 if (!isPaired) {
 li.onclick = () => {
-   handleManualPairingDrop(quickPairContext.sourceName, quickPairContext.sourceRole, name);
-   closeQuickPairModal();
+  handleManualPairingDrop(quickPairContext.sourceName, quickPairContext.sourceRole, name);
+  closeQuickPairModal();
 };
 }
 listEl.appendChild(li);
