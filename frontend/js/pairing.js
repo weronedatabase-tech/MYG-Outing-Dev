@@ -210,21 +210,69 @@ ${pairedPills || `<span class="text-[9px] md:text-[10px] font-medium text-gray-4
 `;
 }
 
+function updateGlobalUnpairedCount() {
+let count = 0;
+(manualPairingData.trainees || []).forEach(t => {
+if (!t.isGoneHome && (!t.volPaired || t.volPaired.trim() === '')) {
+  count++;
+}
+});
+updateUnpairedNotification(count);
+}
+
+// TARGETED OPTIMISTIC DOM UPDATE FOR PAIRING
+function updatePairingCardDOM(name, role) {
+const arr = role === 'VOLUNTEER' ? manualPairingData.volunteers : manualPairingData.trainees;
+const item = (arr || []).find(x => x.name === name);
+if (!item) return;
+
+let pairedNames = [];
+if (role === 'VOLUNTEER') {
+  (manualPairingData.trainees || []).forEach(t => {
+      if (t.volPaired) {
+          const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+          if (vols.includes(name.toLowerCase())) pairedNames.push(t.name);
+      }
+  });
+} else {
+  pairedNames = item.volPaired ? item.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
+}
+
+const safeName = item.name.replace(/'/g, "\\'");
+const cardSelector = `.dnd-dropzone[data-name="${safeName}"][data-role="${role}"]`;
+const existingCard = document.querySelector(cardSelector);
+
+if (existingCard) {
+  const newHtml = generatePairingCardHtml(item, pairedNames);
+  const temp = document.createElement('div');
+  temp.innerHTML = newHtml;
+  const newCardNode = temp.firstElementChild;
+  
+  existingCard.replaceWith(newCardNode);
+  
+  // Rebind long press event natively to the injected node
+  uiBindLongPress(newCardNode, () => {
+      const p = (manualPairingData[role === 'VOLUNTEER' ? 'volunteers' : 'trainees'] || []).find(x => x.name === item.name);
+      if (p) showPersonInfo(p);
+  });
+}
+}
+
 function renderManualPairings() {
+const sourcePool = document.getElementById('dnd-source-pool');
+const targetList = document.getElementById('dnd-target-list');
+
+// SAVE SCROLL POSITIONS FOR SEAMLESS BACKGROUND POLLING UPDATES
+const sourceScrollPos = sourcePool ? sourcePool.scrollTop : 0;
+const targetScrollPos = targetList ? targetList.scrollTop : 0;
+
 // STRICT FILTERING: Exclude any trainees that do not have explicitly 'Y' or 'y' in the attending column
 let trainees = (manualPairingData.trainees || []).filter(t => {
 const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
 return att === 'y';
 });
 
-// Calculate total global unpaired trainees BEFORE filtering by search
-let globalUnpairedCount = 0;
-trainees.forEach(t => {
-if (!t.isGoneHome && (!t.volPaired || t.volPaired.trim() === '')) {
-globalUnpairedCount++;
-}
-});
-updateUnpairedNotification(globalUnpairedCount);
+updateGlobalUnpairedCount();
 
 let vols = [...(manualPairingData.volunteers || [])]; 
 
@@ -285,7 +333,10 @@ vols.forEach(item => {
 const myTrainees = volPairingsMap.get(item.name.toLowerCase()) || [];
 sourceHtml += generatePairingCardHtml(item, myTrainees); 
 });
-document.getElementById('dnd-source-pool').innerHTML = sourceHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active volunteers matching search.</p>';
+
+if (sourcePool) {
+sourcePool.innerHTML = sourceHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active volunteers matching search.</p>';
+}
 
 let targetHtml = '';
 trainees.forEach(item => { 
@@ -293,11 +344,17 @@ const myVols = item.volPaired ? item.volPaired.split(/[,|\n]+/).map(v => v.trim(
 targetHtml += generatePairingCardHtml(item, myVols); 
 });
 
+if (targetList) {
 if (isFilteredManualPairingMode && targetHtml === '') {
-document.getElementById('dnd-target-list').innerHTML = '<p class="text-[10px] text-green-500 font-bold p-2 text-center mt-2">All trainees are paired!</p>';
+  targetList.innerHTML = '<p class="text-[10px] text-green-500 font-bold p-2 text-center mt-2">All trainees are paired!</p>';
 } else {
-document.getElementById('dnd-target-list').innerHTML = targetHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active trainees matching search.</p>';
+  targetList.innerHTML = targetHtml || '<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active trainees matching search.</p>';
 }
+}
+
+// RESTORE SCROLL POSITIONS NATIVELY
+if (sourcePool) sourcePool.scrollTop = sourceScrollPos;
+if (targetList) targetList.scrollTop = targetScrollPos;
 
 // Bind Long Press globally to items
 document.querySelectorAll('.dnd-draggable').forEach(el => {
@@ -358,7 +415,11 @@ pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
 pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
 }
 
-renderManualPairings(); 
+// Targeted DOM update to avoid full re-render scroll jumping
+updatePairingCardDOM(volName, 'VOLUNTEER');
+updatePairingCardDOM(traineeName, 'TRAINEE');
+updateGlobalUnpairedCount();
+
 triggerManualPairingPulse(sourceName, targetName, true);
 triggerManualPairingSync();
 } else {
@@ -386,7 +447,11 @@ pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
 pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
 }
 
-renderManualPairings(); 
+// Targeted DOM update to avoid full re-render scroll jumping
+updatePairingCardDOM(volName, 'VOLUNTEER');
+updatePairingCardDOM(traineeName, 'TRAINEE');
+updateGlobalUnpairedCount();
+
 triggerManualPairingPulse(traineeName, volName, false);
 triggerManualPairingSync();
 }

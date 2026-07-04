@@ -728,6 +728,7 @@ const goneHomeList = document.getElementById('commAttGoneHomeList');
 
 if (!notCheckedList || !checkedList || !goneHomeList) return;
 
+// Explicitly save the scroll position during full renders to prevent jumping
 const scrollNC = notCheckedList.scrollTop;
 const scrollC = checkedList.scrollTop;
 const scrollGH = goneHomeList.scrollTop;
@@ -743,7 +744,6 @@ let goneHomeCount = 0;
 
 let participants = commAttData.participants || [];
 
-// Calculate global unpaired BEFORE filters
 let globalUnpairedCount = 0;
 participants.forEach(p => {
 const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
@@ -802,7 +802,6 @@ notCheckedList.scrollTop = scrollNC;
 checkedList.scrollTop = scrollC;
 goneHomeList.scrollTop = scrollGH;
 
-// Bind Long Press logic after rendering
 document.querySelectorAll('.comm-att-card').forEach(el => {
 uiBindLongPress(el, () => {
 const name = el.getAttribute('data-name');
@@ -824,11 +823,9 @@ if (vols.length > 0) {
 volHtml = vols.map(v => `<span class="text-[9px] md:text-[11px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 md:px-2 py-0.5 md:py-1 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
 }
 } else if (!isGoneHome) {
-// Highlight unpaired explicitly
 volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 md:px-2 py-0.5 md:py-1 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
 }
 
-// 1-1 Pairing Star logic for Trainees
 let starBadge = '';
 if (p.extra && p.extra.t_one_on_one) {
 const oneOnOneRaw = String(p.extra.t_one_on_one).trim().toLowerCase();
@@ -837,7 +834,6 @@ starBadge = `<i class="fa-solid fa-star text-yellow-500 shrink-0 text-[10px] md:
 }
 }
 
-// Remarks Indicator Logic for Trainees in Tracker
 let remarksBadge = '';
 let remarkContent = null;
 if (p.extra && p.extra.remark) {
@@ -893,6 +889,158 @@ ${locHtml}
 </div>`;
 }
 
+// TARGETED OPTIMISTIC UI LOGIC
+function updateCommAttCardDOM(name) {
+const p = (commAttData.participants || []).find(x => x.name === name);
+if (!p) return;
+
+const juncture = commAttState.currentJuncture;
+const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
+const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
+
+const cardId = `comm-att-card-${p.name.replace(/[^a-zA-Z0-9]/g, '')}`;
+const existingCard = document.getElementById(cardId);
+
+const newHtml = generateCommAttCard(p, isChecked, isGoneHome);
+
+let targetListId = 'commAttNotCheckedList';
+if (isGoneHome) targetListId = 'commAttGoneHomeList';
+else if (isChecked) targetListId = 'commAttCheckedList';
+
+const targetList = document.getElementById(targetListId);
+
+if (existingCard) {
+const currentListId = existingCard.parentElement.id;
+if (currentListId === targetListId) {
+  existingCard.outerHTML = newHtml;
+  rebindCommAttCard(cardId, p);
+  
+  // Pulse
+  const newNode = document.getElementById(cardId);
+  if (newNode) applyCardPulse(newNode, isChecked ? 'pulse-green' : (isGoneHome ? 'pulse-blue' : 'pulse-red'));
+} else {
+  // Smoothly collapse
+  existingCard.style.overflow = 'hidden';
+  existingCard.style.minHeight = '0';
+  existingCard.style.transition = 'opacity 0.2s ease, height 0.3s ease, margin 0.3s ease, padding 0.3s ease';
+  existingCard.style.height = existingCard.offsetHeight + 'px';
+  
+  // Trigger Reflow
+  void existingCard.offsetHeight;
+  
+  existingCard.style.opacity = '0';
+  existingCard.style.height = '0px';
+  existingCard.style.margin = '0px';
+  existingCard.style.padding = '0px';
+  existingCard.style.border = 'none';
+  
+  setTimeout(() => {
+      existingCard.remove();
+      
+      const temp = document.createElement('div');
+      temp.innerHTML = newHtml;
+      const newNode = temp.firstElementChild;
+      
+      newNode.style.opacity = '0';
+      newNode.style.transform = 'translateY(-10px)';
+      newNode.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      
+      insertCardSorted(targetList, newNode, p);
+      
+      // Trigger Reflow
+      void newNode.offsetWidth;
+      
+      newNode.style.opacity = '1';
+      newNode.style.transform = 'translateY(0)';
+      
+      updateCommAttCountsDOM();
+      rebindCommAttCard(cardId, p);
+      
+      applyCardPulse(newNode, isChecked ? 'pulse-green' : (isGoneHome ? 'pulse-blue' : 'pulse-red'));
+  }, 300);
+}
+}
+}
+
+function applyCardPulse(node, pulseClass) {
+node.classList.add(pulseClass);
+setTimeout(() => { node.classList.remove(pulseClass); }, 800);
+}
+
+function rebindCommAttCard(cardId, p) {
+const card = document.getElementById(cardId);
+if (card) {
+uiBindLongPress(card, () => {
+  const pObj = (commAttData.participants || []).find(x => x.name === p.name);
+  if (pObj) showPersonInfo(pObj);
+});
+}
+}
+
+function insertCardSorted(listEl, newCardNode, pData) {
+const children = Array.from(listEl.children).filter(c => c.classList.contains('comm-att-card'));
+let inserted = false;
+for (let child of children) {
+const childName = child.getAttribute('data-name');
+const childP = commAttData.participants.find(x => x.name.replace(/'/g, "\\'") === childName);
+if (childP) {
+  const grpA = pData.group ? pData.group.toString().toLowerCase() : "zzzz";
+  const grpB = childP.group ? childP.group.toString().toLowerCase() : "zzzz";
+  let groupCmp = grpA.localeCompare(grpB, undefined, {numeric: true});
+  if (groupCmp < 0 || (groupCmp === 0 && pData.name.localeCompare(childP.name) < 0)) {
+      listEl.insertBefore(newCardNode, child);
+      inserted = true;
+      break;
+  }
+}
+}
+if (!inserted) {
+listEl.appendChild(newCardNode);
+}
+}
+
+function updateCommAttCountsDOM() {
+const juncture = commAttState.currentJuncture;
+let nc = 0, c = 0, gh = 0;
+let globalUnpairedCount = 0;
+
+(commAttData.participants || []).forEach(p => {
+const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
+const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
+
+if (!isGoneHome && (!p.volPaired || p.volPaired.trim() === '')) {
+  globalUnpairedCount++;
+}
+
+// Ignore counts for items filtered out
+if (commAttState.selectedGroups.length > 0 && !commAttState.selectedGroups.includes(String(p.group))) return;
+if (commAttState.selectedMeets.length > 0 && !commAttState.selectedMeets.includes(String(p.meetingLoc))) return;
+if (commAttState.selectedDismissals.length > 0 && !commAttState.selectedDismissals.includes(String(p.dismissalLoc))) return;
+
+if (isGoneHome) gh++;
+else if (isChecked) c++;
+else nc++;
+});
+
+document.getElementById('commAttNotCheckedCount').textContent = nc;
+document.getElementById('commAttCheckedCount').textContent = c;
+document.getElementById('commAttGoneHomeCount').textContent = gh;
+updateUnpairedNotification(globalUnpairedCount);
+
+['commAttNotCheckedList', 'commAttCheckedList', 'commAttGoneHomeList'].forEach(id => {
+const el = document.getElementById(id);
+if (!el) return;
+
+const cardCount = el.querySelectorAll('.comm-att-card').length;
+if (cardCount === 0) {
+  el.innerHTML = '<p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold p-2 text-center mt-2">Empty</p>';
+} else {
+  const emptyP = el.querySelector('p');
+  if (emptyP && emptyP.innerText === 'Empty') emptyP.remove();
+}
+});
+}
+
 function triggerSync() {
 if (commAttSyncTimeout) clearTimeout(commAttSyncTimeout);
 commAttSyncTimeout = setTimeout(() => {
@@ -911,8 +1059,7 @@ commAttData.attendance[juncture][name] = forceState;
 if (!pendingCommAttUpdates[juncture]) pendingCommAttUpdates[juncture] = {};
 pendingCommAttUpdates[juncture][name] = forceState;
 
-renderCommAttLists();
-triggerCommAttPulse(name, forceState ? 'checked' : 'unchecked');
+updateCommAttCardDOM(name);
 triggerSync();
 }
 
@@ -927,47 +1074,8 @@ commAttData.attendance['__GONE_HOME__'][name] = forceState;
 if (!pendingCommAttUpdates['__GONE_HOME__']) pendingCommAttUpdates['__GONE_HOME__'] = {};
 pendingCommAttUpdates['__GONE_HOME__'][name] = forceState;
 
-renderCommAttLists();
-triggerCommAttPulse(name, forceState ? 'gonehome' : 'unchecked');
+updateCommAttCardDOM(name);
 triggerSync();
-}
-
-function triggerCommAttPulse(name, stateType) {
-setTimeout(() => {
-requestAnimationFrame(() => {
-const id = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
-const card = document.getElementById(id);
-if (card) {
-const container = card.parentElement;
-if (container) {
-const containerRect = container.getBoundingClientRect();
-const cardRect = card.getBoundingClientRect();
-
-if (cardRect.height > 0) {
-    const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
-    
-    container.scrollTo({
-        top: scrollTop,
-        behavior: 'smooth'
-    });
-}
-}
-
-let pulseClass = 'pulse-red';
-
-if (stateType === 'checked') {
-pulseClass = 'pulse-green';
-} else if (stateType === 'gonehome') {
-pulseClass = 'pulse-blue';
-}
-
-card.classList.add(pulseClass);
-setTimeout(() => {
-card.classList.remove(pulseClass);
-}, 800);
-}
-});
-}, 150);
 }
 
 function generateColumnText(columnType) {
@@ -1349,6 +1457,9 @@ const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attend
 if (!isGoneHome) {
 toggleCommAttStatus(name, true, null);
 } else {
-triggerCommAttPulse(name, 'gonehome');
+// Call the function directly on the existing node to force a pulse without replacing it 
+const cardId = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
+const cardNode = document.getElementById(cardId);
+if (cardNode) applyCardPulse(cardNode, 'pulse-blue');
 }
 }
