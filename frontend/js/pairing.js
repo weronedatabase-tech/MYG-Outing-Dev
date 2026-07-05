@@ -213,7 +213,8 @@ ${pairedPills || `<span class="text-[9px] md:text-[10px] font-medium text-gray-4
 function updateGlobalUnpairedCount() {
 let count = 0;
 (manualPairingData.trainees || []).forEach(t => {
-if (!t.isGoneHome && (!t.volPaired || t.volPaired.trim() === '')) {
+const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
+if (att === 'y' && !t.isGoneHome && (!t.volPaired || t.volPaired.trim() === '')) {
   count++;
 }
 });
