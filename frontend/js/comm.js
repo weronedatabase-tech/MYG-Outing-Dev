@@ -1,5 +1,5 @@
 let currentCommAttSheetUrl = null;
-let commAttData = { participants: [], junctures: [], attendance: { '__GONE_HOME__': {} } };
+let commAttData = { participants: [], junctures: [], attendance: { '__GONE_HOME__': {} }, meetingLocs: [], dismissalLocs: [] };
 let commAttState = {
 currentJuncture: null,
 selectedGroups: [],
@@ -29,7 +29,7 @@ function ensureMeetingJuncture() {
 if (!commAttData) return;
 if (!commAttData.junctures) commAttData.junctures = [];
 if (!commAttData.junctures.includes("Meeting")) {
-   commAttData.junctures.unshift("Meeting");
+ commAttData.junctures.unshift("Meeting");
 }
 if (!commAttData.attendance) commAttData.attendance = {};
 if (!commAttData.attendance['Meeting']) commAttData.attendance['Meeting'] = {};
@@ -55,48 +55,48 @@ const listContainer = document.getElementById('upcomingList');
 
 // STATE-AWARENESS: Prevent DOM wipe if data exists
 if (!forceRefresh && window.currentSheetList && window.currentSheetList.length > 0) {
- // Ensure selector is populated for the current view if empty
- if (selector && selector.options.length <= 1) {
-     selector.innerHTML = '';
-     selector.disabled = false;
-     window.currentSheetList.forEach(item => {
-         let opt = document.createElement('option');
-         opt.value = item.sheetUrl;
-         opt.text = item.displayName;
-         selector.appendChild(opt);
-     });
-     selector.selectedIndex = 0;
- }
+// Ensure selector is populated for the current view if empty
+if (selector && selector.options.length <= 1) {
+   selector.innerHTML = '';
+   selector.disabled = false;
+   window.currentSheetList.forEach(item => {
+       let opt = document.createElement('option');
+       opt.value = item.sheetUrl;
+       opt.text = item.displayName;
+       selector.appendChild(opt);
+   });
+   selector.selectedIndex = 0;
+}
 
- if (viewId === 'volunteer') {
-     resetVolForm();
- } else if (viewId === 'actual-attendance' && window.currentSheetList.length === 1) {
-     setTimeout(() => openLiveAttendance(), 100);
- }
+if (viewId === 'volunteer') {
+   resetVolForm();
+} else if (viewId === 'actual-attendance' && window.currentSheetList.length === 1) {
+   setTimeout(() => openLiveAttendance(), 100);
+}
 
- if (viewId === 'comm' && listContainer) {
-     // If the container already has our rendered cards, skip completely!
-     if (listContainer.children.length > 0 && !listContainer.innerHTML.includes('animate-pulse') && !listContainer.innerHTML.includes('Loading events')) {
-         // Re-enable action buttons just in case
-         document.getElementById('scrubBtn').disabled = false;
-         document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-         document.getElementById('manualPairBtn').disabled = false;
-         document.getElementById('manualPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-         document.getElementById('groupBtn').disabled = false;
-         document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-         document.getElementById('manualGroupBtn').disabled = false;
-         document.getElementById('manualGroupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-         const assignBtn = document.getElementById('assignICBtn');
-         if (assignBtn) {
-            assignBtn.disabled = false;
-            assignBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-         }
-         return; // ZERO LATENCY EXIT
-     } else {
-         renderCommDashboardCards(window.currentSheetList);
-     }
- }
- return;
+if (viewId === 'comm' && listContainer) {
+   // If the container already has our rendered cards, skip completely!
+   if (listContainer.children.length > 0 && !listContainer.innerHTML.includes('animate-pulse') && !listContainer.innerHTML.includes('Loading events')) {
+       // Re-enable action buttons just in case
+       document.getElementById('scrubBtn').disabled = false;
+       document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+       document.getElementById('manualPairBtn').disabled = false;
+       document.getElementById('manualPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+       document.getElementById('groupBtn').disabled = false;
+       document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+       document.getElementById('manualGroupBtn').disabled = false;
+       document.getElementById('manualGroupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
+       const assignBtn = document.getElementById('assignICBtn');
+       if (assignBtn) {
+          assignBtn.disabled = false;
+          assignBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+       }
+       return; // ZERO LATENCY EXIT
+   } else {
+       renderCommDashboardCards(window.currentSheetList);
+   }
+}
+return;
 }
 
 selector.innerHTML = '<option disabled selected>↻ Loading events...</option>';
@@ -104,76 +104,76 @@ selector.disabled = true;
 if(spinner) spinner.classList.remove('hidden');
 
 if(viewId === 'comm' && listContainer) {
- document.getElementById('scrubBtn').disabled = true;
- document.getElementById('scrubBtn').classList.add('opacity-50', 'cursor-not-allowed');
- document.getElementById('manualPairBtn').disabled = true;
- document.getElementById('manualPairBtn').classList.add('opacity-50', 'cursor-not-allowed');
- document.getElementById('groupBtn').disabled = true;
- document.getElementById('groupBtn').classList.add('opacity-50', 'cursor-not-allowed');
- document.getElementById('manualGroupBtn').disabled = true;
- document.getElementById('manualGroupBtn').classList.add('opacity-50', 'cursor-not-allowed');
- const assignBtn = document.getElementById('assignICBtn');
- if (assignBtn) {
-    assignBtn.disabled = true;
-    assignBtn.classList.add('opacity-50', 'cursor-not-allowed');
- }
+document.getElementById('scrubBtn').disabled = true;
+document.getElementById('scrubBtn').classList.add('opacity-50', 'cursor-not-allowed');
+document.getElementById('manualPairBtn').disabled = true;
+document.getElementById('manualPairBtn').classList.add('opacity-50', 'cursor-not-allowed');
+document.getElementById('groupBtn').disabled = true;
+document.getElementById('groupBtn').classList.add('opacity-50', 'cursor-not-allowed');
+document.getElementById('manualGroupBtn').disabled = true;
+document.getElementById('manualGroupBtn').classList.add('opacity-50', 'cursor-not-allowed');
+const assignBtn = document.getElementById('assignICBtn');
+if (assignBtn) {
+  assignBtn.disabled = true;
+  assignBtn.classList.add('opacity-50', 'cursor-not-allowed');
+}
 
- // Implement Skeleton UI
- let skeletonHtml = '';
- for(let i=0; i<3; i++) {
-     skeletonHtml += `
-     <div class="animate-pulse flex flex-col gap-3 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
-         <div class="flex justify-between items-start">
-             <div class="space-y-2 w-1/2">
-                 <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
-                 <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
-             </div>
-             <div class="flex gap-2">
-                 <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-                 <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-             </div>
-         </div>
-         <div class="h-12 bg-gray-50 dark:bg-zinc-800/50 rounded w-full mt-1"></div>
-     </div>`;
- }
- listContainer.innerHTML = skeletonHtml;
+// Implement Skeleton UI
+let skeletonHtml = '';
+for(let i=0; i<3; i++) {
+   skeletonHtml += `
+   <div class="animate-pulse flex flex-col gap-3 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
+       <div class="flex justify-between items-start">
+           <div class="space-y-2 w-1/2">
+               <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
+               <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
+           </div>
+           <div class="flex gap-2">
+               <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+               <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+           </div>
+       </div>
+       <div class="h-12 bg-gray-50 dark:bg-zinc-800/50 rounded w-full mt-1"></div>
+   </div>`;
+}
+listContainer.innerHTML = skeletonHtml;
 }
 
 apiCall('getRecentOutingSheets', null).then(res => {
- if(spinner) spinner.classList.add('hidden');
- selector.disabled = false;
- selector.innerHTML = '';
+if(spinner) spinner.classList.add('hidden');
+selector.disabled = false;
+selector.innerHTML = '';
 
- if (res.success) {
-     window.currentSheetList = res.data;
-     if(res.data.length > 0) {
-         res.data.forEach(item => {
-             let opt = document.createElement('option');
-             opt.value = item.sheetUrl;
-             opt.text = item.displayName;
-             selector.appendChild(opt);
-         });
-         selector.selectedIndex = 0;
+if (res.success) {
+   window.currentSheetList = res.data;
+   if(res.data.length > 0) {
+       res.data.forEach(item => {
+           let opt = document.createElement('option');
+           opt.value = item.sheetUrl;
+           opt.text = item.displayName;
+           selector.appendChild(opt);
+       });
+       selector.selectedIndex = 0;
 
-         if(viewId === 'comm' && listContainer) {
-             renderCommDashboardCards(res.data);
-         } else if(viewId === 'volunteer') {
-             resetVolForm();
-         } else if (viewId === 'actual-attendance' && res.data.length === 1) {
-             setTimeout(() => openLiveAttendance(), 100);
-         }
-     } else {
-         selector.innerHTML = '<option disabled selected>No upcoming events</option>';
-         if(viewId === 'comm' && listContainer) {
-             listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
-         }
-     }
- } else {
-     selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
-     if(viewId === 'comm' && listContainer) {
-         listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
-     }
- }
+       if(viewId === 'comm' && listContainer) {
+           renderCommDashboardCards(res.data);
+       } else if(viewId === 'volunteer') {
+           resetVolForm();
+       } else if (viewId === 'actual-attendance' && res.data.length === 1) {
+           setTimeout(() => openLiveAttendance(), 100);
+       }
+   } else {
+       selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+       if(viewId === 'comm' && listContainer) {
+           listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
+       }
+   }
+} else {
+   selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
+   if(viewId === 'comm' && listContainer) {
+       listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
+   }
+}
 });
 }
 
@@ -201,71 +201,71 @@ assignBtn.classList.remove('opacity-50', 'cursor-not-allowed');
 
 let allCards = '';
 data.forEach((item, index) => {
- allCards += `
- <div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
-  <div class="flex justify-between items-start">
-    <div>
-        <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
-        <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
-        <div id="pending-badge-${index}" class="mt-1 hidden"></div>
-    </div>
-    <div class="flex gap-2 text-xs">
-        <button onclick="openEditOutingModal(${index})" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors" title="Edit Outing"><i class="fa-solid fa-pen text-base"></i></button>
-        <a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a>
-        <a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a>
-    </div>
+allCards += `
+<div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
+<div class="flex justify-between items-start">
+  <div>
+      <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
+      <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
+      <div id="pending-badge-${index}" class="mt-1 hidden"></div>
   </div>
-  <div id="stats-${index}" class="animate-pulse mt-2"><div class="h-12 bg-gray-100 dark:bg-zinc-800 rounded w-full"></div></div>
-  <div id="btn-group-${index}" class="hidden grid grid-cols-3 gap-1.5 md:gap-2 mt-2 pt-3 border-t border-gray-100 dark:border-zinc-800">
-      <button onclick="openReminderModal('${index}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Remind">
-         <i class="fa-solid fa-bell text-sm md:text-base shrink-0"></i>
-         <span class="text-[10px] md:text-[11px] font-semibold truncate">Remind</span>
-      </button>
-      <button onclick="copyOutingMessage('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Copy Info">
-         <i class="fa-regular fa-copy text-sm md:text-base shrink-0"></i>
-         <span class="text-[10px] md:text-[11px] font-semibold truncate">Copy Info</span>
-      </button>
-      <button onclick="openShareTableFromComm('${item.sheetUrl}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Share Pairing/Grouping Screenshot">
-         <i class="fa-solid fa-share-nodes text-sm md:text-base shrink-0"></i>
-         <span class="text-[9px] md:text-[11px] font-semibold leading-tight text-center whitespace-normal">Share Table</span>
-      </button>
+  <div class="flex gap-2 text-xs">
+      <button onclick="openEditOutingModal(${index})" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors" title="Edit Outing"><i class="fa-solid fa-pen text-base"></i></button>
+      <a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a>
+      <a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a>
   </div>
- </div>`;
+</div>
+<div id="stats-${index}" class="animate-pulse mt-2"><div class="h-12 bg-gray-100 dark:bg-zinc-800 rounded w-full"></div></div>
+<div id="btn-group-${index}" class="hidden grid grid-cols-3 gap-1.5 md:gap-2 mt-2 pt-3 border-t border-gray-100 dark:border-zinc-800">
+    <button onclick="openReminderModal('${index}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Remind">
+       <i class="fa-solid fa-bell text-sm md:text-base shrink-0"></i>
+       <span class="text-[10px] md:text-[11px] font-semibold truncate">Remind</span>
+    </button>
+    <button onclick="copyOutingMessage('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Copy Info">
+       <i class="fa-regular fa-copy text-sm md:text-base shrink-0"></i>
+       <span class="text-[10px] md:text-[11px] font-semibold truncate">Copy Info</span>
+    </button>
+    <button onclick="openShareTableFromComm('${item.sheetUrl}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Share Pairing/Grouping Screenshot">
+       <i class="fa-solid fa-share-nodes text-sm md:text-base shrink-0"></i>
+       <span class="text-[9px] md:text-[11px] font-semibold leading-tight text-center whitespace-normal">Share Table</span>
+    </button>
+</div>
+</div>`;
 });
 listContainer.innerHTML = allCards;
 
 let currentIndex = 0;
 const MAX_STATS_TO_FETCH = 6; 
 const fetchBatchStats = () => {
-  const batch = data.slice(currentIndex, currentIndex + 2); 
-  if (batch.length === 0 || currentIndex >= MAX_STATS_TO_FETCH) {
-      for (let i = currentIndex; i < data.length; i++) {
-          const container = document.getElementById(`stats-${i}`);
-          if (container) {
-              container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-              container.classList.remove('animate-pulse');
-          }
-      }
-      return;
-  }
-  
-  Promise.all(batch.map((item, localIdx) => {
-      const globalIdx = currentIndex + localIdx;
-      return fetchOutingStats(item.sheetUrl, globalIdx);
-  })).then(() => {
-      currentIndex += 2;
-      if (currentIndex < Math.min(data.length, MAX_STATS_TO_FETCH)) {
-          setTimeout(fetchBatchStats, 1500); 
-      } else {
-          for (let i = currentIndex; i < data.length; i++) {
-              const container = document.getElementById(`stats-${i}`);
-              if (container) {
-                  container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-                  container.classList.remove('animate-pulse');
-              }
-          }
-      }
-  });
+const batch = data.slice(currentIndex, currentIndex + 2); 
+if (batch.length === 0 || currentIndex >= MAX_STATS_TO_FETCH) {
+    for (let i = currentIndex; i < data.length; i++) {
+        const container = document.getElementById(`stats-${i}`);
+        if (container) {
+            container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+            container.classList.remove('animate-pulse');
+        }
+    }
+    return;
+}
+
+Promise.all(batch.map((item, localIdx) => {
+    const globalIdx = currentIndex + localIdx;
+    return fetchOutingStats(item.sheetUrl, globalIdx);
+})).then(() => {
+    currentIndex += 2;
+    if (currentIndex < Math.min(data.length, MAX_STATS_TO_FETCH)) {
+        setTimeout(fetchBatchStats, 1500); 
+    } else {
+        for (let i = currentIndex; i < data.length; i++) {
+            const container = document.getElementById(`stats-${i}`);
+            if (container) {
+                container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+                container.classList.remove('animate-pulse');
+            }
+        }
+    }
+});
 };
 fetchBatchStats();
 }
@@ -393,11 +393,11 @@ showOverlay('loading', 'Generating Table...');
 apiCall('fetchManualPairingData', { sheetUrl: sheetUrl }).then(res => {
 closeOverlay();
 if (res.success) {
-  groupingData = res.data;
-  currentGroupingSheetUrl = sheetUrl; // Bind globally for image export Context
-  openTableExportModal();
+groupingData = res.data;
+currentGroupingSheetUrl = sheetUrl; // Bind globally for image export Context
+openTableExportModal();
 } else {
-  alert("Error: " + res.message);
+alert("Error: " + res.message);
 }
 });
 }
@@ -514,12 +514,12 @@ dismissalTimes: Array.from(document.getElementsByName('editDismissalTime')).map(
 
 apiCall('updateOuting', { sheetUrl: currentEditSheetUrl, form: formData }).then(res => { 
 if(res.success) { 
-  showOverlay('success', 'Outing Details Updated!');
-  closeEditModal(); 
-  loadSheets('comm', true); 
-  showFlashMessage('commGlobalStatus', "Outing Updated Successfully!", 'success');
+showOverlay('success', 'Outing Details Updated!');
+closeEditModal(); 
+loadSheets('comm', true); 
+showFlashMessage('commGlobalStatus', "Outing Updated Successfully!", 'success');
 } else { 
-  showOverlay('error', res.message);
+showOverlay('error', res.message);
 } 
 }); 
 }
@@ -559,13 +559,11 @@ showView('actual-attendance');
 
 function renderCommAttFilters() {
 let groups = new Set();
-let meets = new Set();
-let dismissals = new Set();
+let meets = new Set(commAttData.meetingLocs || []);
+let dismissals = new Set(commAttData.dismissalLocs || []);
 
 (commAttData.participants || []).forEach(p => {
 if (p.group) groups.add(String(p.group));
-if (p.meetingLoc) meets.add(String(p.meetingLoc));
-if (p.dismissalLoc) dismissals.add(String(p.dismissalLoc));
 });
 
 const sortedGroups = Array.from(groups).sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
@@ -654,12 +652,12 @@ commAttFiltersChanged = false;
 
 document.addEventListener('click', function(e) {
 const isDropdownClick = e.target.closest('#commAttGroupDropdown') || 
-        e.target.closest('#commAttMeetDropdown') || 
-        e.target.closest('#commAttDismissDropdown');
+      e.target.closest('#commAttMeetDropdown') || 
+      e.target.closest('#commAttDismissDropdown');
 
 const isBtnClick = e.target.closest('#commAttGroupBtn') || 
-   e.target.closest('#commAttMeetBtn') || 
-   e.target.closest('#commAttDismissBtn');
+ e.target.closest('#commAttMeetBtn') || 
+ e.target.closest('#commAttDismissBtn');
 
 if (!isDropdownClick && !isBtnClick) {
 closeAllCommAttFilters();
@@ -912,52 +910,52 @@ const targetList = document.getElementById(targetListId);
 if (existingCard) {
 const currentListId = existingCard.parentElement.id;
 if (currentListId === targetListId) {
-  existingCard.outerHTML = newHtml;
-  rebindCommAttCard(cardId, p);
-  
-  // Pulse
-  const newNode = document.getElementById(cardId);
-  if (newNode) applyCardPulse(newNode, isChecked ? 'pulse-green' : (isGoneHome ? 'pulse-blue' : 'pulse-red'));
+existingCard.outerHTML = newHtml;
+rebindCommAttCard(cardId, p);
+
+// Pulse
+const newNode = document.getElementById(cardId);
+if (newNode) applyCardPulse(newNode, isChecked ? 'pulse-green' : (isGoneHome ? 'pulse-blue' : 'pulse-red'));
 } else {
-  // Smoothly collapse
-  existingCard.style.overflow = 'hidden';
-  existingCard.style.minHeight = '0';
-  existingCard.style.transition = 'opacity 0.2s ease, height 0.3s ease, margin 0.3s ease, padding 0.3s ease';
-  existingCard.style.height = existingCard.offsetHeight + 'px';
-  
-  // Trigger Reflow
-  void existingCard.offsetHeight;
-  
-  existingCard.style.opacity = '0';
-  existingCard.style.height = '0px';
-  existingCard.style.margin = '0px';
-  existingCard.style.padding = '0px';
-  existingCard.style.border = 'none';
-  
-  setTimeout(() => {
-      existingCard.remove();
-      
-      const temp = document.createElement('div');
-      temp.innerHTML = newHtml;
-      const newNode = temp.firstElementChild;
-      
-      newNode.style.opacity = '0';
-      newNode.style.transform = 'translateY(-10px)';
-      newNode.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-      
-      insertCardSorted(targetList, newNode, p);
-      
-      // Trigger Reflow
-      void newNode.offsetWidth;
-      
-      newNode.style.opacity = '1';
-      newNode.style.transform = 'translateY(0)';
-      
-      updateCommAttCountsDOM();
-      rebindCommAttCard(cardId, p);
-      
-      applyCardPulse(newNode, isChecked ? 'pulse-green' : (isGoneHome ? 'pulse-blue' : 'pulse-red'));
-  }, 300);
+// Smoothly collapse
+existingCard.style.overflow = 'hidden';
+existingCard.style.minHeight = '0';
+existingCard.style.transition = 'opacity 0.2s ease, height 0.3s ease, margin 0.3s ease, padding 0.3s ease';
+existingCard.style.height = existingCard.offsetHeight + 'px';
+
+// Trigger Reflow
+void existingCard.offsetHeight;
+
+existingCard.style.opacity = '0';
+existingCard.style.height = '0px';
+existingCard.style.margin = '0px';
+existingCard.style.padding = '0px';
+existingCard.style.border = 'none';
+
+setTimeout(() => {
+    existingCard.remove();
+    
+    const temp = document.createElement('div');
+    temp.innerHTML = newHtml;
+    const newNode = temp.firstElementChild;
+    
+    newNode.style.opacity = '0';
+    newNode.style.transform = 'translateY(-10px)';
+    newNode.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    
+    insertCardSorted(targetList, newNode, p);
+    
+    // Trigger Reflow
+    void newNode.offsetWidth;
+    
+    newNode.style.opacity = '1';
+    newNode.style.transform = 'translateY(0)';
+    
+    updateCommAttCountsDOM();
+    rebindCommAttCard(cardId, p);
+    
+    applyCardPulse(newNode, isChecked ? 'pulse-green' : (isGoneHome ? 'pulse-blue' : 'pulse-red'));
+}, 300);
 }
 }
 }
@@ -971,8 +969,8 @@ function rebindCommAttCard(cardId, p) {
 const card = document.getElementById(cardId);
 if (card) {
 uiBindLongPress(card, () => {
-  const pObj = (commAttData.participants || []).find(x => x.name === p.name);
-  if (pObj) showPersonInfo(pObj);
+const pObj = (commAttData.participants || []).find(x => x.name === p.name);
+if (pObj) showPersonInfo(pObj);
 });
 }
 }
@@ -984,14 +982,14 @@ for (let child of children) {
 const childName = child.getAttribute('data-name');
 const childP = commAttData.participants.find(x => x.name.replace(/'/g, "\\'") === childName);
 if (childP) {
-  const grpA = pData.group ? pData.group.toString().toLowerCase() : "zzzz";
-  const grpB = childP.group ? childP.group.toString().toLowerCase() : "zzzz";
-  let groupCmp = grpA.localeCompare(grpB, undefined, {numeric: true});
-  if (groupCmp < 0 || (groupCmp === 0 && pData.name.localeCompare(childP.name) < 0)) {
-      listEl.insertBefore(newCardNode, child);
-      inserted = true;
-      break;
-  }
+const grpA = pData.group ? pData.group.toString().toLowerCase() : "zzzz";
+const grpB = childP.group ? childP.group.toString().toLowerCase() : "zzzz";
+let groupCmp = grpA.localeCompare(grpB, undefined, {numeric: true});
+if (groupCmp < 0 || (groupCmp === 0 && pData.name.localeCompare(childP.name) < 0)) {
+    listEl.insertBefore(newCardNode, child);
+    inserted = true;
+    break;
+}
 }
 }
 if (!inserted) {
@@ -1009,7 +1007,7 @@ const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attend
 const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
 
 if (!isGoneHome && (!p.volPaired || p.volPaired.trim() === '')) {
-  globalUnpairedCount++;
+globalUnpairedCount++;
 }
 
 // Ignore counts for items filtered out
@@ -1033,10 +1031,10 @@ if (!el) return;
 
 const cardCount = el.querySelectorAll('.comm-att-card').length;
 if (cardCount === 0) {
-  el.innerHTML = '<p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold p-2 text-center mt-2">Empty</p>';
+el.innerHTML = '<p class="text-[10px] text-gray-400 dark:text-gray-500 font-bold p-2 text-center mt-2">Empty</p>';
 } else {
-  const emptyP = el.querySelector('p');
-  if (emptyP && emptyP.innerText === 'Empty') emptyP.remove();
+const emptyP = el.querySelector('p');
+if (emptyP && emptyP.innerText === 'Empty') emptyP.remove();
 }
 });
 }
@@ -1149,6 +1147,7 @@ copyColumnData(columnType);
 }
 
 async function executeCommAttSync() {
+if (isCommAttSyncing) return; // Prevent concurrent overlaps
 if (!hasPendingUpdates()) return;
 
 isCommAttSyncing = true;
@@ -1183,6 +1182,9 @@ pendingCommAttUpdates[junc][name] = batchBackup[junc][name];
 }
 } finally {
 isCommAttSyncing = false;
+if (hasPendingUpdates()) {
+ triggerSync();
+}
 }
 }
 
@@ -1270,6 +1272,8 @@ alert(res.message);
 }
 
 async function manualSyncCommAttendance() {
+if (isCommAttSyncing) return; // Prevent overlapping with automated sync
+
 if (hasPendingUpdates()) {
 await executeCommAttSync();
 }
