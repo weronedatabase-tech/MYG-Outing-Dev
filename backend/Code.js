@@ -47,6 +47,9 @@ switch (action) {
 case 'verifyAdminPassword':
 result = verifyAdminPassword(payload);
 break;
+case 'changeAdminPassword':
+result = changeAdminPassword(payload);
+break;
 case 'getRecentOutingSheets':
 result = getRecentOutingSheets();
 break;
@@ -388,6 +391,19 @@ AUTH LOGIC
 function verifyAdminPassword(inputPassword) {
 const correctPassword = PropertiesService.getScriptProperties().getProperty("Admin");
 return inputPassword === correctPassword;
+}
+
+function changeAdminPassword(payload) {
+const { currentPassword, newPassword } = payload;
+const props = PropertiesService.getScriptProperties();
+const storedPassword = props.getProperty("Admin");
+
+if (currentPassword === storedPassword) {
+    props.setProperty("Admin", newPassword);
+    return { success: true, message: "Password updated successfully!" };
+} else {
+    return { success: false, message: "Incorrect current password." };
+}
 }
 
 /* =========================================
