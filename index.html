@@ -354,7 +354,7 @@ primary: '#3b82f6',
 
 <!-- BUS TRACKER MODAL -->
 <div id="busTrackerModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-[80] flex items-start md:items-center justify-center md:p-4 transition-opacity duration-300">
-<div class="bg-white dark:bg-zinc-900 w-full md:max-w-5xl h-[100dvh] md:h-[95dvh] max-h-screen md:rounded-2xl border-b md:border border-gray-200 dark:border-zinc-800 flex flex-col shadow-2xl overflow-hidden">
+<div class="bg-white dark:bg-zinc-900 w-full md:max-w-5xl h-[100dvh] max-h-[100dvh] md:h-[95dvh] md:max-h-[95dvh] md:rounded-2xl border-b md:border border-gray-200 dark:border-zinc-800 flex flex-col shadow-2xl overflow-hidden">
 <!-- Header -->
 <div class="p-3 md:p-4 border-b border-gray-200 dark:border-zinc-800 flex justify-between items-center shrink-0">
    <h3 class="text-gray-900 dark:text-white font-bold text-base md:text-lg"><i class="fa-solid fa-bus mr-2 text-yellow-500"></i>Bus Tracker</h3>
@@ -365,15 +365,15 @@ primary: '#3b82f6',
 <div class="p-2 md:p-3 border-b border-gray-200 dark:border-zinc-800 shrink-0 flex flex-col gap-2">
    <!-- Juncture Select Row -->
    <div class="flex gap-2 w-full items-center">
-       <select id="busJunctureSelect" onchange="changeBusContext()" class="flex-1 px-2 py-1.5 border border-gray-300 dark:border-zinc-700 rounded font-bold text-sm bg-gray-50 dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500 shadow-sm"></select>
-       <button onclick="promptNewBusJuncture()" class="h-8 w-8 shrink-0 flex items-center justify-center bg-gray-100 dark:bg-zinc-800 text-yellow-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded shadow-sm border border-gray-300 dark:border-zinc-700 transition" title="Add Bus Juncture"><i class="fa-solid fa-plus text-sm"></i></button>
-       <button onclick="promptDeleteBusJuncture()" class="h-8 w-8 shrink-0 flex items-center justify-center bg-gray-100 dark:bg-zinc-800 text-red-600 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded shadow-sm border border-gray-300 dark:border-zinc-700 transition" title="Delete Bus Juncture"><i class="fa-solid fa-trash text-sm"></i></button>
+       <select id="busJunctureSelect" onchange="changeBusContext()" class="flex-1 px-2 py-2 border border-gray-300 dark:border-zinc-700 rounded font-bold text-sm bg-gray-50 dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500 shadow-sm"></select>
+       <button onclick="promptNewBusJuncture()" class="h-9 w-9 shrink-0 flex items-center justify-center bg-gray-100 dark:bg-zinc-800 text-yellow-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded shadow-sm border border-gray-300 dark:border-zinc-700 transition" title="Add Bus Juncture"><i class="fa-solid fa-plus text-sm"></i></button>
+       <button onclick="promptDeleteBusJuncture()" class="h-9 w-9 shrink-0 flex items-center justify-center bg-gray-100 dark:bg-zinc-800 text-red-600 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded shadow-sm border border-gray-300 dark:border-zinc-700 transition" title="Delete Bus Juncture"><i class="fa-solid fa-trash text-sm"></i></button>
    </div>
    
    <!-- Search Row -->
    <div class="relative">
-       <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-       <input type="text" id="busSearchInput" oninput="handleBusSearch(); toggleClearBtn('busSearchInput')" placeholder="Search trainee to assign bus..." class="w-full py-2 pl-8 pr-8 border border-gray-300 dark:border-zinc-700 rounded bg-gray-50 dark:bg-black font-bold text-sm focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 text-gray-900 dark:text-white shadow-sm transition">
+       <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+       <input type="text" id="busSearchInput" oninput="handleBusSearch(); toggleClearBtn('busSearchInput')" placeholder="Search trainee to assign bus..." class="w-full py-2.5 pl-9 pr-9 border border-gray-300 dark:border-zinc-700 rounded bg-gray-50 dark:bg-black font-bold text-sm focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 text-gray-900 dark:text-white shadow-sm transition">
        <button type="button" id="clearBtn-busSearchInput" onclick="clearSearchInput('busSearchInput', 'handleBusSearch')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hidden transition-colors z-10"><i class="fa-solid fa-xmark text-sm"></i></button>
        <ul id="busSearchResults" class="absolute z-20 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded shadow-2xl mt-1 max-h-[40vh] overflow-y-auto hidden custom-scrollbar pb-6"></ul>
    </div>
@@ -388,7 +388,7 @@ primary: '#3b82f6',
    
    <!-- Not Boarded -->
    <div class="flex-1 flex flex-col border-r border-gray-200 dark:border-zinc-800 bg-red-50/50 dark:bg-red-900/10 min-w-0">
-       <div class="bg-red-100 dark:bg-red-900/50 border-b border-red-200 dark:border-red-800 px-3 py-2 shrink-0 flex justify-between items-center">
+       <div class="bg-red-100 dark:bg-red-900/50 border-b border-red-200 dark:border-red-800 p-2.5 md:px-3 md:py-2 shrink-0 flex justify-between items-center h-12">
            <h4 class="font-black text-[10px] md:text-xs uppercase tracking-wide text-red-800 dark:text-red-300 truncate">Not Boarded (<span id="busNotBoardedCount">0</span>)</h4>
        </div>
        <div id="busNotBoardedList" class="flex-grow overflow-y-auto p-2 custom-scrollbar pb-32 space-y-2"></div>
@@ -396,11 +396,11 @@ primary: '#3b82f6',
    
    <!-- Boarded -->
    <div class="flex-1 flex flex-col bg-green-50/50 dark:bg-green-900/10 min-w-0">
-       <div class="bg-green-100 dark:bg-green-900/50 border-b border-green-200 dark:border-green-800 px-2 py-1.5 shrink-0 flex justify-between items-center gap-1 overflow-hidden">
+       <div class="bg-green-100 dark:bg-green-900/50 border-b border-green-200 dark:border-green-800 p-2 shrink-0 flex justify-between items-center gap-1 overflow-hidden h-12">
            <h4 class="font-black text-[10px] md:text-xs uppercase tracking-wide text-green-800 dark:text-green-300 shrink-0 truncate">Boarded (<span id="busBoardedCount">0</span>)</h4>
-           <div class="flex items-center gap-1 shrink-0">
-               <select id="busFilterSelect" onchange="renderBusLists()" class="text-[9px] md:text-[10px] font-bold py-0.5 px-1 rounded border border-green-300 dark:border-green-700 bg-white dark:bg-black text-green-900 dark:text-green-100 max-w-[70px] md:max-w-[100px] truncate focus:outline-none"></select>
-               <button onclick="addBusOption()" class="h-5 w-5 md:h-6 md:w-6 shrink-0 flex items-center justify-center bg-white dark:bg-black text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700 rounded shadow-sm hover:bg-green-50 dark:hover:bg-green-900/30 transition" title="Add Bus"><i class="fa-solid fa-plus text-[8px] md:text-[10px]"></i></button>
+           <div class="flex items-center gap-1.5 shrink-0">
+               <select id="busFilterSelect" onchange="renderBusLists()" class="text-xs font-bold py-1 px-1.5 rounded border border-green-300 dark:border-green-700 bg-white dark:bg-black text-green-900 dark:text-green-100 max-w-[90px] md:max-w-[120px] truncate focus:outline-none"></select>
+               <button onclick="addBusOption()" class="h-6 w-6 md:h-7 md:w-7 shrink-0 flex items-center justify-center bg-white dark:bg-black text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700 rounded shadow-sm hover:bg-green-50 dark:hover:bg-green-900/30 transition" title="Add Bus"><i class="fa-solid fa-plus text-[10px] md:text-xs"></i></button>
            </div>
        </div>
        <div id="busBoardedList" class="flex-grow overflow-y-auto p-2 custom-scrollbar pb-32 space-y-2"></div>

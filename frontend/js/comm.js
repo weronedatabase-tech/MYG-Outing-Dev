@@ -1532,15 +1532,25 @@ document.getElementById('busTrackerModal').classList.add('hidden');
 
 function extractBusJunctures() {
 const juncs = [];
-// Get all dynamic buses created explicitly in Tracker
-for(let j in commAttData.busAttendance) {
-if (!juncs.includes(j)) juncs.push(j);
-}
-// Get config-based catered buses
+const addedValues = new Set();
+
+// Get config-based catered buses first (so they can get the Meeting/Dismissal label)
 if (commAttData.busJunctures) {
 commAttData.busJunctures.forEach(b => {
-  if (!juncs.includes(b.name)) juncs.push(b.name);
+  if (!addedValues.has(b.name)) {
+      let prefix = b.type === 'meet' ? 'Meeting: ' : 'Dismissal: ';
+      juncs.push({ value: b.name, label: prefix + b.name });
+      addedValues.add(b.name);
+  }
 });
+}
+
+// Get all dynamic buses created explicitly in Tracker (custom junctures)
+for(let j in commAttData.busAttendance) {
+if (!addedValues.has(j)) {
+  juncs.push({ value: j, label: j });
+  addedValues.add(j);
+}
 }
 return juncs;
 }
@@ -1559,14 +1569,16 @@ return;
 }
 
 juncs.forEach(j => {
-select.innerHTML += `<option value="${j}">${j}</option>`;
+select.innerHTML += `<option value="${j.value}">${j.label}</option>`;
 });
 
-if (busState.currentJuncture && juncs.includes(busState.currentJuncture)) {
+const validValues = juncs.map(j => j.value);
+
+if (busState.currentJuncture && validValues.includes(busState.currentJuncture)) {
 select.value = busState.currentJuncture;
 } else {
-busState.currentJuncture = juncs[0];
-select.value = juncs[0];
+busState.currentJuncture = validValues[0];
+select.value = validValues[0];
 }
 
 changeBusContext();
