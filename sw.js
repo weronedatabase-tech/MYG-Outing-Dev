@@ -1,7 +1,13 @@
-const CACHE_NAME = 'minds-myg-cache-v125';
+const CACHE_NAME = 'minds-myg-cache-v132';
 const urlsToCache = [
 './',
 './index.html',
+'./admin.html',
+'./tracker.html',
+'./pairing.html',
+'./grouping.html',
+'./volunteer.html',
+'./settings.html',
 './manifest.json',
 './frontend/css/style.css',
 './backend/config.js',
@@ -19,7 +25,6 @@ const urlsToCache = [
 ];
 
 self.addEventListener('install', event => {
-// Force the waiting service worker to become the active service worker
 self.skipWaiting();
 event.waitUntil(
 caches.open(CACHE_NAME)
@@ -41,21 +46,17 @@ return caches.delete(cacheName);
 })
 );
 }).then(() => {
-// Claim all clients immediately so the new SW takes over instantly
 return self.clients.claim();
 })
 );
 });
 
 self.addEventListener('fetch', event => {
-// Only handle GET requests for caching
 if (event.request.method !== 'GET') return;
 
-// Network-First Strategy: Fetch from network first, then fall back to cache if offline
 event.respondWith(
 fetch(event.request)
 .then(networkResponse => {
-// Clone the response because it can only be consumed once
 const responseClone = networkResponse.clone();
 caches.open(CACHE_NAME).then(cache => {
 cache.put(event.request, responseClone);
@@ -63,7 +64,6 @@ cache.put(event.request, responseClone);
 return networkResponse;
 })
 .catch(() => {
-// If network fetch fails (e.g., offline), try serving from cache
 return caches.match(event.request);
 })
 );

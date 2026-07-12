@@ -141,13 +141,13 @@ cache.put(cacheKey, jsonStr, 21600); // 6 hours max
 const chunks = [];
 let i = 0;
 while (i < jsonStr.length) {
- chunks.push(jsonStr.substring(i, i + 90000));
- i += 90000;
+chunks.push(jsonStr.substring(i, i + 90000));
+i += 90000;
 }
 cache.put(cacheKey + "_count", chunks.length.toString(), 21600);
 const dict = {};
 for (let j = 0; j < chunks.length; j++) {
- dict[cacheKey + "_" + j] = chunks[j];
+dict[cacheKey + "_" + j] = chunks[j];
 }
 cache.putAll(dict, 21600);
 }
@@ -168,8 +168,8 @@ for (let i = 0; i < count; i++) keys.push(cacheKey + "_" + i);
 const dict = cache.getAll(keys);
 let fullStr = "";
 for (let i = 0; i < count; i++) {
- if (!dict[keys[i]]) return null; 
- fullStr += dict[keys[i]];
+if (!dict[keys[i]]) return null; 
+fullStr += dict[keys[i]];
 }
 return fullStr;
 }
@@ -212,9 +212,9 @@ function setupCron() {
 const triggers = ScriptApp.getProjectTriggers();
 triggers.forEach(t => ScriptApp.deleteTrigger(t));
 ScriptApp.newTrigger('precomputeRecentOutings')
-    .timeBased()
-    .everyMinutes(15)
-    .create();
+   .timeBased()
+   .everyMinutes(15)
+   .create();
 precomputeRecentOutings();
 }
 
@@ -251,13 +251,13 @@ let d = parseInt(dStr.substring(6, 8), 10);
 let prettyDate = (mIndex >= 0 && mIndex < 12 && d > 0 && d <= 31) ? `${d} ${monthNames[mIndex]} ${y}` : dStr;
 
 folderList.push({
- id: folder.getId(),
- fullName: name,
- displayName: cleanName || name,
- formattedDate: prettyDate,
- folderDateNum: folderDateNum,
- folderUrl: folder.getUrl(),
- sheetUrl: ""
+id: folder.getId(),
+fullName: name,
+displayName: cleanName || name,
+formattedDate: prettyDate,
+folderDateNum: folderDateNum,
+folderUrl: folder.getUrl(),
+sheetUrl: ""
 });
 }
 }
@@ -318,20 +318,20 @@ const maxRow = infoSheet.getLastRow();
 const getList = (keyword, stopKeyword, isMeet) => {
 let found = infoSheet.createTextFinder(keyword).findNext();
 if (found) {
- const row = found.getRow() + 1;
- const col = found.getColumn();
- if (col <= maxCol) {
-     const vals = infoSheet.getRange(row, col, Math.min(10, maxRow - row + 1), Math.min(3, maxCol - col + 1)).getValues();
-     for(let r of vals) {
-         const val = String(r[0]).trim();
-         if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
-         if (isMeet) meetLocs.push(val);
-         else disLocs.push(val);
-         if (r.length > 2 && (r[2] === true || String(r[2]).toLowerCase() === 'true')) {
-             busJuncs.push({ name: val, type: isMeet ? 'meet' : 'dismiss' });
-         }
-     }
- }
+const row = found.getRow() + 1;
+const col = found.getColumn();
+if (col <= maxCol) {
+    const vals = infoSheet.getRange(row, col, Math.min(10, maxRow - row + 1), Math.min(3, maxCol - col + 1)).getValues();
+    for(let r of vals) {
+        const val = String(r[0]).trim();
+        if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
+        if (isMeet) meetLocs.push(val);
+        else disLocs.push(val);
+        if (r.length > 2 && (r[2] === true || String(r[2]).toLowerCase() === 'true')) {
+            busJuncs.push({ name: val, type: isMeet ? 'meet' : 'dismiss' });
+        }
+    }
+}
 }
 };
 getList("Meeting Location", "Dismissal", true);
@@ -560,14 +560,14 @@ let row = found.getRow() + 1;
 let col = found.getColumn();
 const neededCols = col + 2;
 if (neededCols > sheet.getMaxColumns()) {
- sheet.insertColumnsAfter(sheet.getMaxColumns(), neededCols - sheet.getMaxColumns());
+sheet.insertColumnsAfter(sheet.getMaxColumns(), neededCols - sheet.getMaxColumns());
 }
 for(let i=0; i<4; i++) {
- if (row + i <= maxRow) {
-     sheet.getRange(row + i, col).setValue(locs[i] || "");
-     sheet.getRange(row + i, col + 1).setValue(times[i] || "");
-     sheet.getRange(row + i, col + 2).setValue(buses && buses[i] ? true : false);
- }
+if (row + i <= maxRow) {
+    sheet.getRange(row + i, col).setValue(locs[i] || "");
+    sheet.getRange(row + i, col + 1).setValue(times[i] || "");
+    sheet.getRange(row + i, col + 2).setValue(buses && buses[i] ? true : false);
+}
 }
 }
 };
@@ -613,64 +613,64 @@ eventName: "", eventDate: "", meetingLocs: [], meetingTimes: [], meetingBuses: [
 
 if (infoSheet) {
 try {
- const maxInfoRow = infoSheet.getLastRow();
- const maxInfoCol = infoSheet.getMaxColumns();
+const maxInfoRow = infoSheet.getLastRow();
+const maxInfoCol = infoSheet.getMaxColumns();
 
- if (maxInfoRow >= 2 && maxInfoCol >= 2) {
-   const numRows = Math.min(maxInfoRow, 25) - 1;
-   if (numRows > 0) {
-      outingMessage = infoSheet.getRange(2, 2, numRows, 1).getDisplayValues()
-          .map(r => r[0]).join('\n').trim();
-   }
- }
+if (maxInfoRow >= 2 && maxInfoCol >= 2) {
+  const numRows = Math.min(maxInfoRow, 25) - 1;
+  if (numRows > 0) {
+     outingMessage = infoSheet.getRange(2, 2, numRows, 1).getDisplayValues()
+         .map(r => r[0]).join('\n').trim();
+  }
+}
 
- const getVal = (keyword) => {
-   let found = infoSheet.createTextFinder(keyword).findNext();
-   if (!found || found.getColumn() >= maxInfoCol) return "";
-   return found.offset(0, 1).getDisplayValue();
- };
+const getVal = (keyword) => {
+  let found = infoSheet.createTextFinder(keyword).findNext();
+  if (!found || found.getColumn() >= maxInfoCol) return "";
+  return found.offset(0, 1).getDisplayValue();
+};
 
- const getList = (keyword, stopKeyword) => {
-   const locs = [], times = [], buses = [];
-   let found = infoSheet.createTextFinder(keyword).findNext();
-   if (found) {
-       const row = found.getRow() + 1;
-       const col = found.getColumn();
-       const maxRows = infoSheet.getLastRow() - row + 1;
-       if (maxRows > 0 && col <= maxInfoCol) {
-           const numColsToRead = Math.min(3, maxInfoCol - col + 1);
-           const vals = infoSheet.getRange(row, col, Math.min(10, maxRows), numColsToRead).getValues();
-           for(let r of vals) {
-               const val = String(r[0]).trim();
-               if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
-               locs.push(val);
-               times.push(r.length > 1 ? String(r[1]).trim() : "");
-               buses.push(r.length > 2 ? (r[2] === true || String(r[2]).toLowerCase() === 'true') : false);
-           }
-       }
-   }
-   return { locs, times, buses };
- };
+const getList = (keyword, stopKeyword) => {
+  const locs = [], times = [], buses = [];
+  let found = infoSheet.createTextFinder(keyword).findNext();
+  if (found) {
+      const row = found.getRow() + 1;
+      const col = found.getColumn();
+      const maxRows = infoSheet.getLastRow() - row + 1;
+      if (maxRows > 0 && col <= maxInfoCol) {
+          const numColsToRead = Math.min(3, maxInfoCol - col + 1);
+          const vals = infoSheet.getRange(row, col, Math.min(10, maxRows), numColsToRead).getValues();
+          for(let r of vals) {
+              const val = String(r[0]).trim();
+              if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
+              locs.push(val);
+              times.push(r.length > 1 ? String(r[1]).trim() : "");
+              buses.push(r.length > 2 ? (r[2] === true || String(r[2]).toLowerCase() === 'true') : false);
+          }
+      }
+  }
+  return { locs, times, buses };
+};
 
- outingConfig.eventName = getVal("Name of Outing");
- const dateCell = infoSheet.createTextFinder("Date").findNext();
- if(dateCell && dateCell.getColumn() < maxInfoCol) {
-   const dVal = dateCell.offset(0,1).getValue();
-   if (dVal instanceof Date) {
-       outingConfig.eventDate = Utilities.formatDate(dVal, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
-   } else {
-       outingConfig.eventDate = getVal("Date"); 
-   }
- }
+outingConfig.eventName = getVal("Name of Outing");
+const dateCell = infoSheet.createTextFinder("Date").findNext();
+if(dateCell && dateCell.getColumn() < maxInfoCol) {
+  const dVal = dateCell.offset(0,1).getValue();
+  if (dVal instanceof Date) {
+      outingConfig.eventDate = Utilities.formatDate(dVal, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
+  } else {
+      outingConfig.eventDate = getVal("Date"); 
+  }
+}
 
- const meet = getList("Meeting Location", "Dismissal");
- outingConfig.meetingLocs = meet.locs; 
- outingConfig.meetingTimes = meet.times;
- outingConfig.meetingBuses = meet.buses;
- const dis = getList("Dismissal Location", "Timeline");
- outingConfig.dismissalLocs = dis.locs; 
- outingConfig.dismissalTimes = dis.times;
- outingConfig.dismissalBuses = dis.buses;
+const meet = getList("Meeting Location", "Dismissal");
+outingConfig.meetingLocs = meet.locs; 
+outingConfig.meetingTimes = meet.times;
+outingConfig.meetingBuses = meet.buses;
+const dis = getList("Dismissal Location", "Timeline");
+outingConfig.dismissalLocs = dis.locs; 
+outingConfig.dismissalTimes = dis.times;
+outingConfig.dismissalBuses = dis.buses;
 } catch(extractErr) { console.log(extractErr); }
 }
 
@@ -689,19 +689,19 @@ let tNameIdx = getColIndex(tHeaders, "name");
 if (tNameIdx === -1) tNameIdx = 0;
 
 tData.forEach(row => {
- const name = row[tNameIdx] ? row[tNameIdx].toString().trim() : "";
- if(!name) return;
- const project = (tProjIdx > -1 && row[tProjIdx]) ? row[tProjIdx].toString().trim() : "Unassigned";
- const att = (tAttIdx > -1 && row[tAttIdx]) ? row[tAttIdx].toString().trim().toLowerCase() : "";
- const cgCount = (tCareIdx > -1 && row[tCareIdx]) ? parseInt(row[tCareIdx]) : 0;
- initProj(project);
- stats[project].tTot++;
- if(att === 'y') {
-   stats[project].tY++;
-   if(!isNaN(cgCount) && cgCount > 0) stats[project].cY += cgCount;
- } else if (att !== 'n') {
-   pendingTrainees.push(name);
- }
+const name = row[tNameIdx] ? row[tNameIdx].toString().trim() : "";
+if(!name) return;
+const project = (tProjIdx > -1 && row[tProjIdx]) ? row[tProjIdx].toString().trim() : "Unassigned";
+const att = (tAttIdx > -1 && row[tAttIdx]) ? row[tAttIdx].toString().trim().toLowerCase() : "";
+const cgCount = (tCareIdx > -1 && row[tCareIdx]) ? parseInt(row[tCareIdx]) : 0;
+initProj(project);
+stats[project].tTot++;
+if(att === 'y') {
+  stats[project].tY++;
+  if(!isNaN(cgCount) && cgCount > 0) stats[project].cY += cgCount;
+} else if (att !== 'n') {
+  pendingTrainees.push(name);
+}
 });
 }
 
@@ -715,13 +715,13 @@ let vNameIdx = getColIndex(vHeaders, "name");
 if (vNameIdx === -1) vNameIdx = 0;
 
 vData.forEach(row => {
- const name = row[vNameIdx] ? row[vNameIdx].toString().trim() : "";
- if(!name) return;
- const project = (vProjIdx > -1 && row[vProjIdx]) ? row[vProjIdx].toString().trim() : "Unassigned";
- const att = (vAttIdx > -1 && row[vAttIdx]) ? row[vAttIdx].toString().trim().toLowerCase() : "";
- initProj(project);
- stats[project].vTot++;
- if(att === 'y') stats[project].vY++;
+const name = row[vNameIdx] ? row[vNameIdx].toString().trim() : "";
+if(!name) return;
+const project = (vProjIdx > -1 && row[vProjIdx]) ? row[vProjIdx].toString().trim() : "Unassigned";
+const att = (vAttIdx > -1 && row[vAttIdx]) ? row[vAttIdx].toString().trim().toLowerCase() : "";
+initProj(project);
+stats[project].vTot++;
+if(att === 'y') stats[project].vY++;
 });
 }
 
@@ -807,9 +807,9 @@ let meetingLocs = []; let dismissalLocs = [];
 const infoSheet = ss.getSheetByName("OutingInformation");
 if (infoSheet) {
 try {
-   const ext = extractLocations(infoSheet);
-   meetingLocs = ext.meetLocs;
-   dismissalLocs = ext.disLocs;
+  const ext = extractLocations(infoSheet);
+  meetingLocs = ext.meetLocs;
+  dismissalLocs = ext.disLocs;
 } catch(e) {}
 }
 
@@ -818,63 +818,63 @@ const trainees = []; const volunteers = [];
 
 const tLastRow = tSheet.getLastRow();
 if (tLastRow > 1) {
- const tData = tSheet.getRange(2, 1, tLastRow - 1, tSheet.getLastColumn()).getValues();
- const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
- const tNameIdx = getColIndex(tHeaders, "name") > -1 ? getColIndex(tHeaders, "name") : 0;
- const tAttIdx = getColIndex(tHeaders, "attending");
- const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
- const tProjIdx = getColIndex(tHeaders, "project");
- const tCareIdx = getColIndex(tHeaders, "caregiver");
- const tGroupIdx = getColIndex(tHeaders, "outing grouping");
- const goneHomeIdx = tHeaders.indexOf("[Sys] Gone Home");
+const tData = tSheet.getRange(2, 1, tLastRow - 1, tSheet.getLastColumn()).getValues();
+const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
+const tNameIdx = getColIndex(tHeaders, "name") > -1 ? getColIndex(tHeaders, "name") : 0;
+const tAttIdx = getColIndex(tHeaders, "attending");
+const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
+const tProjIdx = getColIndex(tHeaders, "project");
+const tCareIdx = getColIndex(tHeaders, "caregiver");
+const tGroupIdx = getColIndex(tHeaders, "outing grouping");
+const goneHomeIdx = tHeaders.indexOf("[Sys] Gone Home");
 
- tData.forEach(row => {
-     const name = row[tNameIdx] ? row[tNameIdx].toString().trim() : "";
-     if (name) {
-         const att = (tAttIdx > -1 && row[tAttIdx]) ? row[tAttIdx].toString().toLowerCase() : "";
-         trainees.push({
-             name: name, role: 'TRAINEE',
-             caregivers: (tCareIdx > -1 && row[tCareIdx]) ? parseInt(row[tCareIdx]) || 0 : 0,
-             attending: att,
-             volPaired: (tVolPairedIdx > -1 && row[tVolPairedIdx]) ? row[tVolPairedIdx].toString().trim() : "",
-             project: (tProjIdx > -1 && row[tProjIdx]) ? row[tProjIdx].toString().trim() : "",
-             group: (tGroupIdx > -1 && row[tGroupIdx]) ? row[tGroupIdx].toString().trim() : "",
-             isAttendingN: att === 'n',
-             isAttendingUnknown: att === '',
-             isGoneHome: (goneHomeIdx > -1 && (row[goneHomeIdx] === true || String(row[goneHomeIdx]).toLowerCase() === 'true')),
-             extra: extraDataMap[name.toLowerCase()] || {}
-         });
-     }
- });
+tData.forEach(row => {
+    const name = row[tNameIdx] ? row[tNameIdx].toString().trim() : "";
+    if (name) {
+        const att = (tAttIdx > -1 && row[tAttIdx]) ? row[tAttIdx].toString().toLowerCase() : "";
+        trainees.push({
+            name: name, role: 'TRAINEE',
+            caregivers: (tCareIdx > -1 && row[tCareIdx]) ? parseInt(row[tCareIdx]) || 0 : 0,
+            attending: att,
+            volPaired: (tVolPairedIdx > -1 && row[tVolPairedIdx]) ? row[tVolPairedIdx].toString().trim() : "",
+            project: (tProjIdx > -1 && row[tProjIdx]) ? row[tProjIdx].toString().trim() : "",
+            group: (tGroupIdx > -1 && row[tGroupIdx]) ? row[tGroupIdx].toString().trim() : "",
+            isAttendingN: att === 'n',
+            isAttendingUnknown: att === '',
+            isGoneHome: (goneHomeIdx > -1 && (row[goneHomeIdx] === true || String(row[goneHomeIdx]).toLowerCase() === 'true')),
+            extra: extraDataMap[name.toLowerCase()] || {}
+        });
+    }
+});
 }
 
 const vLastRow = vSheet.getLastRow();
 if (vLastRow > 1) {
- const vData = vSheet.getRange(2, 1, vLastRow - 1, vSheet.getLastColumn()).getValues();
- const vHeaders = vSheet.getRange(1, 1, 1, vSheet.getLastColumn()).getValues()[0];
- const vNameIdx = getColIndex(vHeaders, "name") > -1 ? getColIndex(vHeaders, "name") : 0;
- const vAttIdx = getColIndex(vHeaders, "attending");
- const vProjIdx = getColIndex(vHeaders, "project");
- const vGroupICIdx = getColIndex(vHeaders, "group ic");
- const vMeetICIdx = getColIndex(vHeaders, "meeting ic");
- const vDismissICIdx = getColIndex(vHeaders, "dismissal ic");
+const vData = vSheet.getRange(2, 1, vLastRow - 1, vSheet.getLastColumn()).getValues();
+const vHeaders = vSheet.getRange(1, 1, 1, vSheet.getLastColumn()).getValues()[0];
+const vNameIdx = getColIndex(vHeaders, "name") > -1 ? getColIndex(vHeaders, "name") : 0;
+const vAttIdx = getColIndex(vHeaders, "attending");
+const vProjIdx = getColIndex(vHeaders, "project");
+const vGroupICIdx = getColIndex(vHeaders, "group ic");
+const vMeetICIdx = getColIndex(vHeaders, "meeting ic");
+const vDismissICIdx = getColIndex(vHeaders, "dismissal ic");
 
- vData.forEach(row => {
-     const att = (vAttIdx > -1 && row[vAttIdx]) ? row[vAttIdx].toString().toLowerCase() : "";
-     if (att === 'y') {
-         const name = row[vNameIdx] ? row[vNameIdx].toString().trim() : "";
-         if (name) {
-             volunteers.push({
-                 name: name, role: 'VOLUNTEER',
-                 project: (vProjIdx > -1 && row[vProjIdx]) ? row[vProjIdx].toString().trim() : "",
-                 groupIC: (vGroupICIdx > -1 && row[vGroupICIdx]) ? (String(row[vGroupICIdx]).toLowerCase() === 'true' || String(row[vGroupICIdx]).toLowerCase() === 'y') : false,
-                 meetIC: (vMeetICIdx > -1 && row[vMeetICIdx]) ? (String(row[vMeetICIdx]).toLowerCase() === 'true' || String(row[vMeetICIdx]).toLowerCase() === 'y') : false,
-                 dismissIC: (vDismissICIdx > -1 && row[vDismissICIdx]) ? (String(row[vDismissICIdx]).toLowerCase() === 'true' || String(row[vDismissICIdx]).toLowerCase() === 'y') : false,
-                 extra: extraDataMap[name.toLowerCase()] || {}
-             });
-         }
-     }
- });
+vData.forEach(row => {
+    const att = (vAttIdx > -1 && row[vAttIdx]) ? row[vAttIdx].toString().toLowerCase() : "";
+    if (att === 'y') {
+        const name = row[vNameIdx] ? row[vNameIdx].toString().trim() : "";
+        if (name) {
+            volunteers.push({
+                name: name, role: 'VOLUNTEER',
+                project: (vProjIdx > -1 && row[vProjIdx]) ? row[vProjIdx].toString().trim() : "",
+                groupIC: (vGroupICIdx > -1 && row[vGroupICIdx]) ? (String(row[vGroupICIdx]).toLowerCase() === 'true' || String(row[vGroupICIdx]).toLowerCase() === 'y') : false,
+                meetIC: (vMeetICIdx > -1 && row[vMeetICIdx]) ? (String(row[vMeetICIdx]).toLowerCase() === 'true' || String(row[vMeetICIdx]).toLowerCase() === 'y') : false,
+                dismissIC: (vDismissICIdx > -1 && row[vDismissICIdx]) ? (String(row[vDismissICIdx]).toLowerCase() === 'true' || String(row[vDismissICIdx]).toLowerCase() === 'y') : false,
+                extra: extraDataMap[name.toLowerCase()] || {}
+            });
+        }
+    }
+});
 }
 
 const result = { success: true, data: { trainees: trainees, volunteers: volunteers, meetingLocs: meetingLocs, dismissalLocs: dismissalLocs } };
@@ -931,7 +931,7 @@ if (changed) {
 let tOutput = tData.map((vals, i) => vals.map((v, c) => tFormulas[i][c] !== "" ? tFormulas[i][c] : v));
 tRange.setValues(tOutput);
 SpreadsheetApp.flush();
-atomicCacheRebuild(sheetUrl, ss); // Write-Through Cache
+patchCachesOnPairingSync(sheetUrl, updates);
 }
 
 return { success: true };
@@ -961,8 +961,8 @@ const tNameIdx = getColIndex(tHeaders, "name") > -1 ? getColIndex(tHeaders, "nam
 let tGroupIdx = getColIndex(tHeaders, "outing grouping");
 
 if (tGroupIdx === -1) {
- tGroupIdx = tHeaders.length;
- tSheet.getRange(1, tGroupIdx + 1).setValue("Outing Grouping");
+tGroupIdx = tHeaders.length;
+tSheet.getRange(1, tGroupIdx + 1).setValue("Outing Grouping");
 }
 
 const tRange = tSheet.getRange(2, 1, tLastRow - 1, Math.max(tSheet.getLastColumn(), tGroupIdx + 1));
@@ -971,24 +971,24 @@ const tFormulas = tRange.getFormulas();
 
 const tUpdatesMap = {};
 tUpdates.forEach(u => {
- const n = u.name || u.traineeName;
- tUpdatesMap[n.trim().toLowerCase()] = u.group;
+const n = u.name || u.traineeName;
+tUpdatesMap[n.trim().toLowerCase()] = u.group;
 });
 
 let changed = false;
 for (let i = 0; i < tData.length; i++) {
- const name = tData[i][tNameIdx] ? tData[i][tNameIdx].toString().trim().toLowerCase() : "";
- if (name && tUpdatesMap.hasOwnProperty(name)) {
-    if (tData[i][tGroupIdx] !== tUpdatesMap[name]) {
-        tData[i][tGroupIdx] = tUpdatesMap[name];
-        tFormulas[i][tGroupIdx] = ""; 
-        changed = true;
-    }
- }
+const name = tData[i][tNameIdx] ? tData[i][tNameIdx].toString().trim().toLowerCase() : "";
+if (name && tUpdatesMap.hasOwnProperty(name)) {
+   if (tData[i][tGroupIdx] !== tUpdatesMap[name]) {
+       tData[i][tGroupIdx] = tUpdatesMap[name];
+       tFormulas[i][tGroupIdx] = ""; 
+       changed = true;
+   }
+}
 }
 if (changed) {
- let output = tData.map((vals, i) => vals.map((v, c) => tFormulas[i][c] !== "" ? tFormulas[i][c] : v));
- tRange.setValues(output);
+let output = tData.map((vals, i) => vals.map((v, c) => tFormulas[i][c] !== "" ? tFormulas[i][c] : v));
+tRange.setValues(output);
 }
 }
 }
@@ -1014,7 +1014,7 @@ if (vDismissICIdx === -1) { vDismissICIdx = vHeaders.length + newHeadersCount; n
 
 const maxColNeeded = Math.max(vSheet.getLastColumn(), vGroupICIdx + 1, vMeetICIdx + 1, vDismissICIdx + 1);
 if (maxColNeeded > vSheet.getMaxColumns()) {
- vSheet.insertColumnsAfter(vSheet.getMaxColumns(), maxColNeeded - vSheet.getMaxColumns());
+vSheet.insertColumnsAfter(vSheet.getMaxColumns(), maxColNeeded - vSheet.getMaxColumns());
 }
 
 const vRange = vSheet.getRange(2, 1, vLastRow - 1, maxColNeeded);
@@ -1023,41 +1023,41 @@ const vFormulas = vRange.getFormulas();
 
 const vUpdatesMap = {};
 vUpdates.forEach(u => {
- const key = u.name.trim().toLowerCase();
- if (!vUpdatesMap[key]) {
-     vUpdatesMap[key] = { groupIC: null, meetIC: null, dismissIC: null };
- }
- if (u.groupIC !== undefined) vUpdatesMap[key].groupIC = u.groupIC === true;
- if (u.meetIC !== undefined) vUpdatesMap[key].meetIC = u.meetIC === true;
- if (u.dismissIC !== undefined) vUpdatesMap[key].dismissIC = u.dismissIC === true;
+const key = u.name.trim().toLowerCase();
+if (!vUpdatesMap[key]) {
+    vUpdatesMap[key] = { groupIC: null, meetIC: null, dismissIC: null };
+}
+if (u.groupIC !== undefined) vUpdatesMap[key].groupIC = u.groupIC === true;
+if (u.meetIC !== undefined) vUpdatesMap[key].meetIC = u.meetIC === true;
+if (u.dismissIC !== undefined) vUpdatesMap[key].dismissIC = u.dismissIC === true;
 });
 
 let changed = false;
 for (let i = 0; i < vData.length; i++) {
- const name = vData[i][vNameIdx] ? vData[i][vNameIdx].toString().trim().toLowerCase() : "";
- if (name && vUpdatesMap.hasOwnProperty(name)) {
-    const upd = vUpdatesMap[name];
-    if (upd.groupIC !== null && vData[i][vGroupICIdx] !== upd.groupIC) {
-        vData[i][vGroupICIdx] = upd.groupIC; vFormulas[i][vGroupICIdx] = ""; changed = true;
-    }
-    if (upd.meetIC !== null && vData[i][vMeetICIdx] !== upd.meetIC) {
-        vData[i][vMeetICIdx] = upd.meetIC; vFormulas[i][vMeetICIdx] = ""; changed = true;
-    }
-    if (upd.dismissIC !== null && vData[i][vDismissICIdx] !== upd.dismissIC) {
-        vData[i][vDismissICIdx] = upd.dismissIC; vFormulas[i][vDismissICIdx] = ""; changed = true;
-    }
- }
+const name = vData[i][vNameIdx] ? vData[i][vNameIdx].toString().trim().toLowerCase() : "";
+if (name && vUpdatesMap.hasOwnProperty(name)) {
+   const upd = vUpdatesMap[name];
+   if (upd.groupIC !== null && vData[i][vGroupICIdx] !== upd.groupIC) {
+       vData[i][vGroupICIdx] = upd.groupIC; vFormulas[i][vGroupICIdx] = ""; changed = true;
+   }
+   if (upd.meetIC !== null && vData[i][vMeetICIdx] !== upd.meetIC) {
+       vData[i][vMeetICIdx] = upd.meetIC; vFormulas[i][vMeetICIdx] = ""; changed = true;
+   }
+   if (upd.dismissIC !== null && vData[i][vDismissICIdx] !== upd.dismissIC) {
+       vData[i][vDismissICIdx] = upd.dismissIC; vFormulas[i][vDismissICIdx] = ""; changed = true;
+   }
+}
 }
 if (changed) {
- let output = vData.map((vals, i) => vals.map((v, c) => vFormulas[i][c] !== "" ? vFormulas[i][c] : v));
- vRange.setValues(output);
+let output = vData.map((vals, i) => vals.map((v, c) => vFormulas[i][c] !== "" ? vFormulas[i][c] : v));
+vRange.setValues(output);
 }
 }
 }
 }
 
 SpreadsheetApp.flush();
-atomicCacheRebuild(sheetUrl, ss); // Write-Through Cache
+patchCachesOnGroupingSync(sheetUrl, updates);
 return { success: true };
 } catch(e) {
 return { success: false, message: e.toString() };
@@ -1207,10 +1207,10 @@ traineeIntendedGroup.set(name, intendedGroup);
 if (volPairedStr) {
 const vols = volPairedStr.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
 vols.forEach(v => {
- if (!volIntendedGroups.has(v)) volIntendedGroups.set(v, new Set());
- if (intendedGroup !== "") {
-   volIntendedGroups.get(v).add(intendedGroup);
- }
+if (!volIntendedGroups.has(v)) volIntendedGroups.set(v, new Set());
+if (intendedGroup !== "") {
+  volIntendedGroups.get(v).add(intendedGroup);
+}
 });
 }
 }
@@ -1228,10 +1228,10 @@ let hasConflict = false;
 if (volPairedStr) {
 const vols = volPairedStr.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
 for (let v of vols) {
- if (volIntendedGroups.has(v) && volIntendedGroups.get(v).size > 1) {
-   hasConflict = true;
-   break;
- }
+if (volIntendedGroups.has(v) && volIntendedGroups.get(v).size > 1) {
+  hasConflict = true;
+  break;
+}
 }
 }
 
@@ -1288,10 +1288,10 @@ let meetingLocs = []; let dismissalLocs = []; let busJunctures = [];
 const infoSheet = ss.getSheetByName("OutingInformation");
 if (infoSheet) {
 try {
- const ext = extractLocations(infoSheet);
- meetingLocs = ext.meetLocs;
- dismissalLocs = ext.disLocs;
- busJunctures = ext.busJuncs;
+const ext = extractLocations(infoSheet);
+meetingLocs = ext.meetLocs;
+dismissalLocs = ext.disLocs;
+busJunctures = ext.busJuncs;
 } catch(e) {}
 }
 
@@ -1314,49 +1314,49 @@ if (nameIdx === -1) nameIdx = 0;
 let junctures = [];
 const junctureColMap = {}; 
 headers.forEach((h, i) => {
- const str = String(h);
- if (str.startsWith("[Att] ")) {
-     const jName = str.substring(6).trim();
-     junctures.push(jName);
-     junctureColMap[jName] = i;
- } else if (str.startsWith("[Bus] ")) {
-     const bName = str.substring(6).trim();
-     junctures.push('__BUS__' + bName);
-     junctureColMap['__BUS__' + bName] = i;
- }
+const str = String(h);
+if (str.startsWith("[Att] ")) {
+    const jName = str.substring(6).trim();
+    junctures.push(jName);
+    junctureColMap[jName] = i;
+} else if (str.startsWith("[Bus] ")) {
+    const bName = str.substring(6).trim();
+    junctures.push('__BUS__' + bName);
+    junctureColMap['__BUS__' + bName] = i;
+}
 });
 
 // ENFORCE "Meeting" Juncture to be injected if missing
 let injectedMeeting = false;
 if (!junctures.includes("Meeting") && lastRow >= 1) {
- const targetInsertCol = lastCol + 1;
- 
- sheet.getRange(1, targetInsertCol).setValue("[Att] Meeting");
- if (lastRow > 1) {
-     sheet.getRange(2, targetInsertCol, lastRow - 1).insertCheckboxes();
- }
- SpreadsheetApp.flush();
- 
- lastCol = targetInsertCol;
- headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
- junctures = [];
- headers.forEach((h, i) => {
-     const str = String(h);
-     if (str.startsWith("[Att] ")) {
-         const jName = str.substring(6).trim();
-         junctures.push(jName);
-         junctureColMap[jName] = i;
-     } else if (str.startsWith("[Bus] ")) {
-         const bName = str.substring(6).trim();
-         junctures.push('__BUS__' + bName);
-         junctureColMap['__BUS__' + bName] = i;
-     }
- });
- injectedMeeting = true;
+const targetInsertCol = lastCol + 1;
+
+sheet.getRange(1, targetInsertCol).setValue("[Att] Meeting");
+if (lastRow > 1) {
+    sheet.getRange(2, targetInsertCol, lastRow - 1).insertCheckboxes();
+}
+SpreadsheetApp.flush();
+
+lastCol = targetInsertCol;
+headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+junctures = [];
+headers.forEach((h, i) => {
+    const str = String(h);
+    if (str.startsWith("[Att] ")) {
+        const jName = str.substring(6).trim();
+        junctures.push(jName);
+        junctureColMap[jName] = i;
+    } else if (str.startsWith("[Bus] ")) {
+        const bName = str.substring(6).trim();
+        junctures.push('__BUS__' + bName);
+        junctureColMap['__BUS__' + bName] = i;
+    }
+});
+injectedMeeting = true;
 }
 
 if (junctures.includes("Meeting")) {
- junctures = ["Meeting", ...junctures.filter(j => j !== "Meeting")];
+junctures = ["Meeting", ...junctures.filter(j => j !== "Meeting")];
 }
 
 const extraDataMap = buildExtraDataMap(ss);
@@ -1366,45 +1366,45 @@ const attendance = { '__GONE_HOME__': {} };
 const busAttendance = {};
 
 junctures.forEach(j => {
- if (j.startsWith('__BUS__')) {
-     busAttendance[j.substring(7)] = {};
- } else {
-     attendance[j] = {};
- }
+if (j.startsWith('__BUS__')) {
+    busAttendance[j.substring(7)] = {};
+} else {
+    attendance[j] = {};
+}
 });
 
 data.forEach(row => {
- const name = String(row[nameIdx]).trim();
- const att = attIdx > -1 && row[attIdx] ? String(row[attIdx]).toLowerCase().trim() : "";
- 
- if (name && att === 'y') {
-     participants.push({ 
-         name: name, 
-         group: groupIdx > -1 ? String(row[groupIdx]).trim() : "", 
-         caregivers: cgIdx > -1 ? parseInt(row[cgIdx]) || 0 : 0, 
-         volPaired: volIdx > -1 ? String(row[volIdx]).trim() : "",
-         meetingLoc: meetIdx > -1 ? String(row[meetIdx]).trim() : "",
-         dismissalLoc: dismissIdx > -1 ? String(row[dismissIdx]).trim() : "",
-         extra: extraDataMap[name.toLowerCase()] || {}
-     });
+const name = String(row[nameIdx]).trim();
+const att = attIdx > -1 && row[attIdx] ? String(row[attIdx]).toLowerCase().trim() : "";
 
-     attendance['__GONE_HOME__'][name] = (goneHomeIdx > -1 && (row[goneHomeIdx] === true || String(row[goneHomeIdx]).toLowerCase() === 'true'));
-     junctures.forEach(j => {
-         const val = row[junctureColMap[j]];
-         if (j.startsWith('__BUS__')) {
-             busAttendance[j.substring(7)][name] = val !== "" ? val : "";
-         } else {
-             attendance[j][name] = (val === true || String(val).toLowerCase() === 'true');
-         }
-     });
- }
+if (name && att === 'y') {
+    participants.push({ 
+        name: name, 
+        group: groupIdx > -1 ? String(row[groupIdx]).trim() : "", 
+        caregivers: cgIdx > -1 ? parseInt(row[cgIdx]) || 0 : 0, 
+        volPaired: volIdx > -1 ? String(row[volIdx]).trim() : "",
+        meetingLoc: meetIdx > -1 ? String(row[meetIdx]).trim() : "",
+        dismissalLoc: dismissIdx > -1 ? String(row[dismissIdx]).trim() : "",
+        extra: extraDataMap[name.toLowerCase()] || {}
+    });
+
+    attendance['__GONE_HOME__'][name] = (goneHomeIdx > -1 && (row[goneHomeIdx] === true || String(row[goneHomeIdx]).toLowerCase() === 'true'));
+    junctures.forEach(j => {
+        const val = row[junctureColMap[j]];
+        if (j.startsWith('__BUS__')) {
+            busAttendance[j.substring(7)][name] = val !== "" ? val : "";
+        } else {
+            attendance[j][name] = (val === true || String(val).toLowerCase() === 'true');
+        }
+    });
+}
 });
 
 const result = { success: true, participants: participants, junctures: junctures.filter(j => !j.startsWith('__BUS__')), busJunctures: busJunctures, attendance: attendance, busAttendance: busAttendance, meetingLocs: meetingLocs, dismissalLocs: dismissalLocs };
 putLargeCache(cacheKey, JSON.stringify(result));
 
 if (injectedMeeting) {
- invalidateCaches(sheetUrl);
+invalidateCaches(sheetUrl);
 }
 return result;
 } catch(e) { 
@@ -1440,29 +1440,29 @@ let targetHeader;
 let isBus = false;
 
 if (junctureName === '__GONE_HOME__') {
- targetHeader = "[Sys] Gone Home";
+targetHeader = "[Sys] Gone Home";
 } else if (junctureName.startsWith('__BUS__')) {
- targetHeader = `[Bus] ${junctureName.substring(7)}`;
- isBus = true;
+targetHeader = `[Bus] ${junctureName.substring(7)}`;
+isBus = true;
 } else {
- targetHeader = `[Att] ${junctureName}`;
+targetHeader = `[Att] ${junctureName}`;
 }
 
 let juncIdx = headers.indexOf(targetHeader);
 
 if (juncIdx === -1) {
- const newColIdx = lastCol + 1;
- sheet.insertColumnAfter(lastCol);
- sheet.getRange(1, newColIdx).setValue(targetHeader);
- if (!isBus) {
-     sheet.getRange(2, newColIdx, lastRow - 1).insertCheckboxes();
- } else {
-     sheet.getRange(2, newColIdx, lastRow - 1).clearDataValidations();
- }
- SpreadsheetApp.flush();
- headers = sheet.getRange(1, 1, 1, newColIdx).getValues()[0];
- lastCol = newColIdx;
- juncIdx = newColIdx - 1;
+const newColIdx = lastCol + 1;
+sheet.insertColumnAfter(lastCol);
+sheet.getRange(1, newColIdx).setValue(targetHeader);
+if (!isBus) {
+    sheet.getRange(2, newColIdx, lastRow - 1).insertCheckboxes();
+} else {
+    sheet.getRange(2, newColIdx, lastRow - 1).clearDataValidations();
+}
+SpreadsheetApp.flush();
+headers = sheet.getRange(1, 1, 1, newColIdx).getValues()[0];
+lastCol = newColIdx;
+juncIdx = newColIdx - 1;
 }
 
 const juncRange = sheet.getRange(2, juncIdx + 1, lastRow - 1);
@@ -1473,24 +1473,24 @@ updates.forEach(u => updateMap[u.name.toLowerCase()] = u.status);
 
 let changed = false;
 for (let i = 0; i < namesData.length; i++) {
- const name = String(namesData[i][0]).trim().toLowerCase();
- if (name && updateMap.hasOwnProperty(name)) {
-     if (juncData[i][0] !== updateMap[name]) {
-         juncData[i][0] = updateMap[name];
-         changed = true;
-     }
- }
+const name = String(namesData[i][0]).trim().toLowerCase();
+if (name && updateMap.hasOwnProperty(name)) {
+    if (juncData[i][0] !== updateMap[name]) {
+        juncData[i][0] = updateMap[name];
+        changed = true;
+    }
+}
 }
 
 if (changed) {
- juncRange.setValues(juncData);
- changedGlobal = true;
+juncRange.setValues(juncData);
+changedGlobal = true;
 }
 }
 
 if (changedGlobal) {
 SpreadsheetApp.flush();
-atomicCacheRebuild(sheetUrl, ss);
+patchCachesOnCommSync(sheetUrl, multipleUpdates);
 }
 return { success: true };
 } catch(e) {
@@ -1516,14 +1516,14 @@ const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 const targetHeader = `[Att] ${junctureName.trim()}`;
 
 if (headers.includes(targetHeader)) {
- return { success: false, message: "Juncture already exists." };
+return { success: false, message: "Juncture already exists." };
 }
 
 const newColIdx = lastCol + 1;
 sheet.insertColumnAfter(lastCol);
 sheet.getRange(1, newColIdx).setValue(targetHeader);
 if (lastRow > 1) {
- sheet.getRange(2, newColIdx, lastRow - 1).insertCheckboxes();
+sheet.getRange(2, newColIdx, lastRow - 1).insertCheckboxes();
 }
 SpreadsheetApp.flush();
 atomicCacheRebuild(sheetUrl, ss);
@@ -1541,7 +1541,7 @@ const lock = LockService.getScriptLock();
 try {
 lock.waitLock(15000);
 if (junctureName === "Meeting") {
- return { success: false, message: "The default 'Meeting' juncture cannot be deleted." };
+return { success: false, message: "The default 'Meeting' juncture cannot be deleted." };
 }
 const ss = SpreadsheetApp.openByUrl(sheetUrl);
 let sheet = ss.getSheetByName("Trainee Attendance") || ss.getSheetByName("Trainee Attendance ");
@@ -1556,10 +1556,10 @@ const targetHeader = `[Att] ${junctureName.trim()}`;
 const juncIdx = headers.indexOf(targetHeader);
 
 if (juncIdx > -1) {
- sheet.deleteColumn(juncIdx + 1);
- SpreadsheetApp.flush();
- atomicCacheRebuild(sheetUrl, ss);
- return fetchCommAttendance(sheetUrl, true, true, ss);
+sheet.deleteColumn(juncIdx + 1);
+SpreadsheetApp.flush();
+atomicCacheRebuild(sheetUrl, ss);
+return fetchCommAttendance(sheetUrl, true, true, ss);
 }
 
 return { success: false, message: "Juncture not found." };
@@ -1776,6 +1776,250 @@ activeVolunteers: activeVolunteers
 } catch(e) { return { success: false, message: e.toString() }; }
 }
 
+/* =========================================
+ATOMIC CACHE PATCHING (Ultra-Fast 0ms Writes)
+========================================= */
+function patchCachesOnAttendanceUpdate(sheetUrl, type, name, data) {
+const role = String(type).toUpperCase();
+const normName = String(name).toLowerCase().trim();
+const cache = CacheService.getScriptCache();
+
+let attVal = undefined;
+let meetLoc = undefined;
+let dismissLoc = undefined;
+let groupVal = undefined;
+let pairedVol = undefined;
+
+for (const [k, v] of Object.entries(data)) {
+const normKey = normalizeHeader(k);
+if (normKey.includes("attending")) attVal = String(v).toLowerCase();
+if (normKey.includes("meetinglocation")) meetLoc = String(v).trim();
+if (normKey.includes("dismissallocation")) dismissLoc = String(v).trim();
+if (normKey.includes("group")) groupVal = String(v).trim();
+if (normKey.includes("volpaired")) pairedVol = String(v).trim();
+}
+
+// 1. Patch PAIR Cache
+try {
+const pairKey = getCacheKey("pair", sheetUrl);
+const pairStr = getLargeCache(pairKey);
+if (pairStr) {
+const pairData = JSON.parse(pairStr);
+if (pairData.success && pairData.data) {
+   const arr = role === 'TRAINEE' ? pairData.data.trainees : pairData.data.volunteers;
+   let person = arr.find(p => p.name.toLowerCase() === normName);
+   
+   if (!person) {
+       person = { name: name, role: role, extra: {} };
+       arr.push(person);
+   }
+   
+   if (attVal !== undefined) {
+       person.attending = attVal;
+       if (role === 'TRAINEE') {
+           person.isAttendingN = (attVal === 'n');
+           person.isAttendingUnknown = (attVal === '');
+       }
+   }
+   if (groupVal !== undefined && role === 'TRAINEE') person.group = groupVal;
+   if (pairedVol !== undefined && role === 'TRAINEE') person.volPaired = pairedVol;
+   
+   // Apply Volunteer Cascade Unpairing immediately in cache
+   if (role === 'VOLUNTEER' && attVal === 'n') {
+       pairData.data.trainees.forEach(t => {
+           if (t.volPaired && t.volPaired.toLowerCase().includes(normName)) {
+               const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+               t.volPaired = vols.filter(v => v.toLowerCase() !== normName).join(', ');
+           }
+       });
+   } else if (role === 'TRAINEE' && attVal === 'n') {
+       person.volPaired = "";
+   }
+   putLargeCache(pairKey, JSON.stringify(pairData));
+}
+}
+} catch(e) {}
+
+// 2. Patch COMM Cache
+if (role === 'TRAINEE') {
+try {
+const commKey = getCacheKey("comm", sheetUrl);
+const commStr = getLargeCache(commKey);
+if (commStr) {
+   const commData = JSON.parse(commStr);
+   if (commData.success && commData.participants) {
+       let person = commData.participants.find(p => p.name.toLowerCase() === normName);
+       if (attVal === 'n' || attVal === '') {
+           commData.participants = commData.participants.filter(p => p.name.toLowerCase() !== normName);
+       } else {
+           if (!person) {
+               person = { name: name, group: "", caregivers: 0, volPaired: "", meetingLoc: "", dismissalLoc: "", extra: {} };
+               commData.participants.push(person);
+           }
+           if (groupVal !== undefined) person.group = groupVal;
+           if (pairedVol !== undefined) person.volPaired = pairedVol;
+           if (meetLoc !== undefined) person.meetingLoc = meetLoc;
+           if (dismissLoc !== undefined) person.dismissalLoc = dismissLoc;
+       }
+       putLargeCache(commKey, JSON.stringify(commData));
+   }
+}
+} catch(e) {}
+} else if (role === 'VOLUNTEER' && attVal === 'n') {
+try {
+const commKey = getCacheKey("comm", sheetUrl);
+const commStr = getLargeCache(commKey);
+if (commStr) {
+   const commData = JSON.parse(commStr);
+   if (commData.success && commData.participants) {
+       let changed = false;
+       commData.participants.forEach(t => {
+           if (t.volPaired && t.volPaired.toLowerCase().includes(normName)) {
+               const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+               t.volPaired = vols.filter(v => v.toLowerCase() !== normName).join(', ');
+               changed = true;
+           }
+       });
+       if (changed) putLargeCache(commKey, JSON.stringify(commData));
+   }
+}
+} catch(e) {}
+}
+
+// 3. Patch NAMES Cache
+try {
+const namesKey = getCacheKey("names_" + type.toLowerCase(), sheetUrl);
+const namesStr = getLargeCache(namesKey);
+if (namesStr) {
+const namesData = JSON.parse(namesStr);
+if (namesData.success && namesData.names) {
+   const found = namesData.names.find(n => n.toLowerCase() === normName);
+   if (!found) {
+       namesData.names.push(name);
+       putLargeCache(namesKey, JSON.stringify(namesData));
+   }
+}
+}
+} catch(e) {}
+
+// 4. Invalidate STATS Cache lazily
+try {
+const statsKey = getCacheKey("stats", sheetUrl);
+cache.remove(statsKey);
+cache.remove(statsKey + "_count");
+} catch(e) {}
+}
+
+function patchCachesOnCommSync(sheetUrl, multipleUpdates) {
+try {
+const commKey = getCacheKey("comm", sheetUrl);
+const commStr = getLargeCache(commKey);
+let commData = commStr ? JSON.parse(commStr) : null;
+
+const pairKey = getCacheKey("pair", sheetUrl);
+const pairStr = getLargeCache(pairKey);
+let pairData = pairStr ? JSON.parse(pairStr) : null;
+let pairChanged = false;
+
+if (commData && commData.success && commData.attendance) {
+for (const [juncName, updates] of Object.entries(multipleUpdates)) {
+   const isGoneHome = juncName === '__GONE_HOME__';
+   const isBus = juncName.startsWith('__BUS__');
+   
+   updates.forEach(u => {
+       const nMatch = String(u.name).toLowerCase();
+       if (isBus) {
+           const bName = juncName.substring(7);
+           if (!commData.busAttendance[bName]) commData.busAttendance[bName] = {};
+           commData.busAttendance[bName][u.name] = u.status;
+       } else {
+           if (!commData.attendance[juncName]) commData.attendance[juncName] = {};
+           commData.attendance[juncName][u.name] = u.status;
+       }
+       
+       if (isGoneHome && pairData && pairData.success && pairData.data) {
+           const trainee = pairData.data.trainees.find(t => t.name.toLowerCase() === nMatch);
+           if (trainee) {
+               trainee.isGoneHome = u.status;
+               pairChanged = true;
+           }
+       }
+   });
+}
+putLargeCache(commKey, JSON.stringify(commData));
+}
+
+if (pairChanged) {
+putLargeCache(pairKey, JSON.stringify(pairData));
+}
+} catch(e) { console.log(e); }
+}
+
+function patchCachesOnPairingSync(sheetUrl, updates) {
+try {
+const pairKey = getCacheKey("pair", sheetUrl);
+const pairStr = getLargeCache(pairKey);
+const pairData = pairStr ? JSON.parse(pairStr) : null;
+
+const commKey = getCacheKey("comm", sheetUrl);
+const commStr = getLargeCache(commKey);
+const commData = commStr ? JSON.parse(commStr) : null;
+
+updates.forEach(u => {
+const normName = String(u.traineeName).toLowerCase();
+if (pairData && pairData.success && pairData.data) {
+   const t = pairData.data.trainees.find(x => x.name.toLowerCase() === normName);
+   if (t) t.volPaired = u.volPaired;
+}
+if (commData && commData.success && commData.participants) {
+   const p = commData.participants.find(x => x.name.toLowerCase() === normName);
+   if (p) p.volPaired = u.volPaired;
+}
+});
+
+if (pairData) putLargeCache(pairKey, JSON.stringify(pairData));
+if (commData) putLargeCache(commKey, JSON.stringify(commData));
+} catch(e) { console.log(e); }
+}
+
+function patchCachesOnGroupingSync(sheetUrl, updates) {
+try {
+const pairKey = getCacheKey("pair", sheetUrl);
+const pairStr = getLargeCache(pairKey);
+const pairData = pairStr ? JSON.parse(pairStr) : null;
+
+const commKey = getCacheKey("comm", sheetUrl);
+const commStr = getLargeCache(commKey);
+const commData = commStr ? JSON.parse(commStr) : null;
+
+updates.forEach(u => {
+const normName = String(u.name || u.traineeName).toLowerCase();
+if (u.role === 'TRAINEE' || u.traineeName) {
+   if (pairData && pairData.success && pairData.data) {
+       const t = pairData.data.trainees.find(x => x.name.toLowerCase() === normName);
+       if (t) t.group = u.group;
+   }
+   if (commData && commData.success && commData.participants) {
+       const p = commData.participants.find(x => x.name.toLowerCase() === normName);
+       if (p) p.group = u.group;
+   }
+} else if (u.role === 'VOLUNTEER') {
+   if (pairData && pairData.success && pairData.data) {
+       const v = pairData.data.volunteers.find(x => x.name.toLowerCase() === normName);
+       if (v) {
+           if (u.groupIC !== undefined) v.groupIC = u.groupIC;
+           if (u.meetIC !== undefined) v.meetIC = u.meetIC;
+           if (u.dismissIC !== undefined) v.dismissIC = u.dismissIC;
+       }
+   }
+}
+});
+
+if (pairData) putLargeCache(pairKey, JSON.stringify(pairData));
+if (commData) putLargeCache(commKey, JSON.stringify(commData));
+} catch(e) { console.log(e); }
+}
+
 function submitAttendanceData(form) {
 const lock = LockService.getScriptLock();
 let res;
@@ -1784,8 +2028,9 @@ lock.waitLock(15000);
 res = _submitAttendanceDataInner(form);
 
 if (res && res.success && res.ss) {
- SpreadsheetApp.flush();
- atomicCacheRebuild(form.sheetUrl, res.ss); // Write-Through Cache utilizing shared SS object
+SpreadsheetApp.flush();
+// Bypasses the 10-second full sheet read atomicCacheRebuild! 
+patchCachesOnAttendanceUpdate(form.sheetUrl, form.type, res.targetName, form.data);
 }
 } catch(e) {
 return { success: false, message: e.toString() };
@@ -1873,7 +2118,7 @@ tSheet.getRange(tInsertRow, tProjIdx + 1).setValue(projectVal);
 }
 } catch (err) { console.log("Template update failed: " + err.toString()); }
 
-return { success: true, message: "New volunteer added successfully & Attendance updated!", ss: ss };
+return { success: true, message: "New volunteer added successfully & Attendance updated!", ss: ss, targetName: name };
 } else if (form.type === 'trainee') {
 let newRow = new Array(rawHeaders.length).fill("");
 newRow[0] = name;
@@ -1902,10 +2147,10 @@ sheet.getRange(insertRow, 1, 1, newRow.length).setValues([newRow]);
 // Inject checkboxes for dynamic columns
 const currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 currentHeaders.forEach((h, i) => {
- const str = String(h);
- if (str.startsWith("[Att] ") || str === "[Sys] Gone Home") {
-     sheet.getRange(insertRow, i + 1).insertCheckboxes();
- }
+const str = String(h);
+if (str.startsWith("[Att] ") || str === "[Sys] Gone Home") {
+    sheet.getRange(insertRow, i + 1).insertCheckboxes();
+}
 });
 
 targetRow = insertRow;
@@ -1948,7 +2193,7 @@ rowRange.setValues([rowData]);
 }
 }
 
-// --- LOGICAL CASCADE: Check Attendance Status ---
+// --- OPTIMIZED LOGICAL CASCADE (Unpairing) ---
 if (form.type === 'trainee') {
 if (attendingStatus === 'n') {
 const tHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
@@ -1967,27 +2212,25 @@ if (tLastRow > 1) {
 const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
 const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
 if (tVolPairedIdx > -1) {
-    const tRange = tSheet.getRange(2, 1, tLastRow - 1, tSheet.getLastColumn());
-    const tData = tRange.getValues();
-    let tChanged = false;
-    
-    const nameClean = name.toLowerCase();
-    for(let k=0; k<tData.length; k++){
-        const currentPaired = tData[k][tVolPairedIdx] ? tData[k][tVolPairedIdx].toString() : "";
-        if (currentPaired.toLowerCase().includes(nameClean)) {
-            const vols = currentPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-            const updatedVols = vols.filter(v => v.toLowerCase() !== nameClean);
-            tData[k][tVolPairedIdx] = updatedVols.join(', ');
-            tChanged = true;
-        }
-    }
-    if (tChanged) tRange.setValues(tData);
+   // TextFinder speeds up full-column searches massively compared to getValues()
+   const searchRange = tSheet.getRange(2, tVolPairedIdx + 1, tLastRow - 1, 1);
+   const finder = searchRange.createTextFinder(name).matchCase(false).findAll();
+   
+   if (finder.length > 0) {
+       const nameClean = name.toLowerCase();
+       finder.forEach(cell => {
+           const currentPaired = cell.getValue().toString();
+           const vols = currentPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+           const updatedVols = vols.filter(v => v.toLowerCase() !== nameClean);
+           cell.setValue(updatedVols.join(', '));
+       });
+   }
 }
 }
 }
 }
 }
 
-return { success: true, message: "Attendance updated successfully!", ss: ss };
+return { success: true, message: "Attendance updated successfully!", ss: ss, targetName: name };
 } catch(e) { return { success: false, message: e.toString() }; }
 }

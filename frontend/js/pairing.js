@@ -13,55 +13,48 @@ let filteredManualPairingSourceView = null;
 // MANUAL PAIRING LOGIC
 // ==========================================
 
-function openManualPairing() {
-const selector = document.getElementById('commSheetSelector');
-const url = selector.value;
-if(!url || url.includes("Select") || url.includes("Loading") || url.includes("Error")) return alert("Select an event first");
+function openManualPairing(url) {
+if(!url) return;
 
+currentActiveView = 'manual-pairing';
 isFilteredManualPairingMode = false;
 currentManualPairingSheetUrl = url;
-document.getElementById('navContextTitle').innerText = "Manual Pair: " + selector.options[selector.selectedIndex].text;
 
-showView('manual-pairing');
 loadManualPairingData();
 }
 
-function openFilteredManualPairing(overrideUrl = null) {
-const url = overrideUrl || currentCommAttSheetUrl || currentManualPairingSheetUrl;
+function openFilteredManualPairing(url, source = null) {
 if(!url) return;
 
 if (!isAdminAuthenticated) {
- requestAccess(null, () => openFilteredManualPairing(overrideUrl));
- return;
+requestAccess(null, () => openFilteredManualPairing(url, source));
+return;
 }
 
-// Capture the exact view we are coming from BEFORE we switch
-filteredManualPairingSourceView = currentActiveView;
-
+currentActiveView = 'manual-pairing';
+filteredManualPairingSourceView = source;
 isFilteredManualPairingMode = true;
 currentManualPairingSheetUrl = url;
-document.getElementById('navContextTitle').innerText = "Filtered Manual Pair";
 
-showView('manual-pairing');
 loadManualPairingData();
 }
 
 function loadManualPairingData() {
 const overlay = document.getElementById('manualPairingLoadingOverlay');
-overlay.classList.remove('hidden');
+if(overlay) overlay.classList.remove('hidden');
 
 apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl }).then(res => {
-overlay.classList.add('hidden');
+if(overlay) overlay.classList.add('hidden');
 if (res.success) {
 manualPairingData = res.data;
 renderManualPairings();
 startManualPairingPolling();
 } else {
 alert("Error: " + res.message);
-if (isFilteredManualPairingMode) {
-showView('comm-attendance');
+if (isFilteredManualPairingMode && filteredManualPairingSourceView === 'tracker.html') {
+window.navigateTo('tracker.html', { url: currentManualPairingSheetUrl });
 } else {
-showView('comm');
+window.navigateTo('admin.html');
 }
 }
 });
@@ -74,34 +67,33 @@ renderManualPairings();
 function triggerManualPairingPulse(sourceName, targetName, isPaired) {
 setTimeout(() => {
 requestAnimationFrame(() => {
-// Try to find the exact dropzone elements based on their data attributes
 const sourceCard = document.querySelector(`.dnd-dropzone[data-name="${sourceName.replace(/'/g, "\\'")}"]`);
 const targetCard = document.querySelector(`.dnd-dropzone[data-name="${targetName.replace(/'/g, "\\'")}"]`);
 
 [sourceCard, targetCard].forEach(card => {
-   if (card) {
-       const container = card.parentElement;
-       if (container) {
-           const containerRect = container.getBoundingClientRect();
-           const cardRect = card.getBoundingClientRect();
-           
-           if (cardRect.height > 0) {
-               const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
-               
-               container.scrollTo({
-                   top: scrollTop,
-                   behavior: 'smooth'
-               });
-           }
-       }
-       
-       const pulseClass = isPaired ? 'pulse-green' : 'pulse-red';
-       
-       card.classList.add(pulseClass);
-       setTimeout(() => {
-           card.classList.remove(pulseClass);
-       }, 800);
-   }
+ if (card) {
+     const container = card.parentElement;
+     if (container) {
+         const containerRect = container.getBoundingClientRect();
+         const cardRect = card.getBoundingClientRect();
+         
+         if (cardRect.height > 0) {
+             const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
+             
+             container.scrollTo({
+                 top: scrollTop,
+                 behavior: 'smooth'
+             });
+         }
+     }
+     
+     const pulseClass = isPaired ? 'pulse-green' : 'pulse-red';
+     
+     card.classList.add(pulseClass);
+     setTimeout(() => {
+         card.classList.remove(pulseClass);
+     }, 800);
+ }
 });
 });
 }, 150);
@@ -157,7 +149,6 @@ if (!isVol && item.caregivers > 0) {
 cgBadge = `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 rounded-full text-[9px] font-black text-white shadow-sm">${item.caregivers > 1 ? item.caregivers + 'C' : 'C'}</span>`;
 }
 
-// 1-1 Pairing Star logic for Trainees
 let starBadge = '';
 if (!isVol && item.extra && item.extra.t_one_on_one) {
 const oneOnOneRaw = String(item.extra.t_one_on_one).trim().toLowerCase();
@@ -166,7 +157,6 @@ starBadge = `<i class="fa-solid fa-star text-yellow-500 shrink-0 text-xs ml-1" t
 }
 }
 
-// Remarks Indicator Logic for both Volunteers and Trainees
 let remarksBadge = '';
 let remarkContent = null;
 if (item.extra && item.extra.remark) {
@@ -219,10 +209,9 @@ if (att === 'y' && !t.isGoneHome && (!t.volPaired || t.volPaired.trim() === ''))
 count++;
 }
 });
-updateUnpairedNotification(count);
+if (typeof updateUnpairedNotification === 'function') updateUnpairedNotification(count);
 }
 
-// TARGETED OPTIMISTIC DOM UPDATE FOR PAIRING
 function updatePairingCardDOM(name, role) {
 const arr = role === 'VOLUNTEER' ? manualPairingData.volunteers : manualPairingData.trainees;
 const item = (arr || []).find(x => x.name === name);
@@ -231,10 +220,10 @@ if (!item) return;
 let pairedNames = [];
 if (role === 'VOLUNTEER') {
 (manualPairingData.trainees || []).forEach(t => {
-    if (t.volPaired) {
-        const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
-        if (vols.includes(name.toLowerCase())) pairedNames.push(t.name);
-    }
+  if (t.volPaired) {
+      const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+      if (vols.includes(name.toLowerCase())) pairedNames.push(t.name);
+  }
 });
 } else {
 pairedNames = item.volPaired ? item.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
@@ -252,10 +241,9 @@ const newCardNode = temp.firstElementChild;
 
 existingCard.replaceWith(newCardNode);
 
-// Rebind long press event natively to the injected node
 uiBindLongPress(newCardNode, () => {
-    const p = (manualPairingData[role === 'VOLUNTEER' ? 'volunteers' : 'trainees'] || []).find(x => x.name === item.name);
-    if (p) showPersonInfo(p);
+  const p = (manualPairingData[role === 'VOLUNTEER' ? 'volunteers' : 'trainees'] || []).find(x => x.name === item.name);
+  if (p) showPersonInfo(p);
 });
 }
 }
@@ -264,11 +252,9 @@ function renderManualPairings() {
 const sourcePool = document.getElementById('dnd-source-pool');
 const targetList = document.getElementById('dnd-target-list');
 
-// SAVE SCROLL POSITIONS FOR SEAMLESS BACKGROUND POLLING UPDATES
 const sourceScrollPos = sourcePool ? sourcePool.scrollTop : 0;
 const targetScrollPos = targetList ? targetList.scrollTop : 0;
 
-// STRICT FILTERING: Exclude any trainees that do not have explicitly 'Y' or 'y' in the attending column
 let trainees = (manualPairingData.trainees || []).filter(t => {
 const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
 return att === 'y';
@@ -278,7 +264,6 @@ updateGlobalUnpairedCount();
 
 let vols = [...(manualPairingData.volunteers || [])]; 
 
-// Fuzzy Search logic
 const volSearchQuery = document.getElementById('pairingVolSearch')?.value.toLowerCase().trim() || "";
 const traSearchQuery = document.getElementById('pairingTraineeSearch')?.value.toLowerCase().trim() || "";
 
@@ -296,7 +281,6 @@ t.name.toLowerCase().includes(traSearchQuery) ||
 );
 }
 
-// Sorting Logic: Project Alphabetical, followed by Name Alphabetical
 const sortFn = (a, b) => {
 const projA = a.project ? a.project.toString().toLowerCase().trim() : "zzzz";
 const projB = b.project ? b.project.toString().toLowerCase().trim() : "zzzz";
@@ -311,7 +295,6 @@ return nameA.localeCompare(nameB);
 vols.sort(sortFn);
 trainees.sort(sortFn);
 
-// Build Volunteer Pairings Map
 const volPairingsMap = new Map();
 (manualPairingData.trainees || []).forEach(t => {
 if (t.volPaired) {
@@ -324,8 +307,6 @@ volPairingsMap.get(cleanVol).push(t.name);
 }
 });
 
-// If filtered mode is active, exclusively show Unpaired Trainees in the Target list
-// Enforce that Gone Home trainees never appear in the Target list during Filtered Mode
 if (isFilteredManualPairingMode) {
 trainees = trainees.filter(t => !t.isGoneHome && (!t.volPaired || t.volPaired.trim() === ''));
 }
@@ -354,11 +335,9 @@ targetList.innerHTML = targetHtml || '<p class="text-[10px] text-gray-500 font-b
 }
 }
 
-// RESTORE SCROLL POSITIONS NATIVELY
 if (sourcePool) sourcePool.scrollTop = sourceScrollPos;
 if (targetList) targetList.scrollTop = targetScrollPos;
 
-// Bind Long Press globally to items
 document.querySelectorAll('.dnd-draggable').forEach(el => {
 uiBindLongPress(el, () => {
 const name = el.getAttribute('data-name');
@@ -378,20 +357,17 @@ lastPairingLocalChange = Date.now();
 let trainee = manualPairingData.trainees.find(t => t.name === traineeName);
 if (!trainee || trainee.isGoneHome) return;
 
-// Constraint Check: Volunteer cannot be paired to multiple trainees in DIFFERENT groups.
 const tGroup = String(trainee.group || "").trim();
 const cleanVolName = volName.toLowerCase();
 let blockingTraineeName = null;
 
-// Find all trainees the volunteer is CURRENTLY paired to (or pending to be paired to)
 manualPairingData.trainees.forEach(otherT => {
 if (otherT.name === traineeName || !otherT.volPaired) return;
 const vols = otherT.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
 if (vols.includes(cleanVolName)) {
 const otherTGroup = String(otherT.group || "").trim();
-// If both have groups assigned and they are different, block the pairing
 if (tGroup !== "" && otherTGroup !== "" && tGroup !== otherTGroup) {
-  blockingTraineeName = otherT.name;
+blockingTraineeName = otherT.name;
 }
 }
 });
@@ -401,7 +377,6 @@ showFlashMessage('pairingGlobalStatus', `Cannot pair! ${volName} is already pair
 return;
 }
 
-// Check if already paired
 const currentVols = trainee.volPaired ? trainee.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
 const exists = currentVols.some(v => v.toLowerCase() === cleanVolName);
 
@@ -409,7 +384,6 @@ if (!exists) {
 currentVols.push(volName);
 trainee.volPaired = currentVols.join(', ');
 
-// Add to pending updates map
 const updateIndex = pendingPairingUpdates.findIndex(u => u.traineeName === traineeName);
 if (updateIndex > -1) {
 pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
@@ -417,7 +391,6 @@ pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
 pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
 }
 
-// Targeted DOM update to avoid full re-render scroll jumping
 updatePairingCardDOM(volName, 'VOLUNTEER');
 updatePairingCardDOM(traineeName, 'TRAINEE');
 updateGlobalUnpairedCount();
@@ -441,7 +414,6 @@ const cleanVolToRemove = volName.toLowerCase();
 currentVols = currentVols.filter(v => v.toLowerCase() !== cleanVolToRemove);
 trainee.volPaired = currentVols.join(', ');
 
-// Add to pending updates map
 const updateIndex = pendingPairingUpdates.findIndex(u => u.traineeName === traineeName);
 if (updateIndex > -1) {
 pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
@@ -449,7 +421,6 @@ pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
 pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
 }
 
-// Targeted DOM update to avoid full re-render scroll jumping
 updatePairingCardDOM(volName, 'VOLUNTEER');
 updatePairingCardDOM(traineeName, 'TRAINEE');
 updateGlobalUnpairedCount();
@@ -463,7 +434,6 @@ const btn = document.getElementById('btn-sync-manual-pairing');
 if(!btn) return;
 const textSpan = btn.querySelector('.btn-text'); const spinner = btn.querySelector('.btn-spinner');
 
-// Updated base classes to align with the new Title Bar placement
 btn.className = "text-[10px] md:text-xs px-1.5 py-1 rounded font-bold transition flex items-center justify-center border shadow-sm focus:outline-none shrink-0"; 
 spinner.className = "fa-solid fa-circle-notch fa-spin btn-spinner ml-1 hidden"; 
 
@@ -495,7 +465,7 @@ executeManualPairingSync();
 }
 
 async function executeManualPairingSync() {
-if (isManualPairingSyncing) return; // Prevent concurrent syncs
+if (isManualPairingSyncing) return; 
 if (pendingPairingUpdates.length === 0) return;
 
 isManualPairingSyncing = true;
@@ -515,7 +485,6 @@ throw new Error(res.message);
 } catch(e) {
 console.error(e);
 setManualPairingSyncButtonState('error');
-// Push back failed updates
 updatesToSync.forEach(u => {
 const idx = pendingPairingUpdates.findIndex(p => p.traineeName === u.traineeName);
 if (idx === -1) pendingPairingUpdates.push(u);
@@ -523,7 +492,7 @@ if (idx === -1) pendingPairingUpdates.push(u);
 } finally {
 isManualPairingSyncing = false;
 if (pendingPairingUpdates.length > 0) {
- triggerManualPairingSync();
+triggerManualPairingSync();
 }
 }
 }
@@ -532,9 +501,7 @@ function startManualPairingPolling() {
 if (manualPairingPollInterval) clearInterval(manualPairingPollInterval);
 
 manualPairingPollInterval = setInterval(async () => {
-const view = document.getElementById('view-manual-pairing');
-if(!view || view.classList.contains('hidden') || isManualPairingSyncing || (dndState.el || dndState.isDragging)) return;
-
+if (isManualPairingSyncing || (window.dndState && (window.dndState.el || window.dndState.isDragging))) return;
 if (pendingPairingUpdates.length > 0) return;
 
 const fetchStartTime = Date.now();
@@ -548,16 +515,16 @@ const newDataStr = JSON.stringify(res.data);
 const oldDataStr = JSON.stringify(manualPairingData);
 
 if (newDataStr !== oldDataStr) {
-    manualPairingData = res.data;
-    renderManualPairings();
+  manualPairingData = res.data;
+  renderManualPairings();
 }
 }
 } catch(e) { }
-}, 10000); // Backed off to 10 seconds
+}, 10000); 
 }
 
 async function manualSyncManualPairing() {
-if (isManualPairingSyncing) return; // Prevent overlapping with automated sync
+if (isManualPairingSyncing) return; 
 
 if (pendingPairingUpdates.length > 0) {
 await executeManualPairingSync();
@@ -565,13 +532,13 @@ await executeManualPairingSync();
 
 setManualPairingSyncButtonState('loading');
 const overlay = document.getElementById('manualPairingLoadingOverlay');
-overlay.classList.remove('hidden');
+if(overlay) overlay.classList.remove('hidden');
 
 const fetchStartTime = Date.now();
 
 try {
 const res = await apiCall('fetchManualPairingData', { sheetUrl: currentManualPairingSheetUrl });
-overlay.classList.add('hidden');
+if(overlay) overlay.classList.add('hidden');
 if (res.success) {
 if (lastPairingLocalChange > fetchStartTime) return;
 
@@ -582,7 +549,7 @@ setManualPairingSyncButtonState('saved');
 setManualPairingSyncButtonState('error');
 }
 } catch (e) {
-overlay.classList.add('hidden');
+if(overlay) overlay.classList.add('hidden');
 setManualPairingSyncButtonState('error');
 }
 }
@@ -600,10 +567,11 @@ const modal = document.getElementById('quickPairModal');
 const title = document.getElementById('quickPairModalTitle');
 const input = document.getElementById('quickPairSearch');
 
+if(!modal || !title || !input) return;
+
 title.innerHTML = `Pairing with <span class="text-primary">${sourceName}</span>`;
 input.value = '';
 
-// Sorting Logic for Modal: Project Alphabetical, followed by Name Alphabetical
 const sortFn = (a, b) => {
 const projA = a.project ? a.project.toString().toLowerCase().trim() : "zzzz";
 const projB = b.project ? b.project.toString().toLowerCase().trim() : "zzzz";
@@ -615,9 +583,7 @@ const nameB = b.name ? b.name.toString().toLowerCase().trim() : "";
 return nameA.localeCompare(nameB);
 };
 
-// Build target list
 if (sourceRole === 'VOLUNTEER') {
-// Search Trainees (Strictly 'Y' and not gone home)
 quickPairContext.targetList = (manualPairingData.trainees || [])
 .filter(t => {
 const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
@@ -626,7 +592,6 @@ return att === 'y' && !t.isGoneHome;
 .sort(sortFn)
 .map(t => t.name);
 } else {
-// Search Volunteers
 quickPairContext.targetList = (manualPairingData.volunteers || [])
 .sort(sortFn)
 .map(v => v.name);
@@ -638,7 +603,8 @@ setTimeout(() => input.focus(), 100);
 }
 
 function closeQuickPairModal() {
-document.getElementById('quickPairModal').classList.add('hidden');
+const modal = document.getElementById('quickPairModal');
+if(modal) modal.classList.add('hidden');
 }
 
 function filterQuickPairList() {
@@ -654,7 +620,6 @@ return;
 }
 
 matches.forEach(name => {
-// Check if already paired
 let isPaired = false;
 const traineeName = quickPairContext.sourceRole === 'TRAINEE' ? quickPairContext.sourceName : name;
 const volName = quickPairContext.sourceRole === 'VOLUNTEER' ? quickPairContext.sourceName : name;

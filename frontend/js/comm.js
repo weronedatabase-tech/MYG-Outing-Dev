@@ -69,54 +69,64 @@ const selector = document.getElementById(selectorId);
 const spinner = document.getElementById(loadingId);
 const listContainer = document.getElementById('upcomingList');
 
-// STATE-AWARENESS: Prevent DOM wipe if data exists
-if (!forceRefresh && currentSheetList && currentSheetList.length > 0) {
-// Ensure selector is populated for the current view if empty
-if (selector && selector.options.length <= 1) {
-selector.innerHTML = '';
-selector.disabled = false;
-currentSheetList.forEach(item => {
-    let opt = document.createElement('option');
-    opt.value = item.sheetUrl;
-    opt.text = item.displayName;
-    selector.appendChild(opt);
-});
-selector.selectedIndex = 0;
+const renderData = (data) => {
+currentSheetList = data;
+if (selector) {
+ selector.innerHTML = '';
+ selector.disabled = false;
+ data.forEach(item => {
+     let opt = document.createElement('option');
+     opt.value = item.sheetUrl;
+     opt.text = item.displayName;
+     selector.appendChild(opt);
+ });
+ 
+ const closest = window.getClosestEventUrl ? window.getClosestEventUrl(data) : data[0].sheetUrl;
+ if (closest) {
+     selector.value = closest;
+ } else {
+     selector.selectedIndex = 0;
+ }
 }
 
-if (viewId === 'volunteer') {
-resetVolForm();
-} else if (viewId === 'actual-attendance' && currentSheetList.length === 1) {
-setTimeout(() => openLiveAttendance(), 100);
+if (viewId === 'volunteer' && typeof resetVolForm === 'function') {
+ resetVolForm();
+} else if (viewId === 'actual-attendance' && data.length === 1) {
+ if (typeof launchLiveTracker === 'function') setTimeout(() => launchLiveTracker(), 100);
 }
 
 if (viewId === 'comm' && listContainer) {
-// If the container already has our rendered cards, skip completely!
-if (listContainer.children.length > 0 && !listContainer.innerHTML.includes('animate-pulse') && !listContainer.innerHTML.includes('Loading events')) {
-    // Re-enable action buttons just in case
-    document.getElementById('scrubBtn').disabled = false;
-    document.getElementById('scrubBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-    document.getElementById('manualPairBtn').disabled = false;
-    document.getElementById('manualPairBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-    document.getElementById('groupBtn').disabled = false;
-    document.getElementById('groupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-    document.getElementById('manualGroupBtn').disabled = false;
-    document.getElementById('manualGroupBtn').classList.remove('opacity-50', 'cursor-not-allowed');
-    const assignBtn = document.getElementById('assignICBtn');
-    if (assignBtn) {
-       assignBtn.disabled = false;
-       assignBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-    }
-    return; // ZERO LATENCY EXIT
-} else {
-    renderCommDashboardCards(currentSheetList);
+ renderCommDashboardCards(data);
 }
-}
-return;
+};
+
+const localDataStr = localStorage.getItem('myg_sheetList');
+
+// Zero-Latency LocalStorage Hydration logic
+if (!forceRefresh && localDataStr) {
+try {
+ const parsed = JSON.parse(localDataStr);
+ if (parsed && parsed.length > 0) {
+     renderData(parsed);
+     
+     // Silent background update to re-verify
+     if(spinner) spinner.classList.remove('hidden');
+     apiCall('getRecentOutingSheets', null).then(res => {
+         if(spinner) spinner.classList.add('hidden');
+         if (res.success && JSON.stringify(res.data) !== localDataStr) {
+             localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
+             renderData(res.data);
+         }
+     });
+     return;
+ }
+} catch(e) {}
 }
 
+if (selector) {
 selector.innerHTML = '<option disabled selected>↻ Loading events...</option>';
 selector.disabled = true;
+}
 if(spinner) spinner.classList.remove('hidden');
 
 if(viewId === 'comm' && listContainer) {
@@ -139,17 +149,17 @@ let skeletonHtml = '';
 for(let i=0; i<3; i++) {
 skeletonHtml += `
 <div class="animate-pulse flex flex-col gap-3 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
-    <div class="flex justify-between items-start">
-        <div class="space-y-2 w-1/2">
-            <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
-            <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
-        </div>
-        <div class="flex gap-2">
-            <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-            <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-        </div>
-    </div>
-    <div class="h-12 bg-gray-50 dark:bg-zinc-800/50 rounded w-full mt-1"></div>
+ <div class="flex justify-between items-start">
+     <div class="space-y-2 w-1/2">
+         <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
+         <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
+     </div>
+     <div class="flex gap-2">
+         <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+         <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+     </div>
+ </div>
+ <div class="h-12 bg-gray-50 dark:bg-zinc-800/50 rounded w-full mt-1"></div>
 </div>`;
 }
 listContainer.innerHTML = skeletonHtml;
@@ -157,38 +167,28 @@ listContainer.innerHTML = skeletonHtml;
 
 apiCall('getRecentOutingSheets', null).then(res => {
 if(spinner) spinner.classList.add('hidden');
-selector.disabled = false;
-selector.innerHTML = '';
 
 if (res.success) {
-currentSheetList = res.data;
-if(res.data.length > 0) {
-    res.data.forEach(item => {
-        let opt = document.createElement('option');
-        opt.value = item.sheetUrl;
-        opt.text = item.displayName;
-        selector.appendChild(opt);
-    });
-    selector.selectedIndex = 0;
-
-    if(viewId === 'comm' && listContainer) {
-        renderCommDashboardCards(res.data);
-    } else if(viewId === 'volunteer') {
-        resetVolForm();
-    } else if (viewId === 'actual-attendance' && res.data.length === 1) {
-        setTimeout(() => openLiveAttendance(), 100);
-    }
+ localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
+ if(res.data.length > 0) {
+     renderData(res.data);
+ } else {
+     if (selector) {
+         selector.disabled = false;
+         selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+     }
+     if(viewId === 'comm' && listContainer) {
+         listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
+     }
+ }
 } else {
-    selector.innerHTML = '<option disabled selected>No upcoming events</option>';
-    if(viewId === 'comm' && listContainer) {
-        listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
-    }
-}
-} else {
-selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
-if(viewId === 'comm' && listContainer) {
-    listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
-}
+ if (selector) {
+     selector.disabled = false;
+     selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
+ }
+ if(viewId === 'comm' && listContainer) {
+     listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
+ }
 }
 });
 }
@@ -221,30 +221,30 @@ allCards += `
 <div class="flex flex-col gap-2 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm relative transition-colors">
 <div class="flex justify-between items-start">
 <div>
-   <div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
-   <div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
-   <div id="pending-badge-${index}" class="mt-1 hidden"></div>
+<div class="font-bold text-gray-900 dark:text-white text-sm">${item.displayName}</div>
+<div class="text-gray-500 dark:text-gray-400 text-xs">${item.formattedDate}</div>
+<div id="pending-badge-${index}" class="mt-1 hidden"></div>
 </div>
 <div class="flex gap-2 text-xs">
-   <button onclick="openEditOutingModal(${index})" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors" title="Edit Outing"><i class="fa-solid fa-pen text-base"></i></button>
-   <a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a>
-   <a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a>
+<button onclick="openEditOutingModal(${index})" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors" title="Edit Outing"><i class="fa-solid fa-pen text-base"></i></button>
+<a href="${item.folderUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"><i class="fa-regular fa-folder-open text-base"></i></a>
+<a href="${item.sheetUrl}" target="_blank" class="p-2 bg-gray-100 dark:bg-zinc-800 rounded text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors"><i class="fa-regular fa-file-excel text-base"></i></a>
 </div>
 </div>
 <div id="stats-${index}" class="animate-pulse mt-2"><div class="h-12 bg-gray-100 dark:bg-zinc-800 rounded w-full"></div></div>
 <div id="btn-group-${index}" class="hidden grid grid-cols-3 gap-1.5 md:gap-2 mt-2 pt-3 border-t border-gray-100 dark:border-zinc-800">
- <button onclick="openReminderModal('${index}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Remind">
-    <i class="fa-solid fa-bell text-sm md:text-base shrink-0"></i>
-    <span class="text-[10px] md:text-[11px] font-semibold truncate">Remind</span>
- </button>
- <button onclick="copyOutingMessage('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Copy Info">
-    <i class="fa-regular fa-copy text-sm md:text-base shrink-0"></i>
-    <span class="text-[10px] md:text-[11px] font-semibold truncate">Copy Info</span>
- </button>
- <button onclick="openShareTableFromComm('${item.sheetUrl}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Share Pairing/Grouping Screenshot">
-    <i class="fa-solid fa-share-nodes text-sm md:text-base shrink-0"></i>
-    <span class="text-[9px] md:text-[11px] font-semibold leading-tight text-center whitespace-normal">Share Table</span>
- </button>
+<button onclick="openReminderModal('${index}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Remind">
+ <i class="fa-solid fa-bell text-sm md:text-base shrink-0"></i>
+ <span class="text-[10px] md:text-[11px] font-semibold truncate">Remind</span>
+</button>
+<button onclick="copyOutingMessage('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Copy Info">
+ <i class="fa-regular fa-copy text-sm md:text-base shrink-0"></i>
+ <span class="text-[10px] md:text-[11px] font-semibold truncate">Copy Info</span>
+</button>
+<button onclick="openShareTableFromComm('${item.sheetUrl}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Take Screenshot for Volunteers">
+ <i class="fa-solid fa-camera text-sm md:text-base shrink-0"></i>
+ <span class="text-[9px] md:text-[11px] font-semibold leading-tight text-center whitespace-normal">Screenshot for Vol</span>
+</button>
 </div>
 </div>`;
 });
@@ -255,32 +255,32 @@ const MAX_STATS_TO_FETCH = 6;
 const fetchBatchStats = () => {
 const batch = data.slice(currentIndex, currentIndex + 2); 
 if (batch.length === 0 || currentIndex >= MAX_STATS_TO_FETCH) {
- for (let i = currentIndex; i < data.length; i++) {
-     const container = document.getElementById(`stats-${i}`);
-     if (container) {
-         container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-         container.classList.remove('animate-pulse');
-     }
- }
- return;
+for (let i = currentIndex; i < data.length; i++) {
+  const container = document.getElementById(`stats-${i}`);
+  if (container) {
+      container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+      container.classList.remove('animate-pulse');
+  }
+}
+return;
 }
 
 Promise.all(batch.map((item, localIdx) => {
- const globalIdx = currentIndex + localIdx;
- return fetchOutingStats(item.sheetUrl, globalIdx);
+const globalIdx = currentIndex + localIdx;
+return fetchOutingStats(item.sheetUrl, globalIdx);
 })).then(() => {
- currentIndex += 2;
- if (currentIndex < Math.min(data.length, MAX_STATS_TO_FETCH)) {
-     setTimeout(fetchBatchStats, 1500); 
- } else {
-     for (let i = currentIndex; i < data.length; i++) {
-         const container = document.getElementById(`stats-${i}`);
-         if (container) {
-             container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-             container.classList.remove('animate-pulse');
-         }
-     }
- }
+currentIndex += 2;
+if (currentIndex < Math.min(data.length, MAX_STATS_TO_FETCH)) {
+  setTimeout(fetchBatchStats, 1500); 
+} else {
+  for (let i = currentIndex; i < data.length; i++) {
+      const container = document.getElementById(`stats-${i}`);
+      if (container) {
+          container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+          container.classList.remove('animate-pulse');
+      }
+  }
+}
 });
 };
 fetchBatchStats();
@@ -532,7 +532,7 @@ meetingLocs: Array.from(document.getElementsByName('editMeetingLoc')).map(i=>i.v
 meetingTimes: Array.from(document.getElementsByName('editMeetingTime')).map(i=>i.value), 
 meetingBuses: Array.from(document.getElementsByName('editMeetingBus')).map(i=>i.checked), 
 dismissalLocs: Array.from(document.getElementsByName('editDismissalLoc')).map(i=>i.value), 
-dismissalTimes: Array.from(document.getElementsByName('editDismissalTime')).map(i=>i.value), 
+dismissalTimes: Array.from(document.getElementsByName('dismissalTime')).map(i=>i.value), 
 dismissalBuses: Array.from(document.getElementsByName('editDismissalBus')).map(i=>i.checked), 
 }; 
 
@@ -548,19 +548,7 @@ showOverlay('error', res.message);
 }); 
 }
 
-
-// === LIVE ATTENDANCE ===
-function openLiveAttendance() {
-const selector = document.getElementById('actualSheetSelector');
-const url = selector.value;
-if(!url || url.includes("Select") || url.includes("Loading") || url.includes("Error")) return alert("Select an event first");
-
-currentCommAttSheetUrl = url;
-document.getElementById('navContextTitle').innerText = "Live: " + selector.options[selector.selectedIndex].text;
-
-showView('comm-attendance');
-loadCommAttendanceData();
-}
+// === LIVE ATTENDANCE LOGIC ===
 
 function loadCommAttendanceData() {
 const overlay = document.getElementById('commAttLoadingOverlay');
@@ -576,7 +564,7 @@ renderCommAttJunctures();
 startCommAttPolling();
 } else {
 alert("Error: " + res.message);
-showView('actual-attendance');
+window.navigateTo('tracker.html');
 }
 });
 }
@@ -676,8 +664,8 @@ commAttFiltersChanged = false;
 
 document.addEventListener('click', function(e) {
 const isDropdownClick = e.target.closest('#commAttGroupDropdown') || 
-   e.target.closest('#commAttMeetDropdown') || 
-   e.target.closest('#commAttDismissDropdown');
+e.target.closest('#commAttMeetDropdown') || 
+e.target.closest('#commAttDismissDropdown');
 
 const isBtnClick = e.target.closest('#commAttGroupBtn') || 
 e.target.closest('#commAttMeetBtn') || 
@@ -720,6 +708,7 @@ updateCommAttFilterUI(type, available, []);
 
 function renderCommAttJunctures() {
 const select = document.getElementById('commAttJunctureSelect');
+if(!select) return;
 select.innerHTML = '';
 
 commAttData.junctures.forEach(j => {
@@ -738,8 +727,8 @@ changeCommAttContext();
 }
 
 function changeCommAttContext() {
-const juncture = document.getElementById('commAttJunctureSelect').value;
-commAttState.currentJuncture = juncture;
+const select = document.getElementById('commAttJunctureSelect');
+if(select) commAttState.currentJuncture = select.value;
 
 renderCommAttLists();
 }
@@ -751,7 +740,6 @@ const goneHomeList = document.getElementById('commAttGoneHomeList');
 
 if (!notCheckedList || !checkedList || !goneHomeList) return;
 
-// Explicitly save the scroll position during full renders to prevent jumping
 const scrollNC = notCheckedList.scrollTop;
 const scrollC = checkedList.scrollTop;
 const scrollGH = goneHomeList.scrollTop;
@@ -958,28 +946,28 @@ existingCard.style.padding = '0px';
 existingCard.style.border = 'none';
 
 setTimeout(() => {
- existingCard.remove();
- 
- const temp = document.createElement('div');
- temp.innerHTML = newHtml;
- const newNode = temp.firstElementChild;
- 
- newNode.style.opacity = '0';
- newNode.style.transform = 'translateY(-10px)';
- newNode.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
- 
- insertCardSorted(targetList, newNode, p);
- 
- // Trigger Reflow
- void newNode.offsetWidth;
- 
- newNode.style.opacity = '1';
- newNode.style.transform = 'translateY(0)';
- 
- updateCommAttCountsDOM();
- rebindCommAttCard(cardId, p);
- 
- applyCardPulse(newNode, isChecked ? 'pulse-green' : (isGoneHome ? 'pulse-blue' : 'pulse-red'));
+existingCard.remove();
+
+const temp = document.createElement('div');
+temp.innerHTML = newHtml;
+const newNode = temp.firstElementChild;
+
+newNode.style.opacity = '0';
+newNode.style.transform = 'translateY(-10px)';
+newNode.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+
+insertCardSorted(targetList, newNode, p);
+
+// Trigger Reflow
+void newNode.offsetWidth;
+
+newNode.style.opacity = '1';
+newNode.style.transform = 'translateY(0)';
+
+updateCommAttCountsDOM();
+rebindCommAttCard(cardId, p);
+
+applyCardPulse(newNode, isChecked ? 'pulse-green' : (isGoneHome ? 'pulse-blue' : 'pulse-red'));
 }, 300);
 }
 }
@@ -1011,9 +999,9 @@ const grpA = pData.group ? pData.group.toString().toLowerCase() : "zzzz";
 const grpB = childP.group ? childP.group.toString().toLowerCase() : "zzzz";
 let groupCmp = grpA.localeCompare(grpB, undefined, {numeric: true});
 if (groupCmp < 0 || (groupCmp === 0 && pData.name.localeCompare(childP.name) < 0)) {
- listEl.insertBefore(newCardNode, child);
- inserted = true;
- break;
+listEl.insertBefore(newCardNode, child);
+inserted = true;
+break;
 }
 }
 }
@@ -1341,7 +1329,7 @@ if (commAttPollInterval) clearInterval(commAttPollInterval);
 
 commAttPollInterval = setInterval(() => {
 const view = document.getElementById('view-comm-attendance');
-if (view && view.classList.contains('hidden')) return;
+if (!view || view.classList.contains('hidden')) return;
 
 if (isCommAttSyncing || hasPendingUpdates()) return;
 
@@ -1375,14 +1363,14 @@ renderCommAttLists();
 
 if (!document.getElementById('busTrackerModal').classList.contains('hidden')) {
 if (oldBusJunctures !== newBusJunctures) {
-    renderBusJunctures();
+ renderBusJunctures();
 } else if (oldBusAttendance !== newBusAttendance || oldParticipants !== newParticipants) {
-    renderBusLists();
+ renderBusLists();
 }
 }
 }
 });
-}, 10000); // Backed off polling to 10 seconds to ease server load
+}, 10000); 
 }
 
 function handleCommAttSearch() {
@@ -1453,7 +1441,7 @@ starBadge = `<i class="fa-solid fa-star text-yellow-500 shrink-0 text-[10px] md:
 }
 }
 
-// Remarks Indicator Logic for Search Results
+// Remarks Indicator Logic
 let remarksBadge = '';
 let remarkContent = null;
 if (p.extra && p.extra.remark) {
@@ -1509,7 +1497,6 @@ const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attend
 if (!isGoneHome) {
 toggleCommAttStatus(name, true, null);
 } else {
-// Call the function directly on the existing node to force a pulse without replacing it 
 const cardId = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
 const cardNode = document.getElementById(cardId);
 if (cardNode) applyCardPulse(cardNode, 'pulse-blue');
@@ -1534,18 +1521,16 @@ function extractBusJunctures() {
 const juncs = [];
 const addedValues = new Set();
 
-// Get config-based catered buses first (so they can get the Meeting/Dismissal label)
 if (commAttData.busJunctures) {
 commAttData.busJunctures.forEach(b => {
 if (!addedValues.has(b.name)) {
-    let prefix = b.type === 'meet' ? 'Meeting: ' : 'Dismissal: ';
-    juncs.push({ value: b.name, label: prefix + b.name });
-    addedValues.add(b.name);
+ let prefix = b.type === 'meet' ? 'Meeting: ' : 'Dismissal: ';
+ juncs.push({ value: b.name, label: prefix + b.name });
+ addedValues.add(b.name);
 }
 });
 }
 
-// Get all dynamic buses created explicitly in Tracker (custom junctures)
 for(let j in commAttData.busAttendance) {
 if (!addedValues.has(j)) {
 juncs.push({ value: j, label: j });
@@ -1557,6 +1542,7 @@ return juncs;
 
 function renderBusJunctures() {
 const select = document.getElementById('busJunctureSelect');
+if(!select) return;
 select.innerHTML = '';
 
 const juncs = extractBusJunctures();
@@ -1585,10 +1571,10 @@ changeBusContext();
 }
 
 function changeBusContext() {
-busState.currentJuncture = document.getElementById('busJunctureSelect').value;
+const select = document.getElementById('busJunctureSelect');
+if(select) busState.currentJuncture = select.value;
 if(!busState.currentJuncture) return;
 
-// Extract existing bus numbers used in this juncture to populate filter
 const usedBuses = new Set(['Bus 1']);
 if (commAttData.busAttendance[busState.currentJuncture]) {
 for(let t in commAttData.busAttendance[busState.currentJuncture]) {
@@ -1604,6 +1590,7 @@ renderBusLists();
 
 function renderBusFilterOptions() {
 const select = document.getElementById('busFilterSelect');
+if(!select) return;
 select.innerHTML = '<option value="ALL">All Buses</option>';
 busState.busOptions.forEach(b => {
 select.innerHTML += `<option value="${b}">${b}</option>`;
@@ -1632,34 +1619,30 @@ if (!confirm(`Are you sure you want to remove ${filterBus}? All trainees assigne
 return;
 }
 
-// 1. Remove from local busOptions
 busState.busOptions = busState.busOptions.filter(b => b !== filterBus);
 
-// 2. Unassign anyone on this bus locally and queue for sync
 let hasChanges = false;
 const juncKey = '__BUS__' + juncture;
 
 if (commAttData.busAttendance[juncture]) {
 for (let name in commAttData.busAttendance[juncture]) {
-    if (commAttData.busAttendance[juncture][name] === filterBus) {
-        commAttData.busAttendance[juncture][name] = ""; 
-        
-        if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
-        pendingCommAttUpdates[juncKey][name] = "";
-        
-        hasChanges = true;
-    }
+ if (commAttData.busAttendance[juncture][name] === filterBus) {
+     commAttData.busAttendance[juncture][name] = ""; 
+     
+     if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
+     pendingCommAttUpdates[juncKey][name] = "";
+     
+     hasChanges = true;
+ }
 }
 }
 
 lastCommAttLocalChange = Date.now();
 
-// 3. Update UI
 renderBusFilterOptions();
 document.getElementById('busFilterSelect').value = 'ALL';
 renderBusLists();
 
-// 4. Sync
 if (hasChanges) {
 triggerSync();
 }
@@ -1669,23 +1652,18 @@ function getEligibleBusTrainees() {
 const juncture = busState.currentJuncture;
 if(!juncture) return [];
 
-// Check if juncture is a default location or custom
 const defaultJunc = (commAttData.busJunctures || []).find(b => b.name === juncture);
-
 let participants = commAttData.participants || [];
 
-// Filter out Gone Home trainees completely from the bus tracker
 participants = participants.filter(p => !(commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true));
 
 if (defaultJunc) {
-// Filter by meeting or dismissal location explicitly
 if (defaultJunc.type === 'meet') {
 return participants.filter(p => String(p.meetingLoc).toLowerCase() === juncture.toLowerCase());
 } else {
 return participants.filter(p => String(p.dismissalLoc).toLowerCase() === juncture.toLowerCase());
 }
 } else {
-// Custom Bus Juncture -> All Attending
 return participants;
 }
 }
@@ -1724,8 +1702,8 @@ const currentBus = commAttData.busAttendance[juncture] ? commAttData.busAttendan
 
 if (currentBus) {
 if (filterBus === 'ALL' || filterBus === currentBus) {
-    boardedHtml += generateBusCard(p, true, currentBus);
-    boardedCount++;
+ boardedHtml += generateBusCard(p, true, currentBus);
+ boardedCount++;
 }
 } else {
 notBoardedHtml += generateBusCard(p, false, "");
@@ -1778,7 +1756,7 @@ onclick="toggleBusStatus('${safeName}', ${!isBoarded}, event)">
 <div class="shrink-0 flex items-center gap-1.5">
 ${busBadge}
 <div class="w-6 h-6 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
-    <i class="fa-solid fa-check text-xs"></i>
+ <i class="fa-solid fa-check text-xs"></i>
 </div>
 </div>
 </div>
@@ -1802,7 +1780,6 @@ const newHtml = generateBusCard(p, isBoarded, currentBus);
 
 let targetListId = isBoarded && (filterBus === 'ALL' || filterBus === currentBus) ? 'busBoardedList' : 'busNotBoardedList';
 
-// If filtered out, it shouldn't exist in DOM
 if (isBoarded && filterBus !== 'ALL' && filterBus !== currentBus) {
 if (existingCard) {
 existingCard.remove();
@@ -1833,20 +1810,20 @@ existingCard.style.padding = '0px';
 existingCard.style.border = 'none';
 
 setTimeout(() => {
-    existingCard.remove();
-    const temp = document.createElement('div');
-    temp.innerHTML = newHtml;
-    const newNode = temp.firstElementChild;
-    newNode.style.opacity = '0';
-    newNode.style.transform = 'translateY(-10px)';
-    newNode.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-    insertCardSorted(targetList, newNode, p);
-    void newNode.offsetWidth;
-    newNode.style.opacity = '1';
-    newNode.style.transform = 'translateY(0)';
-    updateBusCountsDOM();
-    rebindCommAttCard(cardId, p);
-    applyCardPulse(newNode, isBoarded ? 'pulse-green' : 'pulse-red');
+ existingCard.remove();
+ const temp = document.createElement('div');
+ temp.innerHTML = newHtml;
+ const newNode = temp.firstElementChild;
+ newNode.style.opacity = '0';
+ newNode.style.transform = 'translateY(-10px)';
+ newNode.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+ insertCardSorted(targetList, newNode, p);
+ void newNode.offsetWidth;
+ newNode.style.opacity = '1';
+ newNode.style.transform = 'translateY(0)';
+ updateBusCountsDOM();
+ rebindCommAttCard(cardId, p);
+ applyCardPulse(newNode, isBoarded ? 'pulse-green' : 'pulse-red');
 }, 300);
 }
 }
@@ -1863,7 +1840,7 @@ eligibleTrainees.forEach(p => {
 const currentBus = commAttData.busAttendance[juncture] ? commAttData.busAttendance[juncture][p.name] : "";
 if (currentBus) {
 if (filterBus === 'ALL' || filterBus === currentBus) {
-    b++;
+ b++;
 }
 } else {
 nb++;
@@ -1896,13 +1873,13 @@ let selectedBus = "";
 if (forceBoarded) {
 const filterBus = document.getElementById('busFilterSelect').value;
 if (filterBus === 'ALL') {
-    showFlashMessage('busGlobalStatus', 'Please select a specific bus first.', 'error');
-    const selectEl = document.getElementById('busFilterSelect');
-    if (selectEl) {
-        selectEl.classList.add('pulse-red');
-        setTimeout(() => selectEl.classList.remove('pulse-red'), 800);
-    }
-    return;
+ showFlashMessage('busGlobalStatus', 'Please select a specific bus first.', 'error');
+ const selectEl = document.getElementById('busFilterSelect');
+ if (selectEl) {
+     selectEl.classList.add('pulse-red');
+     setTimeout(() => selectEl.classList.remove('pulse-red'), 800);
+ }
+ return;
 }
 selectedBus = filterBus; 
 }
@@ -1920,7 +1897,6 @@ triggerSync();
 }
 
 function setBusSyncBtnState(state) {
-// Reusing global comm tracker sync UI logic if there was a bus-specific button, but since they share state:
 setCommAttBtnState(state);
 }
 
@@ -1996,32 +1972,30 @@ const btnClass = isSelected ? 'bg-yellow-500 text-white border-yellow-600' : 'bg
 busOptionsHtml += `<button onclick="setBusSearchSelection('${safeName}', '${b}', event)" class="${btnClass} px-2 py-1 rounded text-[10px] font-bold border transition-colors shadow-sm whitespace-nowrap">${b}</button>`;
 });
 
-// "Not Boarded" button
 const isNotBoarded = !currentBus;
 const unassignBtnClass = isNotBoarded ? 'bg-red-500 text-white border-red-600' : 'bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-zinc-700 hover:bg-red-100 hover:text-red-800';
 busOptionsHtml += `<button onclick="setBusSearchSelection('${safeName}', '', event)" class="${unassignBtnClass} px-2 py-1 rounded text-[10px] font-bold border transition-colors shadow-sm whitespace-nowrap">None</button>`;
-
 
 let volHtml = '';
 if (p.volPaired) {
 const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
 if (vols.length > 0) {
-    volHtml = vols.map(v => `<span class="text-[9px] text-teal-700 dark:text-teal-400 font-bold bg-teal-50 dark:bg-teal-900/30 px-1 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
+ volHtml = vols.map(v => `<span class="text-[9px] text-teal-700 dark:text-teal-400 font-bold bg-teal-50 dark:bg-teal-900/30 px-1 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 break-words w-fit"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
 }
 } else {
-volHtml = `<span class="text-[9px] text-red-700 dark:text-red-400 font-black bg-red-50 dark:bg-red-900/30 px-1 py-0.5 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit uppercase">Unpaired</span>`;
+volHtml = `<span class="text-[9px] text-red-700 dark:text-red-400 font-black bg-red-50 dark:bg-red-900/30 px-1 py-0.5 rounded border border-red-200 dark:border-red-800/50 break-words w-fit uppercase">Unpaired</span>`;
 }
 
 html += `
 <li class="px-3 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 flex flex-col gap-1.5 border-b border-gray-200 dark:border-zinc-800 last:border-0 transition">
 <div class="flex items-start justify-between w-full gap-2">
-    <div class="flex flex-col gap-1 w-full min-w-0">
-        <span class="font-bold text-xs text-gray-900 dark:text-white truncate">${p.name}</span>
-        ${volHtml ? `<div class="flex flex-col gap-1 w-full">${volHtml}</div>` : ''}
-    </div>
+ <div class="flex flex-col gap-1 w-full min-w-0">
+     <span class="font-bold text-xs text-gray-900 dark:text-white truncate">${p.name}</span>
+     ${volHtml ? `<div class="flex flex-col gap-1 w-full">${volHtml}</div>` : ''}
+ </div>
 </div>
 <div class="flex gap-1 overflow-x-auto custom-scrollbar pb-1 mt-1 pt-1 border-t border-gray-100 dark:border-zinc-800 w-full shrink-0">
-    ${busOptionsHtml}
+ ${busOptionsHtml}
 </div>
 </li>`;
 });
@@ -2044,22 +2018,14 @@ const juncKey = '__BUS__' + juncture;
 if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
 pendingCommAttUpdates[juncKey][name] = busValue;
 
-// Retain Search Focus and update the row
-handleBusSearch();
+const searchInput = document.getElementById('busSearchInput');
+if (searchInput) searchInput.value = '';
+const searchResults = document.getElementById('busSearchResults');
+if (searchResults) searchResults.classList.add('hidden');
+if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
+
 updateBusCardDOM(name);
 triggerSync();
-
-// Provide feedback without closing modal to allow rapid scanning
-const btn = e.target;
-const orig = btn.innerText;
-btn.innerText = 'Saved';
-btn.classList.add('bg-green-500', 'text-white', 'border-green-600');
-setTimeout(() => {
-if(btn) {
-btn.innerText = orig;
-btn.classList.remove('bg-green-500', 'text-white', 'border-green-600');
-}
-}, 500);
 }
 
 function generateBusColumnText(columnType) {
@@ -2077,13 +2043,13 @@ let targetNames = [];
 eligibleTrainees.forEach(p => {
 const currentBus = commAttData.busAttendance[juncture] ? commAttData.busAttendance[juncture][p.name] : "";
 if (columnType === 'boarded') {
-    if (currentBus && (filterBus === 'ALL' || filterBus === currentBus)) {
-        targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
-    }
+ if (currentBus && (filterBus === 'ALL' || filterBus === currentBus)) {
+     targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
+ }
 } else if (columnType === 'notBoarded') {
-    if (!currentBus) {
-        targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
-    }
+ if (!currentBus) {
+     targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
+ }
 }
 });
 
@@ -2109,10 +2075,16 @@ const listTitle = finalMessage.split('\n')[0].replace(/\[|\]/g, '');
 
 if (navigator.share) {
 navigator.share({
-    title: listTitle,
-    text: finalMessage
+ title: listTitle,
+ text: finalMessage
 }).catch(err => console.error("Share failed", err));
 } else {
 copyBusColumnData(columnType);
 }
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+if (document.getElementById('upcomingList') && window.location.pathname.includes('admin')) {
+loadSheets('comm');
+}
+});
