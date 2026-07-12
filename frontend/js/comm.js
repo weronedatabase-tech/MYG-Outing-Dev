@@ -72,31 +72,31 @@ const listContainer = document.getElementById('upcomingList');
 const renderData = (data) => {
 currentSheetList = data;
 if (selector) {
- selector.innerHTML = '';
- selector.disabled = false;
- data.forEach(item => {
-     let opt = document.createElement('option');
-     opt.value = item.sheetUrl;
-     opt.text = item.displayName;
-     selector.appendChild(opt);
- });
- 
- const closest = window.getClosestEventUrl ? window.getClosestEventUrl(data) : data[0].sheetUrl;
- if (closest) {
-     selector.value = closest;
- } else {
-     selector.selectedIndex = 0;
- }
+selector.innerHTML = '';
+selector.disabled = false;
+data.forEach(item => {
+    let opt = document.createElement('option');
+    opt.value = item.sheetUrl;
+    opt.text = item.displayName;
+    selector.appendChild(opt);
+});
+
+const closest = window.getClosestEventUrl ? window.getClosestEventUrl(data) : data[0].sheetUrl;
+if (closest) {
+    selector.value = closest;
+} else {
+    selector.selectedIndex = 0;
+}
 }
 
 if (viewId === 'volunteer' && typeof resetVolForm === 'function') {
- resetVolForm();
+resetVolForm();
 } else if (viewId === 'actual-attendance' && data.length === 1) {
- if (typeof launchLiveTracker === 'function') setTimeout(() => launchLiveTracker(), 100);
+if (typeof launchLiveTracker === 'function') setTimeout(() => launchLiveTracker(), 100);
 }
 
 if (viewId === 'comm' && listContainer) {
- renderCommDashboardCards(data);
+renderCommDashboardCards(data);
 }
 };
 
@@ -105,21 +105,21 @@ const localDataStr = localStorage.getItem('myg_sheetList');
 // Zero-Latency LocalStorage Hydration logic
 if (!forceRefresh && localDataStr) {
 try {
- const parsed = JSON.parse(localDataStr);
- if (parsed && parsed.length > 0) {
-     renderData(parsed);
-     
-     // Silent background update to re-verify
-     if(spinner) spinner.classList.remove('hidden');
-     apiCall('getRecentOutingSheets', null).then(res => {
-         if(spinner) spinner.classList.add('hidden');
-         if (res.success && JSON.stringify(res.data) !== localDataStr) {
-             localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
-             renderData(res.data);
-         }
-     });
-     return;
- }
+const parsed = JSON.parse(localDataStr);
+if (parsed && parsed.length > 0) {
+    renderData(parsed);
+    
+    // Silent background update to re-verify
+    if(spinner) spinner.classList.remove('hidden');
+    apiCall('getRecentOutingSheets', null).then(res => {
+        if(spinner) spinner.classList.add('hidden');
+        if (res.success && JSON.stringify(res.data) !== localDataStr) {
+            localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
+            renderData(res.data);
+        }
+    });
+    return;
+}
 } catch(e) {}
 }
 
@@ -149,17 +149,17 @@ let skeletonHtml = '';
 for(let i=0; i<3; i++) {
 skeletonHtml += `
 <div class="animate-pulse flex flex-col gap-3 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
- <div class="flex justify-between items-start">
-     <div class="space-y-2 w-1/2">
-         <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
-         <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
-     </div>
-     <div class="flex gap-2">
-         <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-         <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-     </div>
- </div>
- <div class="h-12 bg-gray-50 dark:bg-zinc-800/50 rounded w-full mt-1"></div>
+<div class="flex justify-between items-start">
+    <div class="space-y-2 w-1/2">
+        <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
+        <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
+    </div>
+    <div class="flex gap-2">
+        <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+        <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+    </div>
+</div>
+<div class="h-12 bg-gray-50 dark:bg-zinc-800/50 rounded w-full mt-1"></div>
 </div>`;
 }
 listContainer.innerHTML = skeletonHtml;
@@ -169,26 +169,26 @@ apiCall('getRecentOutingSheets', null).then(res => {
 if(spinner) spinner.classList.add('hidden');
 
 if (res.success) {
- localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
- if(res.data.length > 0) {
-     renderData(res.data);
- } else {
-     if (selector) {
-         selector.disabled = false;
-         selector.innerHTML = '<option disabled selected>No upcoming events</option>';
-     }
-     if(viewId === 'comm' && listContainer) {
-         listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
-     }
- }
+localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
+if(res.data.length > 0) {
+    renderData(res.data);
 } else {
- if (selector) {
-     selector.disabled = false;
-     selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
- }
- if(viewId === 'comm' && listContainer) {
-     listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
- }
+    if (selector) {
+        selector.disabled = false;
+        selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+    }
+    if(viewId === 'comm' && listContainer) {
+        listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
+    }
+}
+} else {
+if (selector) {
+    selector.disabled = false;
+    selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
+}
+if(viewId === 'comm' && listContainer) {
+    listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
+}
 }
 });
 }
@@ -234,16 +234,16 @@ allCards += `
 <div id="stats-${index}" class="animate-pulse mt-2"><div class="h-12 bg-gray-100 dark:bg-zinc-800 rounded w-full"></div></div>
 <div id="btn-group-${index}" class="hidden grid grid-cols-3 gap-1.5 md:gap-2 mt-2 pt-3 border-t border-gray-100 dark:border-zinc-800">
 <button onclick="openReminderModal('${index}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Remind">
- <i class="fa-solid fa-bell text-sm md:text-base shrink-0"></i>
- <span class="text-[10px] md:text-[11px] font-semibold truncate">Remind</span>
+<i class="fa-solid fa-bell text-sm md:text-base shrink-0"></i>
+<span class="text-[10px] md:text-[11px] font-semibold truncate">Remind</span>
 </button>
 <button onclick="copyOutingMessage('${index}', this)" class="bg-gray-50 dark:bg-zinc-800 hover:bg-gray-100 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Copy Info">
- <i class="fa-regular fa-copy text-sm md:text-base shrink-0"></i>
- <span class="text-[10px] md:text-[11px] font-semibold truncate">Copy Info</span>
+<i class="fa-regular fa-copy text-sm md:text-base shrink-0"></i>
+<span class="text-[10px] md:text-[11px] font-semibold truncate">Copy Info</span>
 </button>
 <button onclick="openShareTableFromComm('${item.sheetUrl}')" class="bg-gray-50 dark:bg-zinc-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-1.5 px-1 rounded border border-gray-200 dark:border-zinc-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors flex items-center justify-center gap-1 overflow-hidden" title="Take Screenshot for Volunteers">
- <i class="fa-solid fa-camera text-sm md:text-base shrink-0"></i>
- <span class="text-[9px] md:text-[11px] font-semibold leading-tight text-center whitespace-normal">Screenshot for Vol</span>
+<i class="fa-solid fa-camera text-sm md:text-base shrink-0"></i>
+<span class="text-[9px] md:text-[11px] font-semibold leading-tight text-center whitespace-normal">Screenshot for Vol</span>
 </button>
 </div>
 </div>`;
@@ -256,11 +256,11 @@ const fetchBatchStats = () => {
 const batch = data.slice(currentIndex, currentIndex + 2); 
 if (batch.length === 0 || currentIndex >= MAX_STATS_TO_FETCH) {
 for (let i = currentIndex; i < data.length; i++) {
-  const container = document.getElementById(`stats-${i}`);
-  if (container) {
-      container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-      container.classList.remove('animate-pulse');
-  }
+ const container = document.getElementById(`stats-${i}`);
+ if (container) {
+     container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+     container.classList.remove('animate-pulse');
+ }
 }
 return;
 }
@@ -271,15 +271,15 @@ return fetchOutingStats(item.sheetUrl, globalIdx);
 })).then(() => {
 currentIndex += 2;
 if (currentIndex < Math.min(data.length, MAX_STATS_TO_FETCH)) {
-  setTimeout(fetchBatchStats, 1500); 
+ setTimeout(fetchBatchStats, 1500); 
 } else {
-  for (let i = currentIndex; i < data.length; i++) {
-      const container = document.getElementById(`stats-${i}`);
-      if (container) {
-          container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-          container.classList.remove('animate-pulse');
-      }
-  }
+ for (let i = currentIndex; i < data.length; i++) {
+     const container = document.getElementById(`stats-${i}`);
+     if (container) {
+         container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+         container.classList.remove('animate-pulse');
+     }
+ }
 }
 });
 };
@@ -1363,9 +1363,9 @@ renderCommAttLists();
 
 if (!document.getElementById('busTrackerModal').classList.contains('hidden')) {
 if (oldBusJunctures !== newBusJunctures) {
- renderBusJunctures();
+renderBusJunctures();
 } else if (oldBusAttendance !== newBusAttendance || oldParticipants !== newParticipants) {
- renderBusLists();
+renderBusLists();
 }
 }
 }
@@ -1524,9 +1524,9 @@ const addedValues = new Set();
 if (commAttData.busJunctures) {
 commAttData.busJunctures.forEach(b => {
 if (!addedValues.has(b.name)) {
- let prefix = b.type === 'meet' ? 'Meeting: ' : 'Dismissal: ';
- juncs.push({ value: b.name, label: prefix + b.name });
- addedValues.add(b.name);
+let prefix = b.type === 'meet' ? 'Meeting: ' : 'Dismissal: ';
+juncs.push({ value: b.name, label: prefix + b.name });
+addedValues.add(b.name);
 }
 });
 }
@@ -1626,14 +1626,14 @@ const juncKey = '__BUS__' + juncture;
 
 if (commAttData.busAttendance[juncture]) {
 for (let name in commAttData.busAttendance[juncture]) {
- if (commAttData.busAttendance[juncture][name] === filterBus) {
-     commAttData.busAttendance[juncture][name] = ""; 
-     
-     if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
-     pendingCommAttUpdates[juncKey][name] = "";
-     
-     hasChanges = true;
- }
+if (commAttData.busAttendance[juncture][name] === filterBus) {
+    commAttData.busAttendance[juncture][name] = ""; 
+    
+    if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
+    pendingCommAttUpdates[juncKey][name] = "";
+    
+    hasChanges = true;
+}
 }
 }
 
@@ -1702,8 +1702,8 @@ const currentBus = commAttData.busAttendance[juncture] ? commAttData.busAttendan
 
 if (currentBus) {
 if (filterBus === 'ALL' || filterBus === currentBus) {
- boardedHtml += generateBusCard(p, true, currentBus);
- boardedCount++;
+boardedHtml += generateBusCard(p, true, currentBus);
+boardedCount++;
 }
 } else {
 notBoardedHtml += generateBusCard(p, false, "");
@@ -1756,7 +1756,7 @@ onclick="toggleBusStatus('${safeName}', ${!isBoarded}, event)">
 <div class="shrink-0 flex items-center gap-1.5">
 ${busBadge}
 <div class="w-6 h-6 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
- <i class="fa-solid fa-check text-xs"></i>
+<i class="fa-solid fa-check text-xs"></i>
 </div>
 </div>
 </div>
@@ -1810,20 +1810,20 @@ existingCard.style.padding = '0px';
 existingCard.style.border = 'none';
 
 setTimeout(() => {
- existingCard.remove();
- const temp = document.createElement('div');
- temp.innerHTML = newHtml;
- const newNode = temp.firstElementChild;
- newNode.style.opacity = '0';
- newNode.style.transform = 'translateY(-10px)';
- newNode.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
- insertCardSorted(targetList, newNode, p);
- void newNode.offsetWidth;
- newNode.style.opacity = '1';
- newNode.style.transform = 'translateY(0)';
- updateBusCountsDOM();
- rebindCommAttCard(cardId, p);
- applyCardPulse(newNode, isBoarded ? 'pulse-green' : 'pulse-red');
+existingCard.remove();
+const temp = document.createElement('div');
+temp.innerHTML = newHtml;
+const newNode = temp.firstElementChild;
+newNode.style.opacity = '0';
+newNode.style.transform = 'translateY(-10px)';
+newNode.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+insertCardSorted(targetList, newNode, p);
+void newNode.offsetWidth;
+newNode.style.opacity = '1';
+newNode.style.transform = 'translateY(0)';
+updateBusCountsDOM();
+rebindCommAttCard(cardId, p);
+applyCardPulse(newNode, isBoarded ? 'pulse-green' : 'pulse-red');
 }, 300);
 }
 }
@@ -1840,7 +1840,7 @@ eligibleTrainees.forEach(p => {
 const currentBus = commAttData.busAttendance[juncture] ? commAttData.busAttendance[juncture][p.name] : "";
 if (currentBus) {
 if (filterBus === 'ALL' || filterBus === currentBus) {
- b++;
+b++;
 }
 } else {
 nb++;
@@ -1873,13 +1873,13 @@ let selectedBus = "";
 if (forceBoarded) {
 const filterBus = document.getElementById('busFilterSelect').value;
 if (filterBus === 'ALL') {
- showFlashMessage('busGlobalStatus', 'Please select a specific bus first.', 'error');
- const selectEl = document.getElementById('busFilterSelect');
- if (selectEl) {
-     selectEl.classList.add('pulse-red');
-     setTimeout(() => selectEl.classList.remove('pulse-red'), 800);
- }
- return;
+showFlashMessage('busGlobalStatus', 'Please select a specific bus first.', 'error');
+const selectEl = document.getElementById('busFilterSelect');
+if (selectEl) {
+    selectEl.classList.add('pulse-red');
+    setTimeout(() => selectEl.classList.remove('pulse-red'), 800);
+}
+return;
 }
 selectedBus = filterBus; 
 }
@@ -1980,7 +1980,7 @@ let volHtml = '';
 if (p.volPaired) {
 const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
 if (vols.length > 0) {
- volHtml = vols.map(v => `<span class="text-[9px] text-teal-700 dark:text-teal-400 font-bold bg-teal-50 dark:bg-teal-900/30 px-1 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 break-words w-fit"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
+volHtml = vols.map(v => `<span class="text-[9px] text-teal-700 dark:text-teal-400 font-bold bg-teal-50 dark:bg-teal-900/30 px-1 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 break-words w-fit"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
 }
 } else {
 volHtml = `<span class="text-[9px] text-red-700 dark:text-red-400 font-black bg-red-50 dark:bg-red-900/30 px-1 py-0.5 rounded border border-red-200 dark:border-red-800/50 break-words w-fit uppercase">Unpaired</span>`;
@@ -1989,13 +1989,13 @@ volHtml = `<span class="text-[9px] text-red-700 dark:text-red-400 font-black bg-
 html += `
 <li class="px-3 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 flex flex-col gap-1.5 border-b border-gray-200 dark:border-zinc-800 last:border-0 transition">
 <div class="flex items-start justify-between w-full gap-2">
- <div class="flex flex-col gap-1 w-full min-w-0">
-     <span class="font-bold text-xs text-gray-900 dark:text-white truncate">${p.name}</span>
-     ${volHtml ? `<div class="flex flex-col gap-1 w-full">${volHtml}</div>` : ''}
- </div>
+<div class="flex flex-col gap-1 w-full min-w-0">
+    <span class="font-bold text-xs text-gray-900 dark:text-white truncate">${p.name}</span>
+    ${volHtml ? `<div class="flex flex-col gap-1 w-full">${volHtml}</div>` : ''}
+</div>
 </div>
 <div class="flex gap-1 overflow-x-auto custom-scrollbar pb-1 mt-1 pt-1 border-t border-gray-100 dark:border-zinc-800 w-full shrink-0">
- ${busOptionsHtml}
+${busOptionsHtml}
 </div>
 </li>`;
 });
@@ -2043,13 +2043,13 @@ let targetNames = [];
 eligibleTrainees.forEach(p => {
 const currentBus = commAttData.busAttendance[juncture] ? commAttData.busAttendance[juncture][p.name] : "";
 if (columnType === 'boarded') {
- if (currentBus && (filterBus === 'ALL' || filterBus === currentBus)) {
-     targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
- }
+if (currentBus && (filterBus === 'ALL' || filterBus === currentBus)) {
+    targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
+}
 } else if (columnType === 'notBoarded') {
- if (!currentBus) {
-     targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
- }
+if (!currentBus) {
+    targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
+}
 }
 });
 
@@ -2075,8 +2075,8 @@ const listTitle = finalMessage.split('\n')[0].replace(/\[|\]/g, '');
 
 if (navigator.share) {
 navigator.share({
- title: listTitle,
- text: finalMessage
+title: listTitle,
+text: finalMessage
 }).catch(err => console.error("Share failed", err));
 } else {
 copyBusColumnData(columnType);
@@ -2085,6 +2085,8 @@ copyBusColumnData(columnType);
 
 document.addEventListener("DOMContentLoaded", () => {
 if (document.getElementById('upcomingList') && window.location.pathname.includes('admin')) {
-loadSheets('comm');
+requestAccess(null, () => {
+  loadSheets('comm');
+});
 }
 });
