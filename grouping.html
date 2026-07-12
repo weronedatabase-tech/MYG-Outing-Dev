@@ -38,19 +38,19 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <div class="flex items-center justify-between w-full min-h-[32px] gap-2">
 <div class="flex items-center gap-1.5 min-w-0 flex-1">
 <button onclick="navigateTo('admin.html')" class="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 w-8 h-8 flex items-center justify-center rounded shadow-sm shrink-0 transition-colors">
-  <i class="fa-solid fa-arrow-left text-sm md:text-base"></i>
+ <i class="fa-solid fa-arrow-left text-sm md:text-base"></i>
 </button>
 <h1 id="navContextTitle" class="text-base md:text-lg font-extrabold text-gray-900 dark:text-white leading-tight truncate">Manual Group: Loading...</h1>
 </div>
 <div class="flex items-center gap-1.5 shrink-0 pl-2 ml-auto border-l border-gray-200 dark:border-zinc-700">
 <button onclick="refreshApp()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors group flex items-center p-1">
-  <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm md:text-base group-hover:text-primary transition-transform"></i>
+ <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm md:text-base group-hover:text-primary transition-transform"></i>
 </button>
 <button onclick="toggleTheme()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors flex items-center p-1">
-  <span class="text-sm md:text-base leading-none">🌗</span>
+ <span class="text-sm md:text-base leading-none">🌗</span>
 </button>
 <button onclick="navigateTo('./')" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors flex items-center p-1">
-  <i class="fa-solid fa-house text-sm md:text-base"></i>
+ <i class="fa-solid fa-house text-sm md:text-base"></i>
 </button>
 </div>
 </div>
@@ -66,16 +66,16 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 </div>
 
 <!-- MAIN CONTENT -->
-<main class="container mx-auto p-1 mt-1 max-w-7xl transition-all">
+<main id="protectedMainContent" class="container mx-auto p-1 mt-1 max-w-7xl transition-all hidden">
 <div class="fade-in">
 <div class="flex flex-col h-[calc(100dvh-105px)] w-full relative bg-gray-50 dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden max-w-4xl mx-auto">
 <div class="px-3 py-2 border-b border-gray-200 dark:border-zinc-800 shrink-0 z-10 flex flex-col gap-2 bg-white dark:bg-zinc-900">
 <div id="groupingGlobalStatus" class="hidden p-2 rounded text-[10px] md:text-xs font-bold text-center mb-1"></div>
 <div class="flex gap-2 w-full">
 <div class="relative flex-1">
- <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xs"></i>
- <input type="text" id="groupingSearchInput" oninput="changeGroupingSearch(); toggleClearBtn('groupingSearchInput')" class="w-full pl-8 pr-8 py-1.5 bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded text-xs text-gray-900 dark:text-white focus:border-orange-500 outline-none shadow-sm" placeholder="Search trainee or volunteer...">
- <button type="button" id="clearBtn-groupingSearchInput" onclick="clearSearchInput('groupingSearchInput', 'changeGroupingSearch')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hidden transition-colors z-10"><i class="fa-solid fa-xmark text-sm"></i></button>
+<i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-xs"></i>
+<input type="text" id="groupingSearchInput" oninput="changeGroupingSearch(); toggleClearBtn('groupingSearchInput')" class="w-full pl-8 pr-8 py-1.5 bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded text-xs text-gray-900 dark:text-white focus:border-orange-500 outline-none shadow-sm" placeholder="Search trainee or volunteer...">
+<button type="button" id="clearBtn-groupingSearchInput" onclick="clearSearchInput('groupingSearchInput', 'changeGroupingSearch')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hidden transition-colors z-10"><i class="fa-solid fa-xmark text-sm"></i></button>
 </div>
 </div>
 </div>
@@ -93,32 +93,34 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const params = new URLSearchParams(window.location.search);
-  const url = params.get('url');
-  if (!url) {
-      alert("No event selected.");
-      navigateTo('admin.html');
-      return;
-  }
-  
-  const localListStr = localStorage.getItem('myg_sheetList');
-  if(localListStr) {
-      try {
-          const list = JSON.parse(localListStr);
-          const match = list.find(x => x.sheetUrl === url);
-          if(match) {
-              document.getElementById('navContextTitle').innerText = "Manual Group: " + match.displayName;
-          }
-      } catch(e) {}
-  }
-  
-  requestAccess(null, () => {
-      openManualGrouping(url);
-  });
+ const params = new URLSearchParams(window.location.search);
+ const url = params.get('url');
+ if (!url) {
+     alert("No event selected.");
+     navigateTo('admin.html');
+     return;
+ }
+ 
+ const localListStr = localStorage.getItem('myg_sheetList');
+ if(localListStr) {
+     try {
+         const list = JSON.parse(localListStr);
+         const match = list.find(x => x.sheetUrl === url);
+         if(match) {
+             document.getElementById('navContextTitle').innerText = "Manual Group: " + match.displayName;
+         }
+     } catch(e) {}
+ }
+ 
+ requestAccess(null, () => {
+     const mainEl = document.getElementById('protectedMainContent');
+     if(mainEl) mainEl.classList.remove('hidden');
+     openManualGrouping(url);
+ });
 });
 
 window.handleNavBack = function() {
-  navigateTo('./');
+ navigateTo('./');
 };
 </script>
 

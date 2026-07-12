@@ -2083,10 +2083,4 @@ copyBusColumnData(columnType);
 }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-if (document.getElementById('upcomingList') && window.location.pathname.includes('admin')) {
-requestAccess(null, () => {
-  loadSheets('comm');
-});
-}
-});
+// Removed the redundant DOMContentLoaded listener here

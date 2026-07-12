@@ -38,19 +38,19 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <div class="flex items-center justify-between w-full min-h-[32px] gap-2">
 <div class="flex items-center gap-1.5 min-w-0 flex-1">
 <button onclick="handleNavBack()" class="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 w-8 h-8 flex items-center justify-center rounded shadow-sm shrink-0 transition-colors">
-  <i class="fa-solid fa-arrow-left text-sm md:text-base"></i>
+ <i class="fa-solid fa-arrow-left text-sm md:text-base"></i>
 </button>
 <h1 id="navContextTitle" class="text-base md:text-lg font-extrabold text-gray-900 dark:text-white leading-tight truncate">Manual Pair: Loading...</h1>
 </div>
 <div class="flex items-center gap-1.5 shrink-0 pl-2 ml-auto border-l border-gray-200 dark:border-zinc-700">
 <button onclick="refreshApp()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors group flex items-center p-1">
-  <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm md:text-base group-hover:text-primary transition-transform"></i>
+ <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm md:text-base group-hover:text-primary transition-transform"></i>
 </button>
 <button onclick="toggleTheme()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors flex items-center p-1">
-  <span class="text-sm md:text-base leading-none">🌗</span>
+ <span class="text-sm md:text-base leading-none">🌗</span>
 </button>
 <button onclick="navigateTo('./')" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors flex items-center p-1">
-  <i class="fa-solid fa-house text-sm md:text-base"></i>
+ <i class="fa-solid fa-house text-sm md:text-base"></i>
 </button>
 </div>
 </div>
@@ -66,7 +66,7 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 </div>
 
 <!-- MAIN CONTENT -->
-<main class="container mx-auto p-1 mt-1 max-w-7xl transition-all">
+<main id="protectedMainContent" class="container mx-auto p-1 mt-1 max-w-7xl transition-all hidden">
 <div class="fade-in">
 <div class="flex flex-col h-[calc(100dvh-105px)] w-full relative bg-gray-50 dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden max-w-7xl mx-auto">
 <div class="px-2 md:px-4 py-2 border-b border-gray-200 dark:border-zinc-800 shrink-0 z-10 flex flex-col gap-2 bg-white dark:bg-zinc-900">
@@ -108,52 +108,55 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const params = new URLSearchParams(window.location.search);
-  const url = params.get('url');
-  const isFiltered = params.get('filtered') === 'true';
-  const source = params.get('source') || 'admin.html';
-  
-  if (!url) {
-      alert("No event selected.");
-      navigateTo('admin.html');
-      return;
-  }
-  
-  // Eager caching lookup for zero-latency titles
-  const localListStr = localStorage.getItem('myg_sheetList');
-  if(localListStr) {
-      try {
-          const list = JSON.parse(localListStr);
-          const match = list.find(x => x.sheetUrl === url);
-          if(match) {
-              document.getElementById('navContextTitle').innerText = (isFiltered ? "Filtered Pair: " : "Manual Pair: ") + match.displayName;
-          }
-      } catch(e) {}
-  }
-  
-  requestAccess(null, () => {
-      if(isFiltered) {
-          openFilteredManualPairing(url, source);
-      } else {
-          openManualPairing(url);
-      }
-  });
+ const params = new URLSearchParams(window.location.search);
+ const url = params.get('url');
+ const isFiltered = params.get('filtered') === 'true';
+ const source = params.get('source') || 'admin.html';
+ 
+ if (!url) {
+     alert("No event selected.");
+     navigateTo('admin.html');
+     return;
+ }
+ 
+ // Eager caching lookup for zero-latency titles
+ const localListStr = localStorage.getItem('myg_sheetList');
+ if(localListStr) {
+     try {
+         const list = JSON.parse(localListStr);
+         const match = list.find(x => x.sheetUrl === url);
+         if(match) {
+             document.getElementById('navContextTitle').innerText = (isFiltered ? "Filtered Pair: " : "Manual Pair: ") + match.displayName;
+         }
+     } catch(e) {}
+ }
+ 
+ requestAccess(null, () => {
+     const mainEl = document.getElementById('protectedMainContent');
+     if(mainEl) mainEl.classList.remove('hidden');
+
+     if(isFiltered) {
+         openFilteredManualPairing(url, source);
+     } else {
+         openManualPairing(url);
+     }
+ });
 });
 
 function toggleFilteredMode() {
-  const params = new URLSearchParams(window.location.search);
-  const url = params.get('url');
-  const currentlyFiltered = params.get('filtered') === 'true';
-  navigateTo('pairing.html', { url: url, filtered: !currentlyFiltered });
+ const params = new URLSearchParams(window.location.search);
+ const url = params.get('url');
+ const currentlyFiltered = params.get('filtered') === 'true';
+ navigateTo('pairing.html', { url: url, filtered: !currentlyFiltered });
 }
 
 window.handleNavBack = function() {
-  const source = new URLSearchParams(window.location.search).get('source');
-  if(source === 'tracker.html') {
-      navigateTo('tracker.html', { url: new URLSearchParams(window.location.search).get('url') });
-  } else {
-      navigateTo('admin.html');
-  }
+ const source = new URLSearchParams(window.location.search).get('source');
+ if(source === 'tracker.html') {
+     navigateTo('tracker.html', { url: new URLSearchParams(window.location.search).get('url') });
+ } else {
+     navigateTo('admin.html');
+ }
 };
 </script>
 
