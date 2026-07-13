@@ -37,19 +37,19 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <div class="flex items-center justify-between w-full min-h-[32px] gap-2">
 <div class="flex items-center gap-1.5 min-w-0 flex-1">
 <button onclick="handleNavBack()" class="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 w-8 h-8 flex items-center justify-center rounded shadow-sm shrink-0 transition-colors">
-  <i class="fa-solid fa-arrow-left text-sm md:text-base"></i>
+ <i class="fa-solid fa-arrow-left text-sm md:text-base"></i>
 </button>
 <h1 id="navContextTitle" class="text-base md:text-lg font-extrabold text-gray-900 dark:text-white leading-tight truncate">Live Tracker</h1>
 </div>
 <div class="flex items-center gap-1.5 shrink-0 pl-2 ml-auto border-l border-gray-200 dark:border-zinc-700">
 <button onclick="refreshApp()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors group flex items-center p-1">
-  <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm md:text-base group-hover:text-primary transition-transform"></i>
+ <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm md:text-base group-hover:text-primary transition-transform"></i>
 </button>
 <button onclick="toggleTheme()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors flex items-center p-1">
-  <span class="text-sm md:text-base leading-none">🌗</span>
+ <span class="text-sm md:text-base leading-none">🌗</span>
 </button>
 <button onclick="navigateTo('./')" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors flex items-center p-1">
-  <i class="fa-solid fa-house text-sm md:text-base"></i>
+ <i class="fa-solid fa-house text-sm md:text-base"></i>
 </button>
 </div>
 </div>
@@ -68,20 +68,8 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <!-- MAIN CONTENT -->
 <main class="container mx-auto p-1 mt-1 max-w-7xl transition-all">
 
-<!-- SELECTOR VIEW (If no URL provided) -->
-<div id="view-actual-attendance" class="fade-in">
-<div class="max-w-2xl mx-auto bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xl mt-2">
-<h3 class="font-bold text-gray-900 dark:text-white mb-2 text-lg"><i class="fa-solid fa-list-check text-teal-500 mr-2"></i>Select Event</h3>
-<div class="relative mb-4">
-<label class="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold mb-1 block flex items-center gap-1">Select Event <span id="actualSheetSpinner" class="hidden"><i class="fa-solid fa-circle-notch fa-spin text-teal-500"></i></span></label>
-<select id="actualSheetSelector" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-3 px-3 text-sm focus:border-teal-500 outline-none text-gray-900 dark:text-white"><option disabled selected>Loading...</option></select>
-</div>
-<button onclick="launchLiveTracker()" class="w-full mt-2 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-sm md:text-base">Launch Live Tracker</button>
-</div>
-</div>
-
 <!-- TRACKER VIEW -->
-<div id="view-comm-attendance" class="hidden fade-in">
+<div id="view-comm-attendance" class="fade-in">
 <div class="flex flex-col h-[calc(100dvh-105px)] w-full relative bg-gray-50 dark:bg-black border border-gray-200 dark:border-zinc-800 rounded-xl shadow-xl overflow-hidden max-w-7xl mx-auto">
 <div class="px-2 md:px-3 py-1.5 border-b border-gray-200 dark:border-zinc-800 shrink-0 z-10 flex flex-col gap-1.5 bg-white dark:bg-zinc-900">
 
@@ -165,56 +153,41 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const params = new URLSearchParams(window.location.search);
-  const url = params.get('url');
-  
-  if (!url) {
-      document.getElementById('view-actual-attendance').classList.remove('hidden');
-      document.getElementById('view-comm-attendance').classList.add('hidden');
-      loadSheets('actual-attendance');
-  } else {
-      document.getElementById('view-actual-attendance').classList.add('hidden');
-      document.getElementById('view-comm-attendance').classList.remove('hidden');
-      
-      const localListStr = localStorage.getItem('myg_sheetList');
-      if(localListStr) {
-          try {
-              const list = JSON.parse(localListStr);
-              const match = list.find(x => x.sheetUrl === url);
-              if(match) {
-                  document.getElementById('navContextTitle').innerText = "Live: " + match.displayName;
-              }
-          } catch(e) {}
-      }
-      
-      currentCommAttSheetUrl = url;
-      document.getElementById('navContextActionsCommAtt').classList.remove('hidden');
-      document.getElementById('navContextActionsCommAtt').classList.add('flex');
-      document.getElementById('navActionsRow').classList.remove('hidden');
-      document.getElementById('navActionsRow').classList.add('flex');
-      loadCommAttendanceData();
-  }
+ const params = new URLSearchParams(window.location.search);
+ const url = params.get('url');
+ 
+ if (!url) {
+     alert("No event selected. Please select an event from the home page.");
+     navigateTo('./');
+     return;
+ }
+ 
+ const localListStr = localStorage.getItem('myg_sheetList');
+ if(localListStr) {
+     try {
+         const list = JSON.parse(localListStr);
+         const match = list.find(x => x.sheetUrl === url);
+         if(match) {
+             document.getElementById('navContextTitle').innerText = "Live: " + match.displayName;
+         }
+     } catch(e) {}
+ }
+ 
+ currentCommAttSheetUrl = url;
+ document.getElementById('navContextActionsCommAtt').classList.remove('hidden');
+ document.getElementById('navContextActionsCommAtt').classList.add('flex');
+ document.getElementById('navActionsRow').classList.remove('hidden');
+ document.getElementById('navActionsRow').classList.add('flex');
+ loadCommAttendanceData();
 });
 
-function launchLiveTracker() {
-  const selector = document.getElementById('actualSheetSelector');
-  const url = selector.value;
-  if(!url || url.includes("Select") || url.includes("Loading") || url.includes("Error")) return alert("Select an event first");
-  navigateTo('tracker.html', { url: url });
-}
-
 function openFilteredPairingFromTracker() {
-  if (!currentCommAttSheetUrl) return;
-  navigateTo('pairing.html', { url: currentCommAttSheetUrl, filtered: true, source: 'tracker.html' });
+ if (!currentCommAttSheetUrl) return;
+ navigateTo('pairing.html', { url: currentCommAttSheetUrl, filtered: true, source: 'tracker.html' });
 }
 
 window.handleNavBack = function() {
-  const url = new URLSearchParams(window.location.search).get('url');
-  if(url && (currentSheetList && currentSheetList.length > 1)) {
-      navigateTo('tracker.html');
-  } else {
-      navigateTo('./');
-  }
+ navigateTo('./');
 };
 </script>
 
@@ -229,56 +202,56 @@ window.handleNavBack = function() {
 <div class="p-2 md:p-3 border-b border-gray-200 dark:border-zinc-800 shrink-0 flex flex-col gap-2">
 <div id="busGlobalStatus" class="hidden p-2 rounded text-[10px] md:text-xs font-bold text-center mb-1"></div>
 <div class="flex gap-2 w-full items-center">
-   <select id="busJunctureSelect" onchange="changeBusContext()" class="flex-1 px-2 py-2 border border-gray-300 dark:border-zinc-700 rounded font-bold text-sm bg-gray-50 dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500 shadow-sm"></select>
-   <button onclick="promptNewBusJuncture()" class="h-9 w-9 shrink-0 flex items-center justify-center bg-gray-100 dark:bg-zinc-800 text-yellow-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded shadow-sm border border-gray-300 dark:border-zinc-700 transition" title="Add Bus Juncture"><i class="fa-solid fa-plus text-sm"></i></button>
-   <button onclick="promptDeleteBusJuncture()" class="h-9 w-9 shrink-0 flex items-center justify-center bg-gray-100 dark:bg-zinc-800 text-red-600 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded shadow-sm border border-gray-300 dark:border-zinc-700 transition" title="Delete Bus Juncture"><i class="fa-solid fa-trash text-sm"></i></button>
+  <select id="busJunctureSelect" onchange="changeBusContext()" class="flex-1 px-2 py-2 border border-gray-300 dark:border-zinc-700 rounded font-bold text-sm bg-gray-50 dark:bg-black text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-yellow-500 shadow-sm"></select>
+  <button onclick="promptNewBusJuncture()" class="h-9 w-9 shrink-0 flex items-center justify-center bg-gray-100 dark:bg-zinc-800 text-yellow-600 dark:text-yellow-400 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded shadow-sm border border-gray-300 dark:border-zinc-700 transition" title="Add Bus Juncture"><i class="fa-solid fa-plus text-sm"></i></button>
+  <button onclick="promptDeleteBusJuncture()" class="h-9 w-9 shrink-0 flex items-center justify-center bg-gray-100 dark:bg-zinc-800 text-red-600 dark:text-red-400 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded shadow-sm border border-gray-300 dark:border-zinc-700 transition" title="Delete Bus Juncture"><i class="fa-solid fa-trash text-sm"></i></button>
 </div>
 
 <div class="relative">
-   <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-   <input type="text" id="busSearchInput" oninput="handleBusSearch(); toggleClearBtn('busSearchInput')" placeholder="Search trainee to assign bus..." class="w-full py-2.5 pl-9 pr-9 border border-gray-300 dark:border-zinc-700 rounded bg-gray-50 dark:bg-black font-bold text-sm focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 text-gray-900 dark:text-white shadow-sm transition">
-   <button type="button" id="clearBtn-busSearchInput" onclick="clearSearchInput('busSearchInput', 'handleBusSearch')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hidden transition-colors z-10"><i class="fa-solid fa-xmark text-sm"></i></button>
-   <ul id="busSearchResults" class="absolute z-20 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded shadow-2xl mt-1 max-h-[40vh] overflow-y-auto hidden custom-scrollbar pb-6"></ul>
+  <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+  <input type="text" id="busSearchInput" oninput="handleBusSearch(); toggleClearBtn('busSearchInput')" placeholder="Search trainee to assign bus..." class="w-full py-2.5 pl-9 pr-9 border border-gray-300 dark:border-zinc-700 rounded bg-gray-50 dark:bg-black font-bold text-sm focus:outline-none focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 text-gray-900 dark:text-white shadow-sm transition">
+  <button type="button" id="clearBtn-busSearchInput" onclick="clearSearchInput('busSearchInput', 'handleBusSearch')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hidden transition-colors z-10"><i class="fa-solid fa-xmark text-sm"></i></button>
+  <ul id="busSearchResults" class="absolute z-20 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded shadow-2xl mt-1 max-h-[40vh] overflow-y-auto hidden custom-scrollbar pb-6"></ul>
 </div>
 </div>
 
 <div class="flex flex-row flex-1 min-h-0 w-full overflow-hidden relative">
 <div id="busLoadingOverlay" class="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm z-10 hidden flex flex-col justify-center items-center">
-  <i class="fa-solid fa-circle-notch fa-spin text-yellow-500 text-3xl mb-2"></i>
-  <span class="text-yellow-600 font-bold text-sm mt-2">Loading...</span>
+ <i class="fa-solid fa-circle-notch fa-spin text-yellow-500 text-3xl mb-2"></i>
+ <span class="text-yellow-600 font-bold text-sm mt-2">Loading...</span>
 </div>
 
 <div class="flex-1 flex flex-col border-r border-gray-200 dark:border-zinc-800 bg-red-50/50 dark:bg-red-900/10 min-w-0">
-   <div class="bg-red-100 dark:bg-red-900/50 border-b border-red-200 dark:border-red-800 p-2 md:px-3 shrink-0 flex flex-col justify-start min-h-[64px]">
-       <div class="flex justify-between items-center w-full mt-0.5">
-           <h4 class="font-black text-[10px] md:text-xs uppercase tracking-wide text-red-800 dark:text-red-300 truncate">Not Boarded (<span id="busNotBoardedCount">0</span>)</h4>
-           <div class="flex gap-2 items-center shrink-0">
-               <button onclick="copyBusColumnData('notBoarded')" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors py-0" title="Copy List"><i class="fa-regular fa-copy text-xs"></i></button>
-               <button onclick="shareBusColumnData('notBoarded')" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors py-0" title="Share List"><i class="fa-solid fa-share-nodes text-xs"></i></button>
-           </div>
-       </div>
-   </div>
-   <div id="busNotBoardedList" class="flex-grow overflow-y-auto p-2 custom-scrollbar pb-32 space-y-2"></div>
+  <div class="bg-red-100 dark:bg-red-900/50 border-b border-red-200 dark:border-red-800 p-2 md:px-3 shrink-0 flex flex-col justify-start min-h-[64px]">
+      <div class="flex justify-between items-center w-full mt-0.5">
+          <h4 class="font-black text-[10px] md:text-xs uppercase tracking-wide text-red-800 dark:text-red-300 truncate">Not Boarded (<span id="busNotBoardedCount">0</span>)</h4>
+          <div class="flex gap-2 items-center shrink-0">
+              <button onclick="copyBusColumnData('notBoarded')" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors py-0" title="Copy List"><i class="fa-regular fa-copy text-xs"></i></button>
+              <button onclick="shareBusColumnData('notBoarded')" class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors py-0" title="Share List"><i class="fa-solid fa-share-nodes text-xs"></i></button>
+          </div>
+      </div>
+  </div>
+  <div id="busNotBoardedList" class="flex-grow overflow-y-auto p-2 custom-scrollbar pb-32 space-y-2"></div>
 </div>
 
 <div class="flex-1 flex flex-col bg-green-50/50 dark:bg-green-900/10 min-w-0">
-   <div class="bg-green-100 dark:bg-green-900/50 border-b border-green-200 dark:border-green-800 p-2 shrink-0 flex flex-col justify-start gap-1.5 min-h-[64px]">
-       <div class="flex justify-between items-center w-full mt-0.5">
-           <h4 class="font-black text-[10px] md:text-xs uppercase tracking-wide text-green-800 dark:text-green-300 shrink-0 truncate">Boarded (<span id="busBoardedCount">0</span>)</h4>
-           <div class="flex items-center gap-2 shrink-0">
-               <button onclick="copyBusColumnData('boarded')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors py-0" title="Copy List"><i class="fa-regular fa-copy text-xs"></i></button>
-               <button onclick="shareBusColumnData('boarded')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors py-0" title="Share List"><i class="fa-solid fa-share-nodes text-xs"></i></button>
-           </div>
-       </div>
-       <div class="flex items-center gap-1 w-full justify-between">
-           <select id="busFilterSelect" onchange="renderBusLists()" class="flex-1 text-xs font-bold py-1 px-1.5 rounded border border-green-300 dark:border-green-700 bg-white dark:bg-black text-green-900 dark:text-green-100 min-w-0 focus:outline-none transition-all duration-300"></select>
-           <div class="flex items-center gap-1 shrink-0">
-               <button onclick="addBusOption()" class="h-6 w-6 shrink-0 flex items-center justify-center bg-white dark:bg-black text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700 rounded shadow-sm hover:bg-green-50 dark:hover:bg-green-900/30 transition" title="Add Bus"><i class="fa-solid fa-plus text-[10px]"></i></button>
-               <button onclick="removeBusOption()" class="h-6 w-6 shrink-0 flex items-center justify-center bg-white dark:bg-black text-red-600 dark:text-red-400 border border-green-300 dark:border-green-700 rounded shadow-sm hover:bg-red-50 dark:hover:bg-red-900/10 transition" title="Remove Selected Bus"><i class="fa-solid fa-trash text-[10px]"></i></button>
-           </div>
-       </div>
-   </div>
-   <div id="busBoardedList" class="flex-grow overflow-y-auto p-2 custom-scrollbar pb-32 space-y-2"></div>
+  <div class="bg-green-100 dark:bg-green-900/50 border-b border-green-200 dark:border-green-800 p-2 shrink-0 flex flex-col justify-start gap-1.5 min-h-[64px]">
+      <div class="flex justify-between items-center w-full mt-0.5">
+          <h4 class="font-black text-[10px] md:text-xs uppercase tracking-wide text-green-800 dark:text-green-300 shrink-0 truncate">Boarded (<span id="busBoardedCount">0</span>)</h4>
+          <div class="flex items-center gap-2 shrink-0">
+              <button onclick="copyBusColumnData('boarded')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors py-0" title="Copy List"><i class="fa-regular fa-copy text-xs"></i></button>
+              <button onclick="shareBusColumnData('boarded')" class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 transition-colors py-0" title="Share List"><i class="fa-solid fa-share-nodes text-xs"></i></button>
+          </div>
+      </div>
+      <div class="flex items-center gap-1 w-full justify-between">
+          <select id="busFilterSelect" onchange="renderBusLists()" class="flex-1 text-xs font-bold py-1 px-1.5 rounded border border-green-300 dark:border-green-700 bg-white dark:bg-black text-green-900 dark:text-green-100 min-w-0 focus:outline-none transition-all duration-300"></select>
+          <div class="flex items-center gap-1 shrink-0">
+              <button onclick="addBusOption()" class="h-6 w-6 shrink-0 flex items-center justify-center bg-white dark:bg-black text-green-700 dark:text-green-400 border border-green-300 dark:border-green-700 rounded shadow-sm hover:bg-green-50 dark:hover:bg-green-900/30 transition" title="Add Bus"><i class="fa-solid fa-plus text-[10px]"></i></button>
+              <button onclick="removeBusOption()" class="h-6 w-6 shrink-0 flex items-center justify-center bg-white dark:bg-black text-red-600 dark:text-red-400 border border-green-300 dark:border-green-700 rounded shadow-sm hover:bg-red-50 dark:hover:bg-red-900/10 transition" title="Remove Selected Bus"><i class="fa-solid fa-trash text-[10px]"></i></button>
+          </div>
+      </div>
+  </div>
+  <div id="busBoardedList" class="flex-grow overflow-y-auto p-2 custom-scrollbar pb-32 space-y-2"></div>
 </div>
 </div>
 </div>
