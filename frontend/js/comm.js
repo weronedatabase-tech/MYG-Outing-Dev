@@ -47,9 +47,24 @@ if (!commAttData.attendance['Meeting']) commAttData.attendance['Meeting'] = {};
 if (!commAttData.attendance['__GONE_HOME__']) commAttData.attendance['__GONE_HOME__'] = {};
 
 // Ensure bus attendance structures exist for tracked bus junctures
+// and safely migrate any legacy exact-name matches to composite keys
 commAttData.busJunctures.forEach(bj => {
-if (!commAttData.busAttendance[bj.name]) {
-commAttData.busAttendance[bj.name] = {};
+let prefix = bj.type === 'meet' ? 'Meeting: ' : 'Dismissal: ';
+let compositeName = prefix + bj.name;
+
+if (commAttData.busAttendance[bj.name] && !commAttData.busAttendance[compositeName]) {
+    commAttData.busAttendance[compositeName] = Object.assign({}, commAttData.busAttendance[bj.name]);
+}
+
+if (!commAttData.busAttendance[compositeName]) {
+    commAttData.busAttendance[compositeName] = {};
+}
+});
+
+// Remove the legacy keys to prevent duplicate entries in the UI dropdown
+commAttData.busJunctures.forEach(bj => {
+if (commAttData.busAttendance[bj.name]) {
+    delete commAttData.busAttendance[bj.name];
 }
 });
 }
@@ -77,17 +92,17 @@ if (selector) {
 selector.innerHTML = '';
 selector.disabled = false;
 data.forEach(item => {
-  let opt = document.createElement('option');
-  opt.value = item.sheetUrl;
-  opt.text = item.displayName;
-  selector.appendChild(opt);
+ let opt = document.createElement('option');
+ opt.value = item.sheetUrl;
+ opt.text = item.displayName;
+ selector.appendChild(opt);
 });
 
 const closest = window.getClosestEventUrl ? window.getClosestEventUrl(data) : data[0].sheetUrl;
 if (closest) {
-  selector.value = closest;
+ selector.value = closest;
 } else {
-  selector.selectedIndex = 0;
+ selector.selectedIndex = 0;
 }
 }
 
@@ -109,18 +124,18 @@ if (!forceRefresh && localDataStr) {
 try {
 const parsed = JSON.parse(localDataStr);
 if (parsed && parsed.length > 0) {
-  renderData(parsed);
-  
-  // Silent background update to re-verify
-  if(spinner) spinner.classList.remove('hidden');
-  apiCall('getRecentOutingSheets', null).then(res => {
-      if(spinner) spinner.classList.add('hidden');
-      if (res.success && JSON.stringify(res.data) !== localDataStr) {
-          localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
-          renderData(res.data);
-      }
-  });
-  return;
+ renderData(parsed);
+ 
+ // Silent background update to re-verify
+ if(spinner) spinner.classList.remove('hidden');
+ apiCall('getRecentOutingSheets', null).then(res => {
+     if(spinner) spinner.classList.add('hidden');
+     if (res.success && JSON.stringify(res.data) !== localDataStr) {
+         localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
+         renderData(res.data);
+     }
+ });
+ return;
 }
 } catch(e) {}
 }
@@ -152,14 +167,14 @@ for(let i=0; i<3; i++) {
 skeletonHtml += `
 <div class="animate-pulse flex flex-col gap-3 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
 <div class="flex justify-between items-start">
-  <div class="space-y-2 w-1/2">
-      <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
-      <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
-  </div>
-  <div class="flex gap-2">
-      <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-      <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-  </div>
+ <div class="space-y-2 w-1/2">
+     <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
+     <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
+ </div>
+ <div class="flex gap-2">
+     <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+     <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+ </div>
 </div>
 <div class="h-12 bg-gray-50 dark:bg-zinc-800/50 rounded w-full mt-1"></div>
 </div>`;
@@ -173,23 +188,23 @@ if(spinner) spinner.classList.add('hidden');
 if (res.success) {
 localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
 if(res.data.length > 0) {
-  renderData(res.data);
+ renderData(res.data);
 } else {
-  if (selector) {
-      selector.disabled = false;
-      selector.innerHTML = '<option disabled selected>No upcoming events</option>';
-  }
-  if(viewId === 'comm' && listContainer) {
-      listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
-  }
+ if (selector) {
+     selector.disabled = false;
+     selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+ }
+ if(viewId === 'comm' && listContainer) {
+     listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
+ }
 }
 } else {
 if (selector) {
-  selector.disabled = false;
-  selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
+ selector.disabled = false;
+ selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
 }
 if(viewId === 'comm' && listContainer) {
-  listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
+ listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
 }
 }
 });
@@ -260,8 +275,8 @@ if (batch.length === 0 || currentIndex >= MAX_STATS_TO_FETCH) {
 for (let i = currentIndex; i < data.length; i++) {
 const container = document.getElementById(`stats-${i}`);
 if (container) {
-   container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-   container.classList.remove('animate-pulse');
+  container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+  container.classList.remove('animate-pulse');
 }
 }
 return;
@@ -276,11 +291,11 @@ if (currentIndex < Math.min(data.length, MAX_STATS_TO_FETCH)) {
 setTimeout(fetchBatchStats, 1500); 
 } else {
 for (let i = currentIndex; i < data.length; i++) {
-   const container = document.getElementById(`stats-${i}`);
-   if (container) {
-       container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-       container.classList.remove('animate-pulse');
-   }
+  const container = document.getElementById(`stats-${i}`);
+  if (container) {
+      container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+      container.classList.remove('animate-pulse');
+  }
 }
 }
 });
@@ -799,11 +814,11 @@ participants = participants.filter(p => commAttState.selectedDismissals.includes
 if (commAttState.searchQuery) {
 const query = commAttState.searchQuery;
 participants = participants.filter(p => 
-    p.name.toLowerCase().includes(query) || 
-    (p.group && String(p.group).toLowerCase().includes(query)) ||
-    (p.volPaired && p.volPaired.toLowerCase().includes(query)) ||
-    (p.meetingLoc && p.meetingLoc.toLowerCase().includes(query)) ||
-    (p.dismissalLoc && p.dismissalLoc.toLowerCase().includes(query))
+   p.name.toLowerCase().includes(query) || 
+   (p.group && String(p.group).toLowerCase().includes(query)) ||
+   (p.volPaired && p.volPaired.toLowerCase().includes(query)) ||
+   (p.meetingLoc && p.meetingLoc.toLowerCase().includes(query)) ||
+   (p.dismissalLoc && p.dismissalLoc.toLowerCase().includes(query))
 );
 }
 
@@ -842,13 +857,13 @@ uiBindLongPress(el, () => {
 const name = el.getAttribute('data-name');
 const p = (commAttData.participants || []).find(x => x.name.replace(/'/g, "\\'") === name);
 if (p) {
-    if (commAttState.searchQuery) {
-        commAttState.searchQuery = "";
-        document.getElementById('commAttSearchInput').value = "";
-        if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
-        renderCommAttLists();
-    }
-    showPersonInfo(p);
+   if (commAttState.searchQuery) {
+       commAttState.searchQuery = "";
+       document.getElementById('commAttSearchInput').value = "";
+       if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
+       renderCommAttLists();
+   }
+   showPersonInfo(p);
 }
 });
 });
@@ -1001,7 +1016,7 @@ rebindCommAttCard(cardId, p);
 
 scrollCardIntoViewLocally(newNode);
 setTimeout(() => {
-    applyCardPulse(newNode, pulseClass);
+   applyCardPulse(newNode, pulseClass);
 }, 400); // Trigger pulse exactly when smooth scroll lands
 }, 300);
 }
@@ -1019,13 +1034,13 @@ if (card) {
 uiBindLongPress(card, () => {
 const pObj = (commAttData.participants || []).find(x => x.name === p.name);
 if (pObj) {
-    if (commAttState.searchQuery) {
-        commAttState.searchQuery = "";
-        document.getElementById('commAttSearchInput').value = "";
-        if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
-        renderCommAttLists();
-    }
-    showPersonInfo(pObj);
+   if (commAttState.searchQuery) {
+       commAttState.searchQuery = "";
+       document.getElementById('commAttSearchInput').value = "";
+       if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
+       renderCommAttLists();
+   }
+   showPersonInfo(pObj);
 }
 });
 }
@@ -1119,13 +1134,13 @@ document.getElementById('commAttSearchInput').value = "";
 if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
 renderCommAttLists();
 setTimeout(() => {
-    const cardNode = document.getElementById(`comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
-    if (cardNode) {
-        scrollCardIntoViewLocally(cardNode);
-        const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][name] === true;
-        const pulseClass = isGoneHome ? 'pulse-blue' : (forceState ? 'pulse-green' : 'pulse-red');
-        setTimeout(() => applyCardPulse(cardNode, pulseClass), 400);
-    }
+   const cardNode = document.getElementById(`comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
+   if (cardNode) {
+       scrollCardIntoViewLocally(cardNode);
+       const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][name] === true;
+       const pulseClass = isGoneHome ? 'pulse-blue' : (forceState ? 'pulse-green' : 'pulse-red');
+       setTimeout(() => applyCardPulse(cardNode, pulseClass), 400);
+   }
 }, 50);
 } else {
 updateCommAttCardDOM(name);
@@ -1150,13 +1165,13 @@ document.getElementById('commAttSearchInput').value = "";
 if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
 renderCommAttLists();
 setTimeout(() => {
-    const cardNode = document.getElementById(`comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
-    if (cardNode) {
-        scrollCardIntoViewLocally(cardNode);
-        const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][name] === true : false;
-        const pulseClass = forceState ? 'pulse-blue' : (isChecked ? 'pulse-green' : 'pulse-red');
-        setTimeout(() => applyCardPulse(cardNode, pulseClass), 400);
-    }
+   const cardNode = document.getElementById(`comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
+   if (cardNode) {
+       scrollCardIntoViewLocally(cardNode);
+       const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][name] === true : false;
+       const pulseClass = forceState ? 'pulse-blue' : (isChecked ? 'pulse-green' : 'pulse-red');
+       setTimeout(() => applyCardPulse(cardNode, pulseClass), 400);
+   }
 }, 50);
 } else {
 updateCommAttCardDOM(name);
@@ -1473,10 +1488,11 @@ const addedValues = new Set();
 
 if (commAttData.busJunctures) {
 commAttData.busJunctures.forEach(b => {
-if (!addedValues.has(b.name)) {
 let prefix = b.type === 'meet' ? 'Meeting: ' : 'Dismissal: ';
-juncs.push({ value: b.name, label: prefix + b.name });
-addedValues.add(b.name);
+let compositeName = prefix + b.name;
+if (!addedValues.has(compositeName)) {
+juncs.push({ value: compositeName, label: compositeName });
+addedValues.add(compositeName);
 }
 });
 }
@@ -1577,12 +1593,12 @@ const juncKey = '__BUS__' + juncture;
 if (commAttData.busAttendance[juncture]) {
 for (let name in commAttData.busAttendance[juncture]) {
 if (commAttData.busAttendance[juncture][name] === filterBus) {
-  commAttData.busAttendance[juncture][name] = ""; 
-  
-  if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
-  pendingCommAttUpdates[juncKey][name] = "";
-  
-  hasChanges = true;
+ commAttData.busAttendance[juncture][name] = ""; 
+ 
+ if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
+ pendingCommAttUpdates[juncKey][name] = "";
+ 
+ hasChanges = true;
 }
 }
 }
@@ -1602,20 +1618,35 @@ function getEligibleBusTrainees() {
 const juncture = busState.currentJuncture;
 if(!juncture) return [];
 
-const defaultJunc = (commAttData.busJunctures || []).find(b => b.name === juncture);
 let participants = commAttData.participants || [];
 
 participants = participants.filter(p => !(commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true));
 
+let matchMeet = false;
+let matchDismiss = false;
+let rawLocName = juncture;
+
+if (juncture.startsWith('Meeting: ')) {
+matchMeet = true;
+rawLocName = juncture.substring(9);
+} else if (juncture.startsWith('Dismissal: ')) {
+matchDismiss = true;
+rawLocName = juncture.substring(11);
+} else {
+const defaultJunc = (commAttData.busJunctures || []).find(b => b.name === juncture);
 if (defaultJunc) {
-if (defaultJunc.type === 'meet') {
-return participants.filter(p => String(p.meetingLoc).toLowerCase() === juncture.toLowerCase());
-} else {
-return participants.filter(p => String(p.dismissalLoc).toLowerCase() === juncture.toLowerCase());
+if (defaultJunc.type === 'meet') matchMeet = true;
+else matchDismiss = true;
 }
-} else {
+}
+
+if (matchMeet) {
+return participants.filter(p => String(p.meetingLoc).toLowerCase() === rawLocName.toLowerCase());
+} else if (matchDismiss) {
+return participants.filter(p => String(p.dismissalLoc).toLowerCase() === rawLocName.toLowerCase());
+}
+
 return participants;
-}
 }
 
 function renderBusLists() {
@@ -1648,8 +1679,8 @@ let eligibleTrainees = getEligibleBusTrainees();
 if (busState.searchQuery) {
 const query = busState.searchQuery;
 eligibleTrainees = eligibleTrainees.filter(p => 
-    p.name.toLowerCase().includes(query) || 
-    (p.volPaired && p.volPaired.toLowerCase().includes(query))
+   p.name.toLowerCase().includes(query) || 
+   (p.volPaired && p.volPaired.toLowerCase().includes(query))
 );
 }
 
@@ -1683,13 +1714,13 @@ uiBindLongPress(el, () => {
 const name = el.getAttribute('data-name');
 const p = (commAttData.participants || []).find(x => x.name.replace(/'/g, "\\'") === name);
 if (p) {
-    if (busState.searchQuery) {
-        busState.searchQuery = "";
-        document.getElementById('busSearchInput').value = "";
-        if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
-        renderBusLists();
-    }
-    showPersonInfo(p);
+   if (busState.searchQuery) {
+       busState.searchQuery = "";
+       document.getElementById('busSearchInput').value = "";
+       if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
+       renderBusLists();
+   }
+   showPersonInfo(p);
 }
 });
 });
@@ -1792,7 +1823,7 @@ rebindCommAttCard(cardId, p);
 
 scrollCardIntoViewLocally(newNode);
 setTimeout(() => {
-    applyCardPulse(newNode, isBoarded ? 'pulse-green' : 'pulse-red');
+   applyCardPulse(newNode, isBoarded ? 'pulse-green' : 'pulse-red');
 }, 400);
 }, 300);
 }
@@ -1846,8 +1877,8 @@ if (filterBus === 'ALL') {
 showFlashMessage('busGlobalStatus', 'Please select a specific bus first.', 'error');
 const selectEl = document.getElementById('busFilterSelect');
 if (selectEl) {
-  selectEl.classList.add('pulse-red');
-  setTimeout(() => selectEl.classList.remove('pulse-red'), 800);
+ selectEl.classList.add('pulse-red');
+ setTimeout(() => selectEl.classList.remove('pulse-red'), 800);
 }
 return;
 }
@@ -1868,13 +1899,13 @@ document.getElementById('busSearchInput').value = "";
 if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
 renderBusLists();
 setTimeout(() => {
-    const cardNode = document.getElementById(`bus-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
-    if (cardNode) {
-        scrollCardIntoViewLocally(cardNode);
-        setTimeout(() => {
-            applyCardPulse(cardNode, forceBoarded ? 'pulse-green' : 'pulse-red');
-        }, 400);
-    }
+   const cardNode = document.getElementById(`bus-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
+   if (cardNode) {
+       scrollCardIntoViewLocally(cardNode);
+       setTimeout(() => {
+           applyCardPulse(cardNode, forceBoarded ? 'pulse-green' : 'pulse-red');
+       }, 400);
+   }
 }, 50);
 } else {
 updateBusCardDOM(name);
@@ -1951,11 +1982,11 @@ eligibleTrainees.forEach(p => {
 const currentBus = commAttData.busAttendance[juncture] ? commAttData.busAttendance[juncture][p.name] : "";
 if (columnType === 'boarded') {
 if (currentBus && (filterBus === 'ALL' || filterBus === currentBus)) {
-  targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
+ targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
 }
 } else if (columnType === 'notBoarded') {
 if (!currentBus) {
-  targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
+ targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
 }
 }
 });
