@@ -4,13 +4,15 @@ let commAttState = {
 currentJuncture: null,
 selectedGroups: [],
 selectedMeets: [],
-selectedDismissals: []
+selectedDismissals: [],
+searchQuery: ""
 }; 
 
 // BUS STATE
 let busState = {
 currentJuncture: null,
-busOptions: ['Bus 1'] // Default to one bus
+busOptions: ['Bus 1'], // Default to one bus
+searchQuery: ""
 };
 
 let pendingCommAttUpdates = {};
@@ -75,17 +77,17 @@ if (selector) {
 selector.innerHTML = '';
 selector.disabled = false;
 data.forEach(item => {
-   let opt = document.createElement('option');
-   opt.value = item.sheetUrl;
-   opt.text = item.displayName;
-   selector.appendChild(opt);
+  let opt = document.createElement('option');
+  opt.value = item.sheetUrl;
+  opt.text = item.displayName;
+  selector.appendChild(opt);
 });
 
 const closest = window.getClosestEventUrl ? window.getClosestEventUrl(data) : data[0].sheetUrl;
 if (closest) {
-   selector.value = closest;
+  selector.value = closest;
 } else {
-   selector.selectedIndex = 0;
+  selector.selectedIndex = 0;
 }
 }
 
@@ -107,18 +109,18 @@ if (!forceRefresh && localDataStr) {
 try {
 const parsed = JSON.parse(localDataStr);
 if (parsed && parsed.length > 0) {
-   renderData(parsed);
-   
-   // Silent background update to re-verify
-   if(spinner) spinner.classList.remove('hidden');
-   apiCall('getRecentOutingSheets', null).then(res => {
-       if(spinner) spinner.classList.add('hidden');
-       if (res.success && JSON.stringify(res.data) !== localDataStr) {
-           localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
-           renderData(res.data);
-       }
-   });
-   return;
+  renderData(parsed);
+  
+  // Silent background update to re-verify
+  if(spinner) spinner.classList.remove('hidden');
+  apiCall('getRecentOutingSheets', null).then(res => {
+      if(spinner) spinner.classList.add('hidden');
+      if (res.success && JSON.stringify(res.data) !== localDataStr) {
+          localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
+          renderData(res.data);
+      }
+  });
+  return;
 }
 } catch(e) {}
 }
@@ -150,14 +152,14 @@ for(let i=0; i<3; i++) {
 skeletonHtml += `
 <div class="animate-pulse flex flex-col gap-3 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
 <div class="flex justify-between items-start">
-   <div class="space-y-2 w-1/2">
-       <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
-       <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
-   </div>
-   <div class="flex gap-2">
-       <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-       <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-   </div>
+  <div class="space-y-2 w-1/2">
+      <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
+      <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
+  </div>
+  <div class="flex gap-2">
+      <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+      <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+  </div>
 </div>
 <div class="h-12 bg-gray-50 dark:bg-zinc-800/50 rounded w-full mt-1"></div>
 </div>`;
@@ -171,23 +173,23 @@ if(spinner) spinner.classList.add('hidden');
 if (res.success) {
 localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
 if(res.data.length > 0) {
-   renderData(res.data);
+  renderData(res.data);
 } else {
-   if (selector) {
-       selector.disabled = false;
-       selector.innerHTML = '<option disabled selected>No upcoming events</option>';
-   }
-   if(viewId === 'comm' && listContainer) {
-       listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
-   }
+  if (selector) {
+      selector.disabled = false;
+      selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+  }
+  if(viewId === 'comm' && listContainer) {
+      listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
+  }
 }
 } else {
 if (selector) {
-   selector.disabled = false;
-   selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
+  selector.disabled = false;
+  selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
 }
 if(viewId === 'comm' && listContainer) {
-   listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
+  listContainer.innerHTML = `<p class="text-xs text-red-500 italic font-bold">Failed to load events: ${res.message}</p>`;
 }
 }
 });
@@ -258,8 +260,8 @@ if (batch.length === 0 || currentIndex >= MAX_STATS_TO_FETCH) {
 for (let i = currentIndex; i < data.length; i++) {
 const container = document.getElementById(`stats-${i}`);
 if (container) {
-    container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-    container.classList.remove('animate-pulse');
+   container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+   container.classList.remove('animate-pulse');
 }
 }
 return;
@@ -274,11 +276,11 @@ if (currentIndex < Math.min(data.length, MAX_STATS_TO_FETCH)) {
 setTimeout(fetchBatchStats, 1500); 
 } else {
 for (let i = currentIndex; i < data.length; i++) {
-    const container = document.getElementById(`stats-${i}`);
-    if (container) {
-        container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-        container.classList.remove('animate-pulse');
-    }
+   const container = document.getElementById(`stats-${i}`);
+   if (container) {
+       container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+       container.classList.remove('animate-pulse');
+   }
 }
 }
 });
@@ -550,6 +552,17 @@ showOverlay('error', res.message);
 
 // === LIVE ATTENDANCE LOGIC ===
 
+function scrollCardIntoViewLocally(cardNode) {
+if (!cardNode) return;
+const container = cardNode.parentElement;
+if (container) {
+const containerRect = container.getBoundingClientRect();
+const cardRect = cardNode.getBoundingClientRect();
+const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
+container.scrollTo({ top: scrollTop, behavior: 'smooth' });
+}
+}
+
 function loadCommAttendanceData() {
 const overlay = document.getElementById('commAttLoadingOverlay');
 overlay.classList.remove('hidden');
@@ -783,6 +796,17 @@ if (commAttState.selectedDismissals.length > 0) {
 participants = participants.filter(p => commAttState.selectedDismissals.includes(String(p.dismissalLoc)));
 }
 
+if (commAttState.searchQuery) {
+const query = commAttState.searchQuery;
+participants = participants.filter(p => 
+    p.name.toLowerCase().includes(query) || 
+    (p.group && String(p.group).toLowerCase().includes(query)) ||
+    (p.volPaired && p.volPaired.toLowerCase().includes(query)) ||
+    (p.meetingLoc && p.meetingLoc.toLowerCase().includes(query)) ||
+    (p.dismissalLoc && p.dismissalLoc.toLowerCase().includes(query))
+);
+}
+
 participants.forEach(p => {
 const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
 const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][p.name] === true : false;
@@ -817,7 +841,15 @@ document.querySelectorAll('.comm-att-card').forEach(el => {
 uiBindLongPress(el, () => {
 const name = el.getAttribute('data-name');
 const p = (commAttData.participants || []).find(x => x.name.replace(/'/g, "\\'") === name);
-if (p) showPersonInfo(p);
+if (p) {
+    if (commAttState.searchQuery) {
+        commAttState.searchQuery = "";
+        document.getElementById('commAttSearchInput').value = "";
+        if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
+        renderCommAttLists();
+    }
+    showPersonInfo(p);
+}
 });
 });
 }
@@ -919,6 +951,7 @@ if (isGoneHome) targetListId = 'commAttGoneHomeList';
 else if (isChecked) targetListId = 'commAttCheckedList';
 
 const targetList = document.getElementById(targetListId);
+let pulseClass = isGoneHome ? 'pulse-blue' : (isChecked ? 'pulse-green' : 'pulse-red');
 
 if (existingCard) {
 const currentListId = existingCard.parentElement.id;
@@ -926,9 +959,8 @@ if (currentListId === targetListId) {
 existingCard.outerHTML = newHtml;
 rebindCommAttCard(cardId, p);
 
-// Pulse
 const newNode = document.getElementById(cardId);
-if (newNode) applyCardPulse(newNode, isChecked ? 'pulse-green' : (isGoneHome ? 'pulse-blue' : 'pulse-red'));
+if (newNode) applyCardPulse(newNode, pulseClass);
 } else {
 // Smoothly collapse
 existingCard.style.overflow = 'hidden';
@@ -967,7 +999,10 @@ newNode.style.transform = 'translateY(0)';
 updateCommAttCountsDOM();
 rebindCommAttCard(cardId, p);
 
-applyCardPulse(newNode, isChecked ? 'pulse-green' : (isGoneHome ? 'pulse-blue' : 'pulse-red'));
+scrollCardIntoViewLocally(newNode);
+setTimeout(() => {
+    applyCardPulse(newNode, pulseClass);
+}, 400); // Trigger pulse exactly when smooth scroll lands
 }, 300);
 }
 }
@@ -983,7 +1018,15 @@ const card = document.getElementById(cardId);
 if (card) {
 uiBindLongPress(card, () => {
 const pObj = (commAttData.participants || []).find(x => x.name === p.name);
-if (pObj) showPersonInfo(pObj);
+if (pObj) {
+    if (commAttState.searchQuery) {
+        commAttState.searchQuery = "";
+        document.getElementById('commAttSearchInput').value = "";
+        if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
+        renderCommAttLists();
+    }
+    showPersonInfo(pObj);
+}
 });
 }
 }
@@ -1070,7 +1113,23 @@ commAttData.attendance[juncture][name] = forceState;
 if (!pendingCommAttUpdates[juncture]) pendingCommAttUpdates[juncture] = {};
 pendingCommAttUpdates[juncture][name] = forceState;
 
+if (commAttState.searchQuery) {
+commAttState.searchQuery = "";
+document.getElementById('commAttSearchInput').value = "";
+if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
+renderCommAttLists();
+setTimeout(() => {
+    const cardNode = document.getElementById(`comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
+    if (cardNode) {
+        scrollCardIntoViewLocally(cardNode);
+        const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][name] === true;
+        const pulseClass = isGoneHome ? 'pulse-blue' : (forceState ? 'pulse-green' : 'pulse-red');
+        setTimeout(() => applyCardPulse(cardNode, pulseClass), 400);
+    }
+}, 50);
+} else {
 updateCommAttCardDOM(name);
+}
 triggerSync();
 }
 
@@ -1085,7 +1144,23 @@ commAttData.attendance['__GONE_HOME__'][name] = forceState;
 if (!pendingCommAttUpdates['__GONE_HOME__']) pendingCommAttUpdates['__GONE_HOME__'] = {};
 pendingCommAttUpdates['__GONE_HOME__'][name] = forceState;
 
+if (commAttState.searchQuery) {
+commAttState.searchQuery = "";
+document.getElementById('commAttSearchInput').value = "";
+if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
+renderCommAttLists();
+setTimeout(() => {
+    const cardNode = document.getElementById(`comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
+    if (cardNode) {
+        scrollCardIntoViewLocally(cardNode);
+        const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][name] === true : false;
+        const pulseClass = forceState ? 'pulse-blue' : (isChecked ? 'pulse-green' : 'pulse-red');
+        setTimeout(() => applyCardPulse(cardNode, pulseClass), 400);
+    }
+}, 50);
+} else {
 updateCommAttCardDOM(name);
+}
 triggerSync();
 }
 
@@ -1375,134 +1450,9 @@ renderBusLists();
 
 function handleCommAttSearch() {
 const query = document.getElementById('commAttSearchInput').value.toLowerCase().trim();
-const resultsContainer = document.getElementById('commAttSearchResults');
-
-if (!query) {
-resultsContainer.classList.add('hidden');
-return;
+commAttState.searchQuery = query;
+renderCommAttLists();
 }
-
-const juncture = commAttState.currentJuncture;
-
-let participants = commAttData.participants || [];
-
-if (commAttState.selectedGroups.length > 0) {
-participants = participants.filter(p => commAttState.selectedGroups.includes(String(p.group)));
-}
-if (commAttState.selectedMeets.length > 0) {
-participants = participants.filter(p => commAttState.selectedMeets.includes(String(p.meetingLoc)));
-}
-if (commAttState.selectedDismissals.length > 0) {
-participants = participants.filter(p => commAttState.selectedDismissals.includes(String(p.dismissalLoc)));
-}
-
-const matches = participants.filter(p => 
-p.name.toLowerCase().includes(query) || 
-(p.group && String(p.group).toLowerCase().includes(query)) ||
-(p.volPaired && p.volPaired.toLowerCase().includes(query)) ||
-(p.meetingLoc && p.meetingLoc.toLowerCase().includes(query)) ||
-(p.dismissalLoc && p.dismissalLoc.toLowerCase().includes(query))
-);
-
-let html = '';
-matches.forEach(p => {
-let isChecked = false;
-if (juncture && commAttData.attendance[juncture]) {
-isChecked = commAttData.attendance[juncture][p.name] === true;
-}
-const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][p.name] === true;
-const safeName = p.name.replace(/'/g, "\\'");
-
-let statusBadge = '';
-if (isGoneHome) {
-statusBadge = '<span class="text-[9px] md:text-[11px] bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-1 py-0.5 rounded font-black uppercase border border-blue-200 dark:border-blue-800">Gone Home</span>';
-} else if (isChecked) {
-statusBadge = '<span class="text-[9px] md:text-[11px] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-1 py-0.5 rounded font-black uppercase border border-green-200 dark:border-green-800">Checked</span>';
-} else {
-statusBadge = '<span class="text-[9px] md:text-[11px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-1 py-0.5 rounded font-black uppercase border border-red-200 dark:border-red-800">NOT Checked</span>';
-}
-
-let volHtml = '';
-if (p.volPaired) {
-const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-if (vols.length > 0) {
-volHtml = vols.map(v => `<span class="text-[9px] md:text-[11px] text-teal-700 dark:text-teal-400 leading-tight font-bold bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 whitespace-normal break-words w-fit max-w-full text-left"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
-}
-} else if (!isGoneHome) {
-volHtml = `<span class="text-[9px] md:text-[11px] text-red-700 dark:text-red-400 leading-tight font-black bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800/50 whitespace-normal break-words w-fit max-w-full text-left uppercase"><i class="fa-solid fa-circle-exclamation mr-1"></i>Unpaired</span>`;
-}
-
-// 1-1 Pairing Star logic
-let starBadge = '';
-if (p.extra && p.extra.t_one_on_one) {
-const oneOnOneRaw = String(p.extra.t_one_on_one).trim().toLowerCase();
-if (oneOnOneRaw !== '' && !['no', 'n', 'false', '0'].includes(oneOnOneRaw)) {
-starBadge = `<i class="fa-solid fa-star text-yellow-500 shrink-0 text-[10px] md:text-xs ml-1" title="1-1 Pairing Required: ${String(p.extra.t_one_on_one).replace(/"/g, '&quot;')}"></i>`;
-}
-}
-
-// Remarks Indicator Logic
-let remarksBadge = '';
-let remarkContent = null;
-if (p.extra && p.extra.remark) {
-remarkContent = String(p.extra.remark).trim();
-}
-if (remarkContent) {
-remarksBadge = `<i class="fa-solid fa-note-sticky text-yellow-500 dark:text-yellow-400 shrink-0 text-xs ml-1 cursor-help" title="${remarkContent.replace(/"/g, '&quot;')}"></i>`;
-}
-
-let locHtml = '';
-if (p.meetingLoc || p.dismissalLoc) {
-locHtml = '<div class="flex flex-col gap-1 w-full mt-1 border-t border-gray-100 dark:border-zinc-700/60 pt-1.5">';
-if (p.meetingLoc) {
-locHtml += `<span class="text-[9px] md:text-[11px] text-blue-700 dark:text-blue-300 leading-tight bg-blue-50 dark:bg-blue-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-location-dot mr-1 text-blue-500 dark:text-blue-400"></i>Meeting: ${p.meetingLoc}</span>`;
-}
-if (p.dismissalLoc) {
-locHtml += `<span class="text-[9px] md:text-[11px] text-purple-700 dark:text-purple-300 leading-tight bg-purple-50 dark:bg-purple-900/20 px-1.5 py-1 rounded whitespace-normal break-words w-full text-left"><i class="fa-solid fa-flag-checkered mr-1 text-purple-500 dark:text-purple-400"></i>Dismissal: ${p.dismissalLoc}</span>`;
-}
-locHtml += '</div>';
-}
-
-const caregiverBadge = p.caregivers > 0 ? `<span class="inline-flex shrink-0 items-center justify-center min-w-[16px] md:min-w-[20px] h-4 md:h-5 px-1 bg-red-500 rounded-full text-[9px] md:text-[11px] font-black text-white shadow-sm mt-px" title="${p.caregivers} Caregiver(s)">${p.caregivers > 1 ? p.caregivers + 'C' : 'C'}</span>` : '';
-const groupBadge = p.group ? `<span class="bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800 border px-1.5 py-0.5 rounded font-black text-[9px] md:text-[11px] uppercase shadow-sm whitespace-nowrap">Grp ${p.group}</span>` : '';
-
-html += `
-<li class="px-3 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer flex flex-col gap-1.5 border-b border-gray-200 dark:border-zinc-800 last:border-0 transition" onclick="selectFromCommAttSearch('${safeName}')">
-<div class="flex items-start gap-1.5 w-full">
-<span class="font-bold text-xs md:text-sm text-gray-900 dark:text-white break-words leading-tight">${p.name}</span>
-${starBadge}
-${remarksBadge}
-${caregiverBadge}
-</div>
-<div class="flex justify-between items-center w-full">
-<div class="shrink-0 flex items-center">
-${groupBadge}
-</div>
-<div class="shrink-0">${statusBadge}</div>
-</div>
-${volHtml ? `<div class="flex flex-col gap-1 w-full">${volHtml}</div>` : ''}
-${locHtml}
-</li>`;
-});
-
-resultsContainer.innerHTML = html || '<li class="px-3 py-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 text-center">No matches found.</li>';
-resultsContainer.classList.remove('hidden');
-}
-
-function selectFromCommAttSearch(name) {
-document.getElementById('commAttSearchInput').value = '';
-document.getElementById('commAttSearchResults').classList.add('hidden');
-
-const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][name] === true;
-if (!isGoneHome) {
-toggleCommAttStatus(name, true, null);
-} else {
-const cardId = `comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`;
-const cardNode = document.getElementById(cardId);
-if (cardNode) applyCardPulse(cardNode, 'pulse-blue');
-}
-}
-
 
 // ==========================================
 // BUS TRACKER LOGIC
@@ -1627,12 +1577,12 @@ const juncKey = '__BUS__' + juncture;
 if (commAttData.busAttendance[juncture]) {
 for (let name in commAttData.busAttendance[juncture]) {
 if (commAttData.busAttendance[juncture][name] === filterBus) {
-   commAttData.busAttendance[juncture][name] = ""; 
-   
-   if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
-   pendingCommAttUpdates[juncKey][name] = "";
-   
-   hasChanges = true;
+  commAttData.busAttendance[juncture][name] = ""; 
+  
+  if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
+  pendingCommAttUpdates[juncKey][name] = "";
+  
+  hasChanges = true;
 }
 }
 }
@@ -1695,6 +1645,14 @@ let boardedCount = 0;
 
 let eligibleTrainees = getEligibleBusTrainees();
 
+if (busState.searchQuery) {
+const query = busState.searchQuery;
+eligibleTrainees = eligibleTrainees.filter(p => 
+    p.name.toLowerCase().includes(query) || 
+    (p.volPaired && p.volPaired.toLowerCase().includes(query))
+);
+}
+
 eligibleTrainees.sort((a, b) => a.name.localeCompare(b.name));
 
 eligibleTrainees.forEach(p => {
@@ -1724,7 +1682,15 @@ document.querySelectorAll('.bus-att-card').forEach(el => {
 uiBindLongPress(el, () => {
 const name = el.getAttribute('data-name');
 const p = (commAttData.participants || []).find(x => x.name.replace(/'/g, "\\'") === name);
-if (p) showPersonInfo(p);
+if (p) {
+    if (busState.searchQuery) {
+        busState.searchQuery = "";
+        document.getElementById('busSearchInput').value = "";
+        if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
+        renderBusLists();
+    }
+    showPersonInfo(p);
+}
 });
 });
 }
@@ -1823,7 +1789,11 @@ newNode.style.opacity = '1';
 newNode.style.transform = 'translateY(0)';
 updateBusCountsDOM();
 rebindCommAttCard(cardId, p);
-applyCardPulse(newNode, isBoarded ? 'pulse-green' : 'pulse-red');
+
+scrollCardIntoViewLocally(newNode);
+setTimeout(() => {
+    applyCardPulse(newNode, isBoarded ? 'pulse-green' : 'pulse-red');
+}, 400);
 }, 300);
 }
 }
@@ -1876,8 +1846,8 @@ if (filterBus === 'ALL') {
 showFlashMessage('busGlobalStatus', 'Please select a specific bus first.', 'error');
 const selectEl = document.getElementById('busFilterSelect');
 if (selectEl) {
-   selectEl.classList.add('pulse-red');
-   setTimeout(() => selectEl.classList.remove('pulse-red'), 800);
+  selectEl.classList.add('pulse-red');
+  setTimeout(() => selectEl.classList.remove('pulse-red'), 800);
 }
 return;
 }
@@ -1892,7 +1862,23 @@ const juncKey = '__BUS__' + juncture;
 if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
 pendingCommAttUpdates[juncKey][name] = selectedBus;
 
+if (busState.searchQuery) {
+busState.searchQuery = "";
+document.getElementById('busSearchInput').value = "";
+if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
+renderBusLists();
+setTimeout(() => {
+    const cardNode = document.getElementById(`bus-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
+    if (cardNode) {
+        scrollCardIntoViewLocally(cardNode);
+        setTimeout(() => {
+            applyCardPulse(cardNode, forceBoarded ? 'pulse-green' : 'pulse-red');
+        }, 400);
+    }
+}, 50);
+} else {
 updateBusCardDOM(name);
+}
 triggerSync();
 }
 
@@ -1945,102 +1931,8 @@ alert(res.message);
 
 function handleBusSearch() {
 const query = document.getElementById('busSearchInput').value.toLowerCase().trim();
-const resultsContainer = document.getElementById('busSearchResults');
-const juncture = busState.currentJuncture;
-
-if (!query || !juncture) {
-resultsContainer.classList.add('hidden');
-return;
-}
-
-let eligibleTrainees = getEligibleBusTrainees();
-
-const matches = eligibleTrainees.filter(p => 
-p.name.toLowerCase().includes(query) || 
-(p.volPaired && p.volPaired.toLowerCase().includes(query))
-);
-
-let html = '';
-matches.forEach(p => {
-const currentBus = commAttData.busAttendance[juncture] ? commAttData.busAttendance[juncture][p.name] : "";
-const safeName = p.name.replace(/'/g, "\\'");
-
-let volHtml = '';
-if (p.volPaired) {
-const vols = p.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-if (vols.length > 0) {
-volHtml = vols.map(v => `<span class="text-[9px] text-teal-700 dark:text-teal-400 font-bold bg-teal-50 dark:bg-teal-900/30 px-1 py-0.5 rounded border border-teal-200 dark:border-teal-800/50 break-words w-fit"><i class="fa-solid fa-handshake-angle mr-1"></i>${v}</span>`).join('');
-}
-} else {
-volHtml = `<span class="text-[9px] text-red-700 dark:text-red-400 font-black bg-red-50 dark:bg-red-900/30 px-1 py-0.5 rounded border border-red-200 dark:border-red-800/50 break-words w-fit uppercase">Unpaired</span>`;
-}
-
-let currentBusBadge = currentBus ? `<span class="text-[9px] font-black uppercase text-yellow-800 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/50 px-1.5 py-0.5 rounded border border-yellow-300 dark:border-yellow-700 shrink-0">${currentBus}</span>` : '';
-
-html += `
-<li class="px-3 py-2 hover:bg-gray-50 dark:hover:bg-zinc-800 flex flex-col gap-1.5 border-b border-gray-200 dark:border-zinc-800 last:border-0 transition cursor-pointer" onclick="handleBusSearchClick('${safeName}', event)">
-<div class="flex items-start justify-between w-full gap-2">
-<div class="flex flex-col gap-1 w-full min-w-0">
-   <div class="flex justify-between items-center w-full gap-2">
-     <span class="font-bold text-xs text-gray-900 dark:text-white truncate">${p.name}</span>
-     ${currentBusBadge}
-   </div>
-   ${volHtml ? `<div class="flex flex-col gap-1 w-full">${volHtml}</div>` : ''}
-</div>
-</div>
-</li>`;
-});
-
-resultsContainer.innerHTML = html || '<li class="px-3 py-2 text-[10px] font-bold text-gray-500 dark:text-gray-400 text-center">No matches found in eligible pool.</li>';
-resultsContainer.classList.remove('hidden');
-}
-
-function handleBusSearchClick(name, e) {
-if(e) e.stopPropagation();
-
-const filterBus = document.getElementById('busFilterSelect').value;
-if (filterBus === 'ALL') {
-showFlashMessage('busGlobalStatus', 'Please select a specific bus first.', 'error');
-const selectEl = document.getElementById('busFilterSelect');
-if (selectEl) {
-   selectEl.classList.add('pulse-red');
-   setTimeout(() => selectEl.classList.remove('pulse-red'), 800);
-}
-
-const searchInput = document.getElementById('busSearchInput');
-if (searchInput) searchInput.value = '';
-const searchResults = document.getElementById('busSearchResults');
-if (searchResults) searchResults.classList.add('hidden');
-if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
-
-return;
-}
-
-setBusSearchSelection(name, filterBus, null);
-}
-
-function setBusSearchSelection(name, busValue, e) {
-if(e) e.stopPropagation();
-
-const juncture = busState.currentJuncture;
-if (!juncture) return;
-
-lastCommAttLocalChange = Date.now();
-if (!commAttData.busAttendance[juncture]) commAttData.busAttendance[juncture] = {};
-commAttData.busAttendance[juncture][name] = busValue;
-
-const juncKey = '__BUS__' + juncture;
-if (!pendingCommAttUpdates[juncKey]) pendingCommAttUpdates[juncKey] = {};
-pendingCommAttUpdates[juncKey][name] = busValue;
-
-const searchInput = document.getElementById('busSearchInput');
-if (searchInput) searchInput.value = '';
-const searchResults = document.getElementById('busSearchResults');
-if (searchResults) searchResults.classList.add('hidden');
-if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
-
-updateBusCardDOM(name);
-triggerSync();
+busState.searchQuery = query;
+renderBusLists();
 }
 
 function generateBusColumnText(columnType) {
@@ -2059,11 +1951,11 @@ eligibleTrainees.forEach(p => {
 const currentBus = commAttData.busAttendance[juncture] ? commAttData.busAttendance[juncture][p.name] : "";
 if (columnType === 'boarded') {
 if (currentBus && (filterBus === 'ALL' || filterBus === currentBus)) {
-   targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
+  targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
 }
 } else if (columnType === 'notBoarded') {
 if (!currentBus) {
-   targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
+  targetNames.push(`${p.name} ${p.group ? '(Grp ' + p.group + ')' : ''}`);
 }
 }
 });
