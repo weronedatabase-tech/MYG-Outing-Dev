@@ -67,33 +67,36 @@ renderManualPairings();
 function triggerManualPairingPulse(sourceName, targetName, isPaired) {
 setTimeout(() => {
 requestAnimationFrame(() => {
-const sourceCard = document.querySelector(`.dnd-dropzone[data-name="${sourceName.replace(/'/g, "\\'")}"]`);
-const targetCard = document.querySelector(`.dnd-dropzone[data-name="${targetName.replace(/'/g, "\\'")}"]`);
+const querySource = sourceName.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+const queryTarget = targetName.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+
+const sourceCard = document.querySelector(`.dnd-dropzone[data-name="${querySource}"]`);
+const targetCard = document.querySelector(`.dnd-dropzone[data-name="${queryTarget}"]`);
 
 [sourceCard, targetCard].forEach(card => {
- if (card) {
-     const container = card.parentElement;
-     if (container) {
-         const containerRect = container.getBoundingClientRect();
-         const cardRect = card.getBoundingClientRect();
-         
-         if (cardRect.height > 0) {
-             const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
-             
-             container.scrollTo({
-                 top: scrollTop,
-                 behavior: 'smooth'
-             });
-         }
-     }
-     
-     const pulseClass = isPaired ? 'pulse-green' : 'pulse-red';
-     
-     card.classList.add(pulseClass);
-     setTimeout(() => {
-         card.classList.remove(pulseClass);
-     }, 800);
- }
+if (card) {
+    const container = card.parentElement;
+    if (container) {
+        const containerRect = container.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+        
+        if (cardRect.height > 0) {
+            const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
+            
+            container.scrollTo({
+                top: scrollTop,
+                behavior: 'smooth'
+            });
+        }
+    }
+    
+    const pulseClass = isPaired ? 'pulse-green' : 'pulse-red';
+    
+    card.classList.add(pulseClass);
+    setTimeout(() => {
+        card.classList.remove(pulseClass);
+    }, 800);
+}
 });
 });
 }, 150);
@@ -101,7 +104,11 @@ const targetCard = document.querySelector(`.dnd-dropzone[data-name="${targetName
 
 function generatePairingPillHtml(pillName, traineeName, volName, isTraineeGoneHome = false) {
 const goneHomeBadge = isTraineeGoneHome ? `<i class="fa-solid fa-house-user text-blue-500 ml-1" title="Gone Home"></i>` : '';
-const removeBtn = isTraineeGoneHome ? '' : `<div class="remove-x flex items-center justify-center font-bold text-[10px] bg-transparent text-red-500 shadow-none border-none hover:bg-transparent hover:text-red-700 hover:scale-125 top-0 right-1" onclick="unpairTrainee('${traineeName.replace(/'/g, "\\'")}', '${volName.replace(/'/g, "\\'")}')">✕</div>`;
+
+const jsSafeTrainee = traineeName.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+const jsSafeVol = volName.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+const removeBtn = isTraineeGoneHome ? '' : `<div class="remove-x flex items-center justify-center font-bold text-[10px] bg-transparent text-red-500 shadow-none border-none hover:bg-transparent hover:text-red-700 hover:scale-125 top-0 right-1" onclick="unpairTrainee('${jsSafeTrainee}', '${jsSafeVol}')">✕</div>`;
 
 return `<div class="relative flex w-full align-top pointer-events-auto">
 <div class="bg-gray-100 dark:bg-zinc-800 border-gray-300 dark:border-zinc-600 text-gray-900 dark:text-gray-100 text-[10px] md:text-[11px] pl-2 ${isTraineeGoneHome ? 'pr-2' : 'pr-6'} py-1 rounded shadow-sm border font-bold opacity-90 leading-tight break-words whitespace-normal text-left w-full flex items-center">
@@ -130,7 +137,9 @@ isTraineeGoneHome = true;
 pairedPills += generatePairingPillHtml(pairedName, tName, vName, isTraineeGoneHome);
 });
 
-const safeName = item.name.replace(/'/g, "\\'");
+const htmlSafeName = item.name.replace(/"/g, '&quot;');
+const jsSafeName = item.name.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
 const displayName = item.name;
 const isGoneHome = item.isGoneHome === true;
 
@@ -177,10 +186,10 @@ projectInfo += `<span class="ml-1.5 bg-orange-100 text-orange-800 border-orange-
 projectInfo = `<span class="bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800 border px-1.5 py-0.5 rounded font-black text-[8px] uppercase shadow-sm whitespace-nowrap">Grp ${item.group}</span>`;
 }
 
-const addBtnHtml = isGoneHome ? '' : `<button class="shrink-0 text-xs text-gray-500 dark:text-gray-400 hover:text-primary transition-colors bg-gray-50 dark:bg-black hover:bg-gray-100 dark:hover:bg-zinc-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-sm pointer-events-auto flex items-center justify-center font-bold" onclick="event.stopPropagation(); openQuickPairModal('${safeName}', '${item.role}')">+${isVol ? 'Trn' : 'Vol'}</button>`;
+const addBtnHtml = isGoneHome ? '' : `<button class="shrink-0 text-xs text-gray-500 dark:text-gray-400 hover:text-primary transition-colors bg-gray-50 dark:bg-black hover:bg-gray-100 dark:hover:bg-zinc-800 px-1.5 py-0.5 rounded border border-gray-200 dark:border-zinc-700 shadow-sm pointer-events-auto flex items-center justify-center font-bold" onclick="event.stopPropagation(); openQuickPairModal('${jsSafeName}', '${item.role}')">+${isVol ? 'Trn' : 'Vol'}</button>`;
 
 return `
-<div class="dnd-draggable dnd-dropzone bg-white dark:bg-zinc-900 p-2 rounded-md border border-gray-200 dark:border-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-grab active:cursor-grabbing hover:border-primary transition select-none flex flex-col min-h-[70px] gap-1.5 ${opacityClass}" data-name="${safeName}" data-role="${item.role}" data-source-array="${isVol ? 'volunteers' : 'trainees'}">
+<div class="dnd-draggable dnd-dropzone bg-white dark:bg-zinc-900 p-2 rounded-md border border-gray-200 dark:border-zinc-700 shadow-[0_1px_2px_rgba(0,0,0,0.05)] cursor-grab active:cursor-grabbing hover:border-primary transition select-none flex flex-col min-h-[70px] gap-1.5 ${opacityClass}" data-name="${htmlSafeName}" data-role="${item.role}" data-source-array="${isVol ? 'volunteers' : 'trainees'}">
 <div class="flex justify-between items-center w-full gap-2">
 <div class="main-name-pill font-extrabold text-[11px] md:text-[12px] text-gray-900 dark:text-white leading-tight break-words whitespace-normal flex items-center gap-1 min-w-0 flex-1">
 <span class="break-words">${displayName}</span>
@@ -220,17 +229,17 @@ if (!item) return;
 let pairedNames = [];
 if (role === 'VOLUNTEER') {
 (manualPairingData.trainees || []).forEach(t => {
-  if (t.volPaired) {
-      const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
-      if (vols.includes(name.toLowerCase())) pairedNames.push(t.name);
-  }
+ if (t.volPaired) {
+     const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim().toLowerCase()).filter(v => v);
+     if (vols.includes(name.toLowerCase())) pairedNames.push(t.name);
+ }
 });
 } else {
 pairedNames = item.volPaired ? item.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v) : [];
 }
 
-const safeName = item.name.replace(/'/g, "\\'");
-const cardSelector = `.dnd-dropzone[data-name="${safeName}"][data-role="${role}"]`;
+const querySafeName = item.name.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+const cardSelector = `.dnd-dropzone[data-name="${querySafeName}"][data-role="${role}"]`;
 const existingCard = document.querySelector(cardSelector);
 
 if (existingCard) {
@@ -242,8 +251,8 @@ const newCardNode = temp.firstElementChild;
 existingCard.replaceWith(newCardNode);
 
 uiBindLongPress(newCardNode, () => {
-  const p = (manualPairingData[role === 'VOLUNTEER' ? 'volunteers' : 'trainees'] || []).find(x => x.name === item.name);
-  if (p) showPersonInfo(p);
+ const p = (manualPairingData[role === 'VOLUNTEER' ? 'volunteers' : 'trainees'] || []).find(x => x.name === item.name);
+ if (p) showPersonInfo(p);
 });
 }
 }
@@ -342,7 +351,7 @@ document.querySelectorAll('.dnd-draggable').forEach(el => {
 uiBindLongPress(el, () => {
 const name = el.getAttribute('data-name');
 const arr = el.getAttribute('data-source-array');
-const p = (manualPairingData[arr] || []).find(x => x.name.replace(/'/g, "\\'") === name);
+const p = (manualPairingData[arr] || []).find(x => x.name === name);
 if (p) showPersonInfo(p);
 });
 });
@@ -515,8 +524,8 @@ const newDataStr = JSON.stringify(res.data);
 const oldDataStr = JSON.stringify(manualPairingData);
 
 if (newDataStr !== oldDataStr) {
-  manualPairingData = res.data;
-  renderManualPairings();
+ manualPairingData = res.data;
+ renderManualPairings();
 }
 }
 } catch(e) { }
@@ -569,7 +578,8 @@ const input = document.getElementById('quickPairSearch');
 
 if(!modal || !title || !input) return;
 
-title.innerHTML = `Pairing with <span class="text-primary">${sourceName}</span>`;
+const htmlSafeSource = sourceName.replace(/"/g, '&quot;');
+title.innerHTML = `Pairing with <span class="text-primary">${htmlSafeSource}</span>`;
 input.value = '';
 
 const sortFn = (a, b) => {
@@ -633,7 +643,7 @@ isPaired = vols.some(v => v.toLowerCase() === volName.toLowerCase());
 const li = document.createElement('li');
 li.className = `p-3 rounded border text-sm font-bold flex justify-between items-center transition-colors ${isPaired ? 'bg-gray-100 dark:bg-zinc-800 border-gray-200 dark:border-zinc-700 opacity-60 cursor-not-allowed' : 'bg-white dark:bg-black border-gray-200 dark:border-zinc-700 hover:border-primary cursor-pointer'}`;
 
-li.innerHTML = `<span>${name}</span> ${isPaired ? '<i class="fa-solid fa-check text-green-500"></i>' : ''}`;
+li.innerHTML = `<span>${name.replace(/"/g, '&quot;')}</span> ${isPaired ? '<i class="fa-solid fa-check text-green-500"></i>' : ''}`;
 
 if (!isPaired) {
 li.onclick = () => {

@@ -39,6 +39,29 @@ body {
 -webkit-tap-highlight-color: transparent; 
 }
 
+/* Prevent text selection, tap highlights, and iOS callouts on ALL interactive elements */
+button, 
+a, 
+select, 
+[role="button"], 
+[onclick], 
+.cursor-pointer,
+.comm-att-card,
+.bus-att-card,
+.grouping-card,
+.dnd-draggable {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Explicitly allow selection in inputs and textareas */
+input, textarea {
+  -webkit-user-select: auto !important;
+  user-select: auto !important;
+}
+
 /* Perfected Red 'X' Pill Overlay */
 .remove-x {
 position: absolute;
@@ -71,57 +94,57 @@ will-change: transform;
 
 /* Card Pulse Highlight Classes */
 .pulse-green {
-  background-color: #dcfce7 !important;
-  border-color: #22c55e !important;
-  box-shadow: 0 0 0 2px #22c55e !important;
-  transform: scale(1.02) !important;
-  z-index: 10 !important;
+ background-color: #dcfce7 !important;
+ border-color: #22c55e !important;
+ box-shadow: 0 0 0 2px #22c55e !important;
+ transform: scale(1.02) !important;
+ z-index: 10 !important;
 }
 .dark .pulse-green { 
-  background-color: rgba(34, 197, 94, 0.25) !important; 
-  border-color: #22c55e !important; 
-  box-shadow: 0 0 0 2px #22c55e !important; 
+ background-color: rgba(34, 197, 94, 0.25) !important; 
+ border-color: #22c55e !important; 
+ box-shadow: 0 0 0 2px #22c55e !important; 
 }
 
 .pulse-red {
-  background-color: #fee2e2 !important;
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 0 2px #ef4444 !important;
-  transform: scale(1.02) !important;
-  z-index: 10 !important;
+ background-color: #fee2e2 !important;
+ border-color: #ef4444 !important;
+ box-shadow: 0 0 0 2px #ef4444 !important;
+ transform: scale(1.02) !important;
+ z-index: 10 !important;
 }
 .dark .pulse-red { 
-  background-color: rgba(239, 68, 68, 0.25) !important; 
-  border-color: #ef4444 !important; 
-  box-shadow: 0 0 0 2px #ef4444 !important; 
+ background-color: rgba(239, 68, 68, 0.25) !important; 
+ border-color: #ef4444 !important; 
+ box-shadow: 0 0 0 2px #ef4444 !important; 
 }
 
 .pulse-blue {
-  background-color: #dbeafe !important;
-  border-color: #3b82f6 !important;
-  box-shadow: 0 0 0 2px #3b82f6 !important;
-  transform: scale(1.02) !important;
-  z-index: 10 !important;
+ background-color: #dbeafe !important;
+ border-color: #3b82f6 !important;
+ box-shadow: 0 0 0 2px #3b82f6 !important;
+ transform: scale(1.02) !important;
+ z-index: 10 !important;
 }
 .dark .pulse-blue { 
-  background-color: rgba(59, 130, 246, 0.25) !important; 
-  border-color: #3b82f6 !important; 
-  box-shadow: 0 0 0 2px #3b82f6 !important; 
+ background-color: rgba(59, 130, 246, 0.25) !important; 
+ border-color: #3b82f6 !important; 
+ box-shadow: 0 0 0 2px #3b82f6 !important; 
 }
 
 /* Skeleton Loading Shimmer Extension */
 .skeleton-shimmer {
-  background: #f6f7f8;
-  background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
-  background-repeat: no-repeat;
-  background-size: 800px 100%; 
-  animation: shimmer 1.5s infinite linear forwards;
+ background: #f6f7f8;
+ background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+ background-repeat: no-repeat;
+ background-size: 800px 100%; 
+ animation: shimmer 1.5s infinite linear forwards;
 }
 .dark .skeleton-shimmer {
-  background: #18181b;
-  background-image: linear-gradient(to right, #18181b 0%, #27272a 20%, #18181b 40%, #18181b 100%);
+ background: #18181b;
+ background-image: linear-gradient(to right, #18181b 0%, #27272a 20%, #18181b 40%, #18181b 100%);
 }
 @keyframes shimmer {
-  0% { background-position: -468px 0; }
-  100% { background-position: 468px 0; }
+ 0% { background-position: -468px 0; }
+ 100% { background-position: 468px 0; }
 }
