@@ -229,6 +229,40 @@ ${pairedPills || `<span class="text-[9px] md:text-[10px] font-medium text-gray-4
 `;
 }
 
+function insertPairingCardSorted(container, newCardNode, itemData, role) {
+const children = Array.from(container.children).filter(c => c.classList.contains('dnd-dropzone'));
+let inserted = false;
+
+const sortFn = (aProj, aName, bProj, bName) => {
+const pA = aProj ? aProj.toString().toLowerCase().trim() : "zzzz";
+const pB = bProj ? bProj.toString().toLowerCase().trim() : "zzzz";
+const pCmp = pA.localeCompare(pB);
+if (pCmp !== 0) return pCmp;
+return (aName || "").toLowerCase().localeCompare((bName || "").toLowerCase());
+};
+
+for (let child of children) {
+const childName = child.getAttribute('data-name').replace(/&quot;/g, '"');
+const childItem = (manualPairingData[role === 'VOLUNTEER' ? 'volunteers' : 'trainees'] || []).find(x => x.name === childName);
+
+if (childItem) {
+    if (sortFn(itemData.project, itemData.name, childItem.project, childItem.name) < 0) {
+        container.insertBefore(newCardNode, child);
+        inserted = true;
+        break;
+    }
+}
+}
+if (!inserted) {
+container.appendChild(newCardNode);
+}
+
+const emptyMsg = container.querySelector('p');
+if (emptyMsg && emptyMsg.innerText.includes('No active')) {
+emptyMsg.remove();
+}
+}
+
 function updateGlobalUnpairedCount() {
 let count = 0;
 (manualPairingData.trainees || []).forEach(t => {
@@ -261,18 +295,87 @@ const querySafeName = item.name.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 const cardSelector = `.dnd-dropzone[data-name="${querySafeName}"][data-role="${role}"]`;
 const existingCard = document.querySelector(cardSelector);
 
-if (existingCard) {
+// Check if it should be in the DOM based on current filters
+let shouldBeInDOM = true;
+
+if (role === 'VOLUNTEER' && showOnlyUnpairedVols && pairedNames.length > 0) shouldBeInDOM = false;
+if (role === 'TRAINEE' && isFilteredManualPairingMode && pairedNames.length > 0) shouldBeInDOM = false;
+if (role === 'TRAINEE' && item.isGoneHome && isFilteredManualPairingMode) shouldBeInDOM = false;
+
+const volSearchQuery = document.getElementById('pairingVolSearch')?.value.toLowerCase().trim() || "";
+const traSearchQuery = document.getElementById('pairingTraineeSearch')?.value.toLowerCase().trim() || "";
+
+if (role === 'VOLUNTEER' && volSearchQuery) {
+if (!item.name.toLowerCase().includes(volSearchQuery) && !(item.project && item.project.toLowerCase().includes(volSearchQuery))) {
+    shouldBeInDOM = false;
+}
+}
+if (role === 'TRAINEE' && traSearchQuery) {
+if (!item.name.toLowerCase().includes(traSearchQuery) && !(item.project && item.project.toLowerCase().includes(traSearchQuery)) && !(item.group && String(item.group).toLowerCase().includes(traSearchQuery))) {
+    shouldBeInDOM = false;
+}
+}
+
+const att = item.attending ? String(item.attending).toLowerCase().trim() : "";
+if (role === 'TRAINEE' && att !== 'y') shouldBeInDOM = false;
+
 const newHtml = generatePairingCardHtml(item, pairedNames);
-const temp = document.createElement('div');
-temp.innerHTML = newHtml;
-const newCardNode = temp.firstElementChild;
 
-existingCard.replaceWith(newCardNode);
+if (existingCard) {
+if (!shouldBeInDOM) {
+    existingCard.style.overflow = 'hidden';
+    existingCard.style.minHeight = '0';
+    existingCard.style.transition = 'opacity 0.2s ease, height 0.3s ease, margin 0.3s ease, padding 0.3s ease';
+    existingCard.style.height = existingCard.offsetHeight + 'px';
+    void existingCard.offsetHeight; 
+    existingCard.style.opacity = '0';
+    existingCard.style.height = '0px';
+    existingCard.style.margin = '0px';
+    existingCard.style.padding = '0px';
+    existingCard.style.border = 'none';
+    setTimeout(() => {
+        existingCard.remove();
+        const containerId = role === 'VOLUNTEER' ? 'dnd-source-pool' : 'dnd-target-list';
+        const container = document.getElementById(containerId);
+        if (container && container.querySelectorAll('.dnd-dropzone').length === 0) {
+            container.innerHTML = `<p class="text-[10px] text-gray-500 font-bold p-2 text-center mt-2">No active ${role === 'VOLUNTEER' ? 'volunteers' : 'trainees'} matching search.</p>`;
+        }
+    }, 300);
+} else {
+    const temp = document.createElement('div');
+    temp.innerHTML = newHtml;
+    const newCardNode = temp.firstElementChild;
+    existingCard.replaceWith(newCardNode);
+    uiBindLongPress(newCardNode, () => {
+        const p = (manualPairingData[role === 'VOLUNTEER' ? 'volunteers' : 'trainees'] || []).find(x => x.name === item.name);
+        if (p) showPersonInfo(p);
+    });
+}
+} else {
+if (shouldBeInDOM) {
+    const temp = document.createElement('div');
+    temp.innerHTML = newHtml;
+    const newCardNode = temp.firstElementChild;
+    
+    newCardNode.style.opacity = '0';
+    newCardNode.style.transform = 'translateY(-10px)';
+    newCardNode.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
 
-uiBindLongPress(newCardNode, () => {
- const p = (manualPairingData[role === 'VOLUNTEER' ? 'volunteers' : 'trainees'] || []).find(x => x.name === item.name);
- if (p) showPersonInfo(p);
-});
+    const containerId = role === 'VOLUNTEER' ? 'dnd-source-pool' : 'dnd-target-list';
+    const container = document.getElementById(containerId);
+    
+    if (container) {
+        insertPairingCardSorted(container, newCardNode, item, role);
+        uiBindLongPress(newCardNode, () => {
+            const p = (manualPairingData[role === 'VOLUNTEER' ? 'volunteers' : 'trainees'] || []).find(x => x.name === item.name);
+            if (p) showPersonInfo(p);
+        });
+        
+        void newCardNode.offsetWidth;
+        newCardNode.style.opacity = '1';
+        newCardNode.style.transform = 'translateY(0)';
+    }
+}
 }
 }
 
@@ -375,7 +478,7 @@ if (targetList) targetList.scrollTop = targetScrollPos;
 
 document.querySelectorAll('.dnd-draggable').forEach(el => {
 uiBindLongPress(el, () => {
-const name = el.getAttribute('data-name');
+const name = el.getAttribute('data-name').replace(/&quot;/g, '"');
 const arr = el.getAttribute('data-source-array');
 const p = (manualPairingData[arr] || []).find(x => x.name === name);
 if (p) showPersonInfo(p);
@@ -426,13 +529,8 @@ pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
 pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
 }
 
-// Reactively remove the volunteer from the list if filtering "Unpaired"
-if (showOnlyUnpairedVols && sourceRole === 'VOLUNTEER') {
-renderManualPairings();
-} else {
 updatePairingCardDOM(volName, 'VOLUNTEER');
 updatePairingCardDOM(traineeName, 'TRAINEE');
-}
 updateGlobalUnpairedCount();
 
 triggerManualPairingPulse(sourceName, targetName, true);
@@ -461,13 +559,8 @@ pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
 pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
 }
 
-// Reactively restore the volunteer to the list if filtering "Unpaired"
-if (showOnlyUnpairedVols) {
-renderManualPairings();
-} else {
 updatePairingCardDOM(volName, 'VOLUNTEER');
 updatePairingCardDOM(traineeName, 'TRAINEE');
-}
 updateGlobalUnpairedCount();
 
 triggerManualPairingPulse(traineeName, volName, false);
