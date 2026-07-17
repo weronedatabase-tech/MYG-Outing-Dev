@@ -8,6 +8,7 @@ let lastPairingLocalChange = 0;
 
 let isFilteredManualPairingMode = false;
 let filteredManualPairingSourceView = null;
+let showOnlyUnpairedVols = false;
 
 // ==========================================
 // MANUAL PAIRING LOGIC
@@ -18,6 +19,7 @@ if(!url) return;
 
 currentActiveView = 'manual-pairing';
 isFilteredManualPairingMode = false;
+showOnlyUnpairedVols = false;
 currentManualPairingSheetUrl = url;
 
 loadManualPairingData();
@@ -64,6 +66,23 @@ function filterPairingPools() {
 renderManualPairings();
 }
 
+window.toggleVolUnpairedFilter = function() {
+showOnlyUnpairedVols = !showOnlyUnpairedVols;
+const btn = document.getElementById('toggleVolUnpairedBtn');
+if (btn) {
+if (showOnlyUnpairedVols) {
+    btn.classList.remove('bg-green-50', 'text-green-700', 'dark:bg-green-900/30', 'dark:text-green-400', 'hover:bg-green-200', 'dark:hover:bg-green-900/60');
+    btn.classList.add('bg-green-600', 'text-white', 'border-green-600', 'hover:bg-green-700');
+    btn.innerHTML = 'Unpaired';
+} else {
+    btn.classList.add('bg-green-50', 'text-green-700', 'dark:bg-green-900/30', 'dark:text-green-400', 'hover:bg-green-200', 'dark:hover:bg-green-900/60');
+    btn.classList.remove('bg-green-600', 'text-white', 'border-green-600', 'hover:bg-green-700');
+    btn.innerHTML = 'All';
+}
+}
+renderManualPairings();
+};
+
 function triggerManualPairingPulse(sourceName, targetName, isPaired) {
 setTimeout(() => {
 requestAnimationFrame(() => {
@@ -75,27 +94,27 @@ const targetCard = document.querySelector(`.dnd-dropzone[data-name="${queryTarge
 
 [sourceCard, targetCard].forEach(card => {
 if (card) {
-    const container = card.parentElement;
-    if (container) {
-        const containerRect = container.getBoundingClientRect();
-        const cardRect = card.getBoundingClientRect();
-        
-        if (cardRect.height > 0) {
-            const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
-            
-            container.scrollTo({
-                top: scrollTop,
-                behavior: 'smooth'
-            });
-        }
-    }
-    
-    const pulseClass = isPaired ? 'pulse-green' : 'pulse-red';
-    
-    card.classList.add(pulseClass);
-    setTimeout(() => {
-        card.classList.remove(pulseClass);
-    }, 800);
+   const container = card.parentElement;
+   if (container) {
+       const containerRect = container.getBoundingClientRect();
+       const cardRect = card.getBoundingClientRect();
+       
+       if (cardRect.height > 0) {
+           const scrollTop = container.scrollTop + (cardRect.top - containerRect.top) - (containerRect.height / 2) + (cardRect.height / 2);
+           
+           container.scrollTo({
+               top: scrollTop,
+               behavior: 'smooth'
+           });
+       }
+   }
+   
+   const pulseClass = isPaired ? 'pulse-green' : 'pulse-red';
+   
+   card.classList.add(pulseClass);
+   setTimeout(() => {
+       card.classList.remove(pulseClass);
+   }, 800);
 }
 });
 });
@@ -264,14 +283,33 @@ const targetList = document.getElementById('dnd-target-list');
 const sourceScrollPos = sourcePool ? sourcePool.scrollTop : 0;
 const targetScrollPos = targetList ? targetList.scrollTop : 0;
 
+updateGlobalUnpairedCount();
+
+const volPairingsMap = new Map();
+(manualPairingData.trainees || []).forEach(t => {
+if (t.volPaired) {
+const pairedVols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+pairedVols.forEach(v => {
+const cleanVol = v.toLowerCase();
+if (!volPairingsMap.has(cleanVol)) volPairingsMap.set(cleanVol, []);
+volPairingsMap.get(cleanVol).push(t.name);
+});
+}
+});
+
 let trainees = (manualPairingData.trainees || []).filter(t => {
 const att = t.attending ? String(t.attending).toLowerCase().trim() : "";
 return att === 'y';
 });
 
-updateGlobalUnpairedCount();
-
 let vols = [...(manualPairingData.volunteers || [])]; 
+
+if (showOnlyUnpairedVols) {
+vols = vols.filter(v => {
+const matched = volPairingsMap.get(v.name.toLowerCase());
+return !matched || matched.length === 0;
+});
+}
 
 const volSearchQuery = document.getElementById('pairingVolSearch')?.value.toLowerCase().trim() || "";
 const traSearchQuery = document.getElementById('pairingTraineeSearch')?.value.toLowerCase().trim() || "";
@@ -303,18 +341,6 @@ return nameA.localeCompare(nameB);
 
 vols.sort(sortFn);
 trainees.sort(sortFn);
-
-const volPairingsMap = new Map();
-(manualPairingData.trainees || []).forEach(t => {
-if (t.volPaired) {
-const pairedVols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-pairedVols.forEach(v => {
-const cleanVol = v.toLowerCase();
-if (!volPairingsMap.has(cleanVol)) volPairingsMap.set(cleanVol, []);
-volPairingsMap.get(cleanVol).push(t.name);
-});
-}
-});
 
 if (isFilteredManualPairingMode) {
 trainees = trainees.filter(t => !t.isGoneHome && (!t.volPaired || t.volPaired.trim() === ''));
@@ -400,8 +426,13 @@ pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
 pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
 }
 
+// Reactively remove the volunteer from the list if filtering "Unpaired"
+if (showOnlyUnpairedVols && sourceRole === 'VOLUNTEER') {
+renderManualPairings();
+} else {
 updatePairingCardDOM(volName, 'VOLUNTEER');
 updatePairingCardDOM(traineeName, 'TRAINEE');
+}
 updateGlobalUnpairedCount();
 
 triggerManualPairingPulse(sourceName, targetName, true);
@@ -430,8 +461,13 @@ pendingPairingUpdates[updateIndex].volPaired = trainee.volPaired;
 pendingPairingUpdates.push({ traineeName: traineeName, volPaired: trainee.volPaired });
 }
 
+// Reactively restore the volunteer to the list if filtering "Unpaired"
+if (showOnlyUnpairedVols) {
+renderManualPairings();
+} else {
 updatePairingCardDOM(volName, 'VOLUNTEER');
 updatePairingCardDOM(traineeName, 'TRAINEE');
+}
 updateGlobalUnpairedCount();
 
 triggerManualPairingPulse(traineeName, volName, false);
