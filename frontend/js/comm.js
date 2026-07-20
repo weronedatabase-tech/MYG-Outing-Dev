@@ -53,18 +53,18 @@ let prefix = bj.type === 'meet' ? 'Meeting: ' : 'Dismissal: ';
 let compositeName = prefix + bj.name;
 
 if (commAttData.busAttendance[bj.name] && !commAttData.busAttendance[compositeName]) {
-   commAttData.busAttendance[compositeName] = Object.assign({}, commAttData.busAttendance[bj.name]);
+  commAttData.busAttendance[compositeName] = Object.assign({}, commAttData.busAttendance[bj.name]);
 }
 
 if (!commAttData.busAttendance[compositeName]) {
-   commAttData.busAttendance[compositeName] = {};
+  commAttData.busAttendance[compositeName] = {};
 }
 });
 
 // Remove the legacy keys to prevent duplicate entries in the UI dropdown
 commAttData.busJunctures.forEach(bj => {
 if (commAttData.busAttendance[bj.name]) {
-   delete commAttData.busAttendance[bj.name];
+  delete commAttData.busAttendance[bj.name];
 }
 });
 }
@@ -129,11 +129,11 @@ renderData(parsed);
 // Silent background update to re-verify
 if(spinner) spinner.classList.remove('hidden');
 apiCall('getRecentOutingSheets', null).then(res => {
-    if(spinner) spinner.classList.add('hidden');
-    if (res.success && JSON.stringify(res.data) !== localDataStr) {
-        localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
-        renderData(res.data);
-    }
+   if(spinner) spinner.classList.add('hidden');
+   if (res.success && JSON.stringify(res.data) !== localDataStr) {
+       localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
+       renderData(res.data);
+   }
 });
 return;
 }
@@ -168,12 +168,12 @@ skeletonHtml += `
 <div class="animate-pulse flex flex-col gap-3 p-4 bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 shadow-sm">
 <div class="flex justify-between items-start">
 <div class="space-y-2 w-1/2">
-    <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
-    <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
+   <div class="h-4 bg-gray-200 dark:bg-zinc-800 rounded w-3/4"></div>
+   <div class="h-3 bg-gray-100 dark:bg-zinc-800/60 rounded w-1/2"></div>
 </div>
 <div class="flex gap-2">
-    <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
-    <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+   <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
+   <div class="w-8 h-8 bg-gray-200 dark:bg-zinc-800 rounded"></div>
 </div>
 </div>
 <div class="h-12 bg-gray-50 dark:bg-zinc-800/50 rounded w-full mt-1"></div>
@@ -191,11 +191,11 @@ if(res.data.length > 0) {
 renderData(res.data);
 } else {
 if (selector) {
-    selector.disabled = false;
-    selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+   selector.disabled = false;
+   selector.innerHTML = '<option disabled selected>No upcoming events</option>';
 }
 if(viewId === 'comm' && listContainer) {
-    listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
+   listContainer.innerHTML = '<p class="text-xs text-gray-500 dark:text-gray-400 italic">No upcoming outings found.</p>';
 }
 }
 } else {
@@ -275,8 +275,8 @@ if (batch.length === 0 || currentIndex >= MAX_STATS_TO_FETCH) {
 for (let i = currentIndex; i < data.length; i++) {
 const container = document.getElementById(`stats-${i}`);
 if (container) {
- container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
- container.classList.remove('animate-pulse');
+container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+container.classList.remove('animate-pulse');
 }
 }
 return;
@@ -291,11 +291,11 @@ if (currentIndex < Math.min(data.length, MAX_STATS_TO_FETCH)) {
 setTimeout(fetchBatchStats, 1500); 
 } else {
 for (let i = currentIndex; i < data.length; i++) {
- const container = document.getElementById(`stats-${i}`);
- if (container) {
-     container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
-     container.classList.remove('animate-pulse');
- }
+const container = document.getElementById(`stats-${i}`);
+if (container) {
+    container.innerHTML = '<span class="text-gray-400 italic text-[10px]">Stats skipped to preserve quota</span>';
+    container.classList.remove('animate-pulse');
+}
 }
 }
 });
@@ -815,11 +815,11 @@ participants = participants.filter(p => commAttState.selectedDismissals.includes
 if (commAttState.searchQuery) {
 const query = commAttState.searchQuery;
 participants = participants.filter(p => 
-  p.name.toLowerCase().includes(query) || 
-  (p.group && String(p.group).toLowerCase().includes(query)) ||
-  (p.volPaired && p.volPaired.toLowerCase().includes(query)) ||
-  (p.meetingLoc && p.meetingLoc.toLowerCase().includes(query)) ||
-  (p.dismissalLoc && p.dismissalLoc.toLowerCase().includes(query))
+ p.name.toLowerCase().includes(query) || 
+ (p.group && String(p.group).toLowerCase().includes(query)) ||
+ (p.volPaired && p.volPaired.toLowerCase().includes(query)) ||
+ (p.meetingLoc && p.meetingLoc.toLowerCase().includes(query)) ||
+ (p.dismissalLoc && p.dismissalLoc.toLowerCase().includes(query))
 );
 }
 
@@ -858,13 +858,13 @@ uiBindLongPress(el, () => {
 const name = el.getAttribute('data-name');
 const p = (commAttData.participants || []).find(x => x.name === name);
 if (p) {
-  if (commAttState.searchQuery) {
-      commAttState.searchQuery = "";
-      document.getElementById('commAttSearchInput').value = "";
-      if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
-      renderCommAttLists();
-  }
-  showPersonInfo(p);
+ if (commAttState.searchQuery) {
+     commAttState.searchQuery = "";
+     document.getElementById('commAttSearchInput').value = "";
+     if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
+     renderCommAttLists();
+ }
+ showPersonInfo(p);
 }
 });
 });
@@ -936,8 +936,9 @@ ${caregiverBadge}
 ${groupBadge}
 </div>
 <div class="shrink-0 flex items-center gap-1.5 md:gap-2">
-<button onclick="toggleGoneHomeStatus('${jsSafeName}', ${!isGoneHome}, event)" class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
-<i class="fa-solid fa-house-user text-[10px] md:text-xs"></i>
+<button onclick="toggleGoneHomeStatus('${jsSafeName}', ${!isGoneHome}, event)" class="px-2 md:px-3 h-6 md:h-8 rounded flex items-center justify-center gap-1 border transition-colors ${homeBtnClass}" title="Toggle Gone Home">
+<i class="fa-solid fa-house-user text-[10px] md:text-xs shrink-0"></i>
+<span class="text-[9px] md:text-[11px] font-bold uppercase tracking-wider">Home</span>
 </button>
 <div class="w-6 h-6 md:w-8 md:h-8 rounded flex items-center justify-center border transition-colors ${checkBtnClass}">
 <i class="fa-solid fa-check text-xs md:text-sm"></i>
@@ -1018,7 +1019,7 @@ rebindCommAttCard(cardId, p);
 
 scrollCardIntoViewLocally(newNode);
 setTimeout(() => {
-  applyCardPulse(newNode, pulseClass);
+ applyCardPulse(newNode, pulseClass);
 }, 400); // Trigger pulse exactly when smooth scroll lands
 }, 300);
 }
@@ -1036,13 +1037,13 @@ if (card) {
 uiBindLongPress(card, () => {
 const pObj = (commAttData.participants || []).find(x => x.name === p.name);
 if (pObj) {
-  if (commAttState.searchQuery) {
-      commAttState.searchQuery = "";
-      document.getElementById('commAttSearchInput').value = "";
-      if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
-      renderCommAttLists();
-  }
-  showPersonInfo(pObj);
+ if (commAttState.searchQuery) {
+     commAttState.searchQuery = "";
+     document.getElementById('commAttSearchInput').value = "";
+     if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
+     renderCommAttLists();
+ }
+ showPersonInfo(pObj);
 }
 });
 }
@@ -1136,13 +1137,13 @@ document.getElementById('commAttSearchInput').value = "";
 if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
 renderCommAttLists();
 setTimeout(() => {
-  const cardNode = document.getElementById(`comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
-  if (cardNode) {
-      scrollCardIntoViewLocally(cardNode);
-      const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][name] === true;
-      const pulseClass = isGoneHome ? 'pulse-blue' : (forceState ? 'pulse-green' : 'pulse-red');
-      setTimeout(() => applyCardPulse(cardNode, pulseClass), 400);
-  }
+ const cardNode = document.getElementById(`comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
+ if (cardNode) {
+     scrollCardIntoViewLocally(cardNode);
+     const isGoneHome = commAttData.attendance['__GONE_HOME__'] && commAttData.attendance['__GONE_HOME__'][name] === true;
+     const pulseClass = isGoneHome ? 'pulse-blue' : (forceState ? 'pulse-green' : 'pulse-red');
+     setTimeout(() => applyCardPulse(cardNode, pulseClass), 400);
+ }
 }, 50);
 } else {
 updateCommAttCardDOM(name);
@@ -1167,13 +1168,13 @@ document.getElementById('commAttSearchInput').value = "";
 if (typeof toggleClearBtn === 'function') toggleClearBtn('commAttSearchInput');
 renderCommAttLists();
 setTimeout(() => {
-  const cardNode = document.getElementById(`comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
-  if (cardNode) {
-      scrollCardIntoViewLocally(cardNode);
-      const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][name] === true : false;
-      const pulseClass = forceState ? 'pulse-blue' : (isChecked ? 'pulse-green' : 'pulse-red');
-      setTimeout(() => applyCardPulse(cardNode, pulseClass), 400);
-  }
+ const cardNode = document.getElementById(`comm-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
+ if (cardNode) {
+     scrollCardIntoViewLocally(cardNode);
+     const isChecked = juncture && commAttData.attendance[juncture] ? commAttData.attendance[juncture][name] === true : false;
+     const pulseClass = forceState ? 'pulse-blue' : (isChecked ? 'pulse-green' : 'pulse-red');
+     setTimeout(() => applyCardPulse(cardNode, pulseClass), 400);
+ }
 }, 50);
 } else {
 updateCommAttCardDOM(name);
@@ -1681,8 +1682,8 @@ let eligibleTrainees = getEligibleBusTrainees();
 if (busState.searchQuery) {
 const query = busState.searchQuery;
 eligibleTrainees = eligibleTrainees.filter(p => 
-  p.name.toLowerCase().includes(query) || 
-  (p.volPaired && p.volPaired.toLowerCase().includes(query))
+ p.name.toLowerCase().includes(query) || 
+ (p.volPaired && p.volPaired.toLowerCase().includes(query))
 );
 }
 
@@ -1716,13 +1717,13 @@ uiBindLongPress(el, () => {
 const name = el.getAttribute('data-name');
 const p = (commAttData.participants || []).find(x => x.name === name);
 if (p) {
-  if (busState.searchQuery) {
-      busState.searchQuery = "";
-      document.getElementById('busSearchInput').value = "";
-      if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
-      renderBusLists();
-  }
-  showPersonInfo(p);
+ if (busState.searchQuery) {
+     busState.searchQuery = "";
+     document.getElementById('busSearchInput').value = "";
+     if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
+     renderBusLists();
+ }
+ showPersonInfo(p);
 }
 });
 });
@@ -1826,7 +1827,7 @@ rebindCommAttCard(cardId, p);
 
 scrollCardIntoViewLocally(newNode);
 setTimeout(() => {
-  applyCardPulse(newNode, isBoarded ? 'pulse-green' : 'pulse-red');
+ applyCardPulse(newNode, isBoarded ? 'pulse-green' : 'pulse-red');
 }, 400);
 }, 300);
 }
@@ -1902,13 +1903,13 @@ document.getElementById('busSearchInput').value = "";
 if (typeof toggleClearBtn === 'function') toggleClearBtn('busSearchInput');
 renderBusLists();
 setTimeout(() => {
-  const cardNode = document.getElementById(`bus-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
-  if (cardNode) {
-      scrollCardIntoViewLocally(cardNode);
-      setTimeout(() => {
-          applyCardPulse(cardNode, forceBoarded ? 'pulse-green' : 'pulse-red');
-      }, 400);
-  }
+ const cardNode = document.getElementById(`bus-att-card-${name.replace(/[^a-zA-Z0-9]/g, '')}`);
+ if (cardNode) {
+     scrollCardIntoViewLocally(cardNode);
+     setTimeout(() => {
+         applyCardPulse(cardNode, forceBoarded ? 'pulse-green' : 'pulse-red');
+     }, 400);
+ }
 }, 50);
 } else {
 updateBusCardDOM(name);
