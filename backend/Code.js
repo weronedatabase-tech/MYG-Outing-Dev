@@ -1694,14 +1694,7 @@ let cached = getLargeCache(cacheKey);
 if (cached) { try { return JSON.parse(cached); } catch(e) {} }
 }
 
-const lock = LockService.getScriptLock();
 try {
-if (!skipLock) lock.waitLock(28000);
-if (!forceRebuild) {
-let cached = getLargeCache(cacheKey);
-if (cached) { try { return JSON.parse(cached); } catch(e) {} }
-}
-
 if (!sheetUrl || sheetUrl === "") return { success: false, message: "Invalid Sheet URL" };
 const ss = ssOpt || SpreadsheetApp.openByUrl(sheetUrl);
 const tabName = type === 'trainee' ? "Trainee Attendance" : "Volunteer Attendance";
@@ -1718,8 +1711,6 @@ putLargeCache(cacheKey, JSON.stringify(result));
 return result;
 } catch(e) { 
 return { success: false, message: e.toString() }; 
-} finally {
-if (!skipLock) lock.releaseLock();
 }
 }
 
