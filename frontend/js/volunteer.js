@@ -5,6 +5,33 @@ let originalVolData = {};
 // PILLAR 3: Zero-Latency Hydration Data Stores
 let preFetchedNames = { trainee: null, volunteer: null };
 
+// Centralized Concurrency Retry Handler for GAS Exceptions
+async function retryApiCall(action, payload, maxRetries = 5) {
+    for (let i = 0; i < maxRetries; i++) {
+        const res = await apiCall(action, payload);
+        if (res && res.success) {
+            return res;
+        }
+        
+        // Check if the response indicates a transient Google Server HTML 500 error, concurrency timeout, or script limit
+        const isLockError = res && res.message && /lock|timeout|concurrent|too many|invalid response|server error/i.test(res.message);
+        
+        if (isLockError && i < maxRetries - 1) {
+            const waitTime = Math.pow(2, i) * 1000 + Math.random() * 1000; // Exponential Backoff & Jitter
+            
+            // Only update UX on mutations. Background fetches stay silent.
+            if (action === 'submitAttendanceData') {
+                showOverlay('loading', `Network Congested. Retrying in ${Math.round(waitTime/1000)}s...`);
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+        } else {
+            return res || { success: false, message: "Unknown API Failure" };
+        }
+    }
+    return { success: false, message: "Failed after multiple retries due to extreme server congestion. Please try again later." };
+}
+
 // MPA Specific Loader for Volunteer App to prevent pulling the massive comm.js bundle
 function loadVolunteerEvents() {
  const selector = document.getElementById('volSheetSelector');
@@ -47,9 +74,9 @@ function loadVolunteerEvents() {
          if (parsed && parsed.length > 0) {
              renderData(parsed);
              if(spinner) spinner.classList.remove('hidden');
-             apiCall('getRecentOutingSheets', null).then(res => {
+             retryApiCall('getRecentOutingSheets', null).then(res => {
                  if(spinner) spinner.classList.add('hidden');
-                 if (res.success && JSON.stringify(res.data) !== localDataStr) {
+                 if (res && res.success && JSON.stringify(res.data) !== localDataStr) {
                      localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
                      renderData(res.data);
                  }
@@ -65,10 +92,10 @@ function loadVolunteerEvents() {
  }
  if(spinner) spinner.classList.remove('hidden');
 
- apiCall('getRecentOutingSheets', null).then(res => {
+ retryApiCall('getRecentOutingSheets', null).then(res => {
      if(spinner) spinner.classList.add('hidden');
 
-     if (res.success) {
+     if (res && res.success) {
          localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
          if(res.data.length > 0) {
              renderData(res.data);
@@ -94,11 +121,11 @@ function prefetchNamesForSelectedEvent() {
     
     preFetchedNames = { trainee: null, volunteer: null };
     
-    apiCall('getNamesList', { url: url, type: 'trainee' }).then(res => {
-        if (res.success) preFetchedNames.trainee = res.names;
+    retryApiCall('getNamesList', { url: url, type: 'trainee' }).then(res => {
+        if (res && res.success) preFetchedNames.trainee = res.names;
     });
-    apiCall('getNamesList', { url: url, type: 'volunteer' }).then(res => {
-        if (res.success) preFetchedNames.volunteer = res.names;
+    retryApiCall('getNamesList', { url: url, type: 'volunteer' }).then(res => {
+        if (res && res.success) preFetchedNames.volunteer = res.names;
     });
 }
 
@@ -184,9 +211,9 @@ if (preFetchedNames[requestedType]) {
     list.innerHTML = Array(5).fill('<li class="px-4 py-3 border-b border-gray-200 dark:border-zinc-700"><div class="animate-pulse h-4 bg-gray-200 dark:bg-zinc-700 rounded w-2/3"></div></li>').join('');
     list.classList.remove('hidden');
 
-    apiCall('getNamesList', { url: url, type: requestedType }).then(res => { 
+    retryApiCall('getNamesList', { url: url, type: requestedType }).then(res => { 
         if (currentVolTypeRequest !== requestedType) return; 
-        if(res.success) {
+        if(res && res.success) {
             preFetchedNames[requestedType] = res.names;
             renderList(res.names);
         } else {
@@ -427,21 +454,24 @@ fieldsDiv.innerHTML = Array(4).fill('<div class="mb-2"><div class="animate-pulse
 
 if (isManualNew) { 
 title.innerText = "Add New Volunteer"; 
-submitBtn.innerText = "Add New Volunteer & Update Attendance"; 
+submitBtn.innerHTML = "Add New Volunteer & Update Attendance"; 
 projectContainer.classList.remove('hidden'); 
 document.getElementById('newVolProjectSearch').value = ""; 
 document.getElementById('newVolProjectSearch').required = true; 
 toggleClearBtn('newVolProjectSearch');
 } else { 
 title.innerText = "Loading details..."; 
-submitBtn.innerText = "Update Attendance"; 
+submitBtn.innerHTML = "<i class='fa-solid fa-circle-notch fa-spin mr-2'></i> Loading details..."; 
+submitBtn.disabled = true;
 projectContainer.classList.add('hidden'); 
 document.getElementById('newVolProjectSearch').required = false; 
 } 
 
-apiCall('getPersonData', { url: url, type: selectedVolType, name: name }).then(res => { 
+retryApiCall('getPersonData', { url: url, type: selectedVolType, name: name }).then(res => { 
 fieldsDiv.innerHTML = ''; 
-if(res.success) { 
+submitBtn.disabled = false;
+
+if(res && res.success) { 
    const data = res.data; 
    originalVolData = JSON.parse(JSON.stringify(data || {}));
    
@@ -453,8 +483,8 @@ if(res.success) {
    
    const htmlSafeName = name ? name.replace(/"/g, '&quot;') : '';
    title.innerHTML = isNew ? `Add New: <span class="text-green-500">Volunteer</span>` : `Update: <span class="text-blue-500">${htmlSafeName}</span>`; 
-   if(isNew) submitBtn.innerText = "Add New Volunteer & Update Attendance"; 
-   else submitBtn.innerText = "Update Attendance"; 
+   if(isNew) submitBtn.innerHTML = "Add New Volunteer & Update Attendance"; 
+   else submitBtn.innerHTML = "Update Attendance"; 
    
    let fieldsToShow = (config && config.length > 0) ? config : res.headers.map(h => h.replace(/\[.*?\]/g,"").trim()); 
    if (isNew) { 
@@ -528,31 +558,11 @@ if(res.success) {
    const attSelect = document.querySelector('select[name*="Attending"], select[name*="attending"]'); 
    if(attSelect) toggleDependentFields(attSelect); 
 } else { 
-   fieldsDiv.innerHTML = '<div class="text-red-500 dark:text-red-400 font-bold">Error: ' + res.message + '</div>'; 
+   const errMsg = res ? res.message : "Network error";
+   fieldsDiv.innerHTML = '<div class="text-red-500 dark:text-red-400 font-bold">Error: ' + errMsg + '</div>'; 
+   submitBtn.innerHTML = "Update Attendance"; 
 } 
 }); 
-}
-
-async function submitAttendanceWithRetry(payload, maxRetries = 4) {
-    for (let i = 0; i < maxRetries; i++) {
-        const res = await apiCall('submitAttendanceData', payload);
-        if (res.success) {
-            return res;
-        }
-        
-        // Retry logic: Identifies GAS lock errors, concurrent overrides, or generic execution timeouts
-        const isLockError = res.message && /lock|timeout|concurrent|too many/i.test(res.message);
-        
-        if (isLockError && i < maxRetries - 1) {
-            // Exponential Backoff & Jitter calculation
-            const waitTime = Math.pow(2, i) * 1000 + Math.random() * 1000;
-            showOverlay('loading', `Server busy. Retrying in ${Math.round(waitTime/1000)}s...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-        } else {
-            return res; // Final failure or non-lock error
-        }
-    }
-    return { success: false, message: "Failed after multiple retries due to server load. Please try again." };
 }
 
 function submitAttendance(e) { 
@@ -605,8 +615,8 @@ showOverlay('loading', 'Saving Attendance...');
 
 const payload = { sheetUrl: document.getElementById('volSheetSelector').value, type: selectedVolType, data: deltaObj, targetName: target }; 
 
-submitAttendanceWithRetry(payload).then(res => { 
-if(res.success) {
+retryApiCall('submitAttendanceData', payload).then(res => { 
+if(res && res.success) {
    showOverlay('success', res.message);
    if(selectedVolType === 'volunteer') { 
        if(res.message.includes("added")) { 
@@ -615,8 +625,8 @@ if(res.success) {
        } 
        const url = document.getElementById('volSheetSelector').value; 
        setTimeout(() => {
-           apiCall('getNamesList', { url: url, type: 'volunteer' }).then(r => { 
-               if(r.success) { 
+           retryApiCall('getNamesList', { url: url, type: 'volunteer' }).then(r => { 
+               if(r && r.success) { 
                    allNames = r.names; 
                    preFetchedNames.volunteer = r.names; 
                } 
@@ -624,7 +634,8 @@ if(res.success) {
        }, 500);
    } 
 } else {
-   showOverlay('error', res.message);
+   const errMsg = res ? res.message : "Submission Failed";
+   showOverlay('error', errMsg);
 }
 }); 
 }

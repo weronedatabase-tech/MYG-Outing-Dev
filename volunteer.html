@@ -65,9 +65,12 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <div class="relative">
 <label class="text-sm font-bold text-green-600 dark:text-green-400 uppercase flex items-center gap-2">1. Select Upcoming Event <span id="volSheetLoading" class="hidden"><i class="fa-solid fa-spinner fa-spin"></i></span></label>
 <div class="relative mt-1">
- <select id="volSheetSelector" class="w-full mt-1 bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-3 px-3 text-sm text-gray-900 dark:text-white focus:border-green-500 outline-none appearance-none shadow-sm" onchange="resetVolForm()"><option disabled selected>Loading...</option></select>
+ <select id="volSheetSelector" class="w-full mt-1 bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-3 px-3 pr-24 text-sm text-gray-900 dark:text-white focus:border-green-500 outline-none appearance-none shadow-sm transition-all" onchange="resetVolForm()"><option disabled selected>Loading...</option></select>
  <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500 dark:text-gray-400"><i class="fa-solid fa-chevron-down"></i></div>
- <div id="volSheetSpinner" class="absolute right-8 top-3 hidden pointer-events-none text-green-500"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
+ <div id="volSheetSpinner" class="absolute inset-y-0 right-8 flex items-center pointer-events-none gap-2 bg-transparent hidden pr-2">
+     <span class="text-[10px] font-bold text-green-600 dark:text-green-400 bg-gray-50 dark:bg-black px-1 rounded uppercase tracking-wider">Loading</span>
+     <i class="fa-solid fa-circle-notch fa-spin text-green-500 text-sm bg-gray-50 dark:bg-black"></i>
+ </div>
 </div>
 </div>
 <div>
@@ -82,8 +85,11 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <div class="relative mt-2">
  <div class="relative">
      <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-solid fa-magnifying-glass text-gray-400 dark:text-gray-500"></i></div>
-     <input type="text" id="volNameSearch" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-3 pl-10 pr-10 text-sm text-gray-900 dark:text-white focus:border-green-500 outline-none placeholder-gray-400 dark:placeholder-gray-500 shadow-sm" placeholder="Type to search..." onfocus="autoScrollAndFocus(this)" oninput="filterNames(); toggleClearBtn('volNameSearch')" autocomplete="off">
-     <div id="nameLoader" class="absolute right-8 top-1/2 -translate-y-1/2 hidden"><div class="text-green-500 dark:text-green-400 text-sm"><i class="fa-solid fa-circle-notch fa-spin"></i></div></div>
+     <input type="text" id="volNameSearch" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-3 pl-10 pr-24 text-sm text-gray-900 dark:text-white focus:border-green-500 outline-none placeholder-gray-400 dark:placeholder-gray-500 shadow-sm" placeholder="Type to search..." onfocus="autoScrollAndFocus(this)" oninput="filterNames(); toggleClearBtn('volNameSearch')" autocomplete="off">
+     <div id="nameLoader" class="absolute inset-y-0 right-8 flex items-center pointer-events-none gap-1.5 bg-transparent hidden pr-1">
+         <span class="text-[10px] font-bold text-green-600 dark:text-green-400 uppercase tracking-wider bg-gray-50 dark:bg-black px-1 rounded">Loading</span>
+         <i class="fa-solid fa-circle-notch fa-spin text-green-500 text-sm bg-gray-50 dark:bg-black"></i>
+     </div>
      <button type="button" id="clearBtn-volNameSearch" onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hidden transition-colors z-10"><i class="fa-solid fa-xmark text-lg"></i></button>
  </div>
  <ul id="volNameList" class="absolute z-50 w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-cyan-700 rounded-xl mt-2 shadow-2xl hidden max-h-60 overflow-y-auto pb-6"></ul>
@@ -111,7 +117,7 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 </div>
 <div id="dynamicFields" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
 <div id="volFormStatus" class="hidden p-3 rounded-lg text-sm text-center"></div>
-<button id="volSubmitBtn" type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 md:py-4 rounded-xl shadow-lg mt-6 transition-colors text-base">Update Attendance</button>
+<button id="volSubmitBtn" type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 md:py-4 rounded-xl shadow-lg mt-6 transition-colors text-base flex items-center justify-center gap-2">Update Attendance</button>
 </form>
 </div>
 </div>
