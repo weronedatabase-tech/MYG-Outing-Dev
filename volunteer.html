@@ -37,19 +37,19 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <div class="flex items-center justify-between w-full min-h-[32px] gap-2">
 <div class="flex items-center gap-1.5 min-w-0 flex-1">
 <button onclick="handleNavBack()" class="bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-700 dark:text-gray-300 w-8 h-8 flex items-center justify-center rounded shadow-sm shrink-0 transition-colors">
-  <i class="fa-solid fa-arrow-left text-sm md:text-base"></i>
+ <i class="fa-solid fa-arrow-left text-sm md:text-base"></i>
 </button>
 <h1 class="text-base md:text-lg font-extrabold text-gray-900 dark:text-white leading-tight truncate">Attendance Update</h1>
 </div>
 <div class="flex items-center gap-1.5 shrink-0 pl-2 ml-auto border-l border-gray-200 dark:border-zinc-700">
 <button onclick="refreshApp()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors group flex items-center p-1">
-  <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm md:text-base group-hover:text-primary transition-transform"></i>
+ <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm md:text-base group-hover:text-primary transition-transform"></i>
 </button>
 <button onclick="toggleTheme()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors flex items-center p-1">
-  <span class="text-sm md:text-base leading-none">🌗</span>
+ <span class="text-sm md:text-base leading-none">🌗</span>
 </button>
 <button onclick="navigateTo('./')" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors flex items-center p-1">
-  <i class="fa-solid fa-house text-sm md:text-base"></i>
+ <i class="fa-solid fa-house text-sm md:text-base"></i>
 </button>
 </div>
 </div>
@@ -62,36 +62,35 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2 max-w-7xl mx-auto">
 <div class="lg:col-span-5 space-y-6">
 <div class="bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl p-6 shadow-xl space-y-4">
-<div class="relative">
-<label class="text-sm font-bold text-green-600 dark:text-green-400 uppercase flex items-center gap-2">1. Select Upcoming Event <span id="volSheetLoading" class="hidden"><i class="fa-solid fa-spinner fa-spin"></i></span></label>
-<div class="relative mt-1">
-  <select id="volSheetSelector" class="w-full mt-1 bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-3 px-3 text-sm text-gray-900 dark:text-white focus:border-green-500 outline-none appearance-none shadow-sm" onchange="resetVolForm()"><option disabled selected>Loading...</option></select>
-  <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500 dark:text-gray-400"><i class="fa-solid fa-chevron-down"></i></div>
-  <div id="volSheetSpinner" class="absolute right-8 top-3 hidden pointer-events-none text-green-500"><i class="fa-solid fa-circle-notch fa-spin"></i></div>
+
+<!-- Static Display for Selected Event -->
+<div class="mb-4 pb-4 border-b border-gray-100 dark:border-zinc-800">
+<h2 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Target Event</h2>
+<div id="volEventTitle" class="text-lg md:text-xl font-black text-gray-900 dark:text-white truncate">Loading...</div>
 </div>
-</div>
+
 <div>
-<label class="text-sm font-bold text-green-600 dark:text-green-400 uppercase">2. Select Type</label>
+<label class="text-sm font-bold text-green-600 dark:text-green-400 uppercase">1. Select Type</label>
 <div class="flex gap-3 mt-2">
-  <button type="button" onclick="setVolType('trainee', this)" class="vol-type-btn flex-1 bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 hover:border-green-500 py-3 rounded-lg text-sm font-bold transition-colors text-gray-700 dark:text-gray-300 shadow-sm">Trainee</button>
-  <button type="button" onclick="setVolType('volunteer', this)" class="vol-type-btn flex-1 bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 hover:border-green-500 py-3 rounded-lg text-sm font-bold transition-colors text-gray-700 dark:text-gray-300 shadow-sm">Volunteer</button>
+ <button type="button" onclick="setVolType('trainee', this)" class="vol-type-btn flex-1 bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 hover:border-green-500 py-3 rounded-lg text-sm font-bold transition-colors text-gray-700 dark:text-gray-300 shadow-sm">Trainee</button>
+ <button type="button" onclick="setVolType('volunteer', this)" class="vol-type-btn flex-1 bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 hover:border-green-500 py-3 rounded-lg text-sm font-bold transition-colors text-gray-700 dark:text-gray-300 shadow-sm">Volunteer</button>
 </div>
 </div>
 <div id="volNameSection" class="hidden mt-2">
-<label class="text-sm font-bold text-green-600 dark:text-green-400 uppercase">3. Search / Select Name</label>
+<label class="text-sm font-bold text-green-600 dark:text-green-400 uppercase">2. Search / Select Name</label>
 <div class="relative mt-2">
-  <div class="relative">
-      <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-solid fa-magnifying-glass text-gray-400 dark:text-gray-500"></i></div>
-      <input type="text" id="volNameSearch" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-3 pl-10 pr-10 text-sm text-gray-900 dark:text-white focus:border-green-500 outline-none placeholder-gray-400 dark:placeholder-gray-500 shadow-sm" placeholder="Type to search..." onfocus="autoScrollAndFocus(this)" oninput="filterNames(); toggleClearBtn('volNameSearch')" autocomplete="off">
-      <div id="nameLoader" class="absolute right-8 top-1/2 -translate-y-1/2 hidden"><div class="text-gray-500 dark:text-gray-400 text-sm"><i class="fa-solid fa-circle-notch fa-spin"></i></div></div>
-      <button type="button" id="clearBtn-volNameSearch" onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hidden transition-colors z-10"><i class="fa-solid fa-xmark text-lg"></i></button>
-  </div>
-  <ul id="volNameList" class="absolute z-50 w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-cyan-700 rounded-xl mt-2 shadow-2xl hidden max-h-60 overflow-y-auto pb-6"></ul>
+ <div class="relative">
+     <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa-solid fa-magnifying-glass text-gray-400 dark:text-gray-500"></i></div>
+     <input type="text" id="volNameSearch" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-3 pl-10 pr-10 text-sm text-gray-900 dark:text-white focus:border-green-500 outline-none placeholder-gray-400 dark:placeholder-gray-500 shadow-sm" placeholder="Type to search..." onfocus="autoScrollAndFocus(this)" oninput="filterNames(); toggleClearBtn('volNameSearch')" autocomplete="off">
+     <div id="nameLoader" class="absolute right-8 top-1/2 -translate-y-1/2 hidden"><div class="text-gray-500 dark:text-gray-400 text-sm"><i class="fa-solid fa-circle-notch fa-spin"></i></div></div>
+     <button type="button" id="clearBtn-volNameSearch" onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hidden transition-colors z-10"><i class="fa-solid fa-xmark text-lg"></i></button>
+ </div>
+ <ul id="volNameList" class="absolute z-50 w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-cyan-700 rounded-xl mt-2 shadow-2xl hidden max-h-60 overflow-y-auto pb-6"></ul>
 </div>
 <div id="addNewVolContainer" class="hidden mt-4 text-center">
-  <button type="button" onclick="showAddNewForm()" class="text-sm md:text-base text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-bold flex items-center justify-center gap-2 w-full py-3 bg-gray-100 dark:bg-zinc-800 rounded-lg border border-dashed border-green-500/30 transition-colors">
-      <i class="fa-solid fa-user-plus"></i> ＋ Can't find your name above? Add yourself in here
-  </button>
+ <button type="button" onclick="showAddNewForm()" class="text-sm md:text-base text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-bold flex items-center justify-center gap-2 w-full py-3 bg-gray-100 dark:bg-zinc-800 rounded-lg border border-dashed border-green-500/30 transition-colors">
+     <i class="fa-solid fa-user-plus"></i> ＋ Can't find your name above? Add yourself in here
+ </button>
 </div>
 </div>
 </div>
@@ -102,12 +101,12 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <h3 id="formTitle" class="font-bold text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-zinc-800 pb-2 text-lg">Update Details</h3>
 <form id="attendanceForm" onsubmit="submitAttendance(event)" class="space-y-4">
 <div id="newVolProjectContainer" class="hidden mb-4 relative">
-  <label class="block text-xs md:text-sm font-bold text-gray-500 dark:text-gray-400 mb-1">Project Group *</label>
-  <div class="relative">
-      <input type="text" id="newVolProjectSearch" name="Project" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg p-3 pr-10 text-sm text-gray-900 dark:text-white focus:border-green-500 outline-none shadow-sm placeholder-gray-400 dark:placeholder-gray-500" placeholder="Search Project..." onfocus="toggleProjectList(true)" oninput="filterProjects(); toggleClearBtn('newVolProjectSearch')" autocomplete="off">
-      <button type="button" id="clearBtn-newVolProjectSearch" onclick="clearSearchInput('newVolProjectSearch', 'filterProjects')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hidden transition-colors z-10"><i class="fa-solid fa-xmark text-lg"></i></button>
-      <ul id="projectList" class="absolute z-50 w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-cyan-700 rounded-xl mt-2 shadow-2xl hidden max-h-40 overflow-y-auto pb-6"></ul>
-  </div>
+ <label class="block text-xs md:text-sm font-bold text-gray-500 dark:text-gray-400 mb-1">Project Group *</label>
+ <div class="relative">
+     <input type="text" id="newVolProjectSearch" name="Project" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg p-3 pr-10 text-sm text-gray-900 dark:text-white focus:border-green-500 outline-none shadow-sm placeholder-gray-400 dark:placeholder-gray-500" placeholder="Search Project..." onfocus="toggleProjectList(true)" oninput="filterProjects(); toggleClearBtn('newVolProjectSearch')" autocomplete="off">
+     <button type="button" id="clearBtn-newVolProjectSearch" onclick="clearSearchInput('newVolProjectSearch', 'filterProjects')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 hidden transition-colors z-10"><i class="fa-solid fa-xmark text-lg"></i></button>
+     <ul id="projectList" class="absolute z-50 w-full bg-white dark:bg-zinc-900 border border-gray-300 dark:border-cyan-700 rounded-xl mt-2 shadow-2xl hidden max-h-40 overflow-y-auto pb-6"></ul>
+ </div>
 </div>
 <div id="dynamicFields" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
 <div id="volFormStatus" class="hidden p-3 rounded-lg text-sm text-center"></div>
@@ -122,10 +121,12 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  loadVolunteerEvents();
+ const params = new URLSearchParams(window.location.search);
+ const url = params.get('url');
+ initVolunteerApp(url);
 });
 window.handleNavBack = function() {
-  navigateTo('./');
+ navigateTo('./');
 };
 </script>
 

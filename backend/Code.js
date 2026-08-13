@@ -215,9 +215,9 @@ function setupCron() {
 const triggers = ScriptApp.getProjectTriggers();
 triggers.forEach(t => ScriptApp.deleteTrigger(t));
 ScriptApp.newTrigger('precomputeRecentOutings')
- .timeBased()
- .everyMinutes(15)
- .create();
+.timeBased()
+.everyMinutes(15)
+.create();
 precomputeRecentOutings();
 }
 
@@ -304,9 +304,9 @@ if (payload && payload.sheetUrl) {
 const url = payload.sheetUrl;
 invalidateCaches(url); // Destroy any local cache payload mapping to this specific sheet URL
 try {
-  atomicCacheRebuild(url); // Rebuild it immediately from raw spreadsheet data
+ atomicCacheRebuild(url); // Rebuild it immediately from raw spreadsheet data
 } catch (e) {
-  // If rebuilding fails (e.g. file deleted from drive entirely), it's fine, it's already invalidated
+ // If rebuilding fails (e.g. file deleted from drive entirely), it's fine, it's already invalidated
 }
 }
 return { success: true, message: "Backend caches forcefully wiped and rebuilt." };
@@ -344,16 +344,16 @@ if (found) {
 const row = found.getRow() + 1;
 const col = found.getColumn();
 if (col <= maxCol) {
-  const vals = infoSheet.getRange(row, col, Math.min(10, maxRow - row + 1), Math.min(3, maxCol - col + 1)).getValues();
-  for(let r of vals) {
-      const val = String(r[0]).trim();
-      if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
-      if (isMeet) meetLocs.push(val);
-      else disLocs.push(val);
-      if (r.length > 2 && (r[2] === true || String(r[2]).toLowerCase() === 'true')) {
-          busJuncs.push({ name: val, type: isMeet ? 'meet' : 'dismiss' });
-      }
-  }
+ const vals = infoSheet.getRange(row, col, Math.min(10, maxRow - row + 1), Math.min(3, maxCol - col + 1)).getValues();
+ for(let r of vals) {
+     const val = String(r[0]).trim();
+     if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
+     if (isMeet) meetLocs.push(val);
+     else disLocs.push(val);
+     if (r.length > 2 && (r[2] === true || String(r[2]).toLowerCase() === 'true')) {
+         busJuncs.push({ name: val, type: isMeet ? 'meet' : 'dismiss' });
+     }
+ }
 }
 }
 };
@@ -587,9 +587,9 @@ sheet.insertColumnsAfter(sheet.getMaxColumns(), neededCols - sheet.getMaxColumns
 }
 for(let i=0; i<4; i++) {
 if (row + i <= maxRow) {
-  sheet.getRange(row + i, col).setValue(locs[i] || "");
-  sheet.getRange(row + i, col + 1).setValue(times[i] || "");
-  sheet.getRange(row + i, col + 2).setValue(buses && buses[i] ? true : false);
+ sheet.getRange(row + i, col).setValue(locs[i] || "");
+ sheet.getRange(row + i, col + 1).setValue(times[i] || "");
+ sheet.getRange(row + i, col + 2).setValue(buses && buses[i] ? true : false);
 }
 }
 }
@@ -642,8 +642,8 @@ const maxInfoCol = infoSheet.getMaxColumns();
 if (maxInfoRow >= 2 && maxInfoCol >= 2) {
 const numRows = Math.min(maxInfoRow, 25) - 1;
 if (numRows > 0) {
-   outingMessage = infoSheet.getRange(2, 2, numRows, 1).getDisplayValues()
-       .map(r => r[0]).join('\n').trim();
+  outingMessage = infoSheet.getRange(2, 2, numRows, 1).getDisplayValues()
+      .map(r => r[0]).join('\n').trim();
 }
 }
 
@@ -657,20 +657,20 @@ const getList = (keyword, stopKeyword) => {
 const locs = [], times = [], buses = [];
 let found = infoSheet.createTextFinder(keyword).findNext();
 if (found) {
-    const row = found.getRow() + 1;
-    const col = found.getColumn();
-    const maxRows = infoSheet.getLastRow() - row + 1;
-    if (maxRows > 0 && col <= maxInfoCol) {
-        const numColsToRead = Math.min(3, maxInfoCol - col + 1);
-        const vals = infoSheet.getRange(row, col, Math.min(10, maxRows), numColsToRead).getValues();
-        for(let r of vals) {
-            const val = String(r[0]).trim();
-            if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
-            locs.push(val);
-            times.push(r.length > 1 ? String(r[1]).trim() : "");
-            buses.push(r.length > 2 ? (r[2] === true || String(r[2]).toLowerCase() === 'true') : false);
-        }
-    }
+   const row = found.getRow() + 1;
+   const col = found.getColumn();
+   const maxRows = infoSheet.getLastRow() - row + 1;
+   if (maxRows > 0 && col <= maxInfoCol) {
+       const numColsToRead = Math.min(3, maxInfoCol - col + 1);
+       const vals = infoSheet.getRange(row, col, Math.min(10, maxRows), numColsToRead).getValues();
+       for(let r of vals) {
+           const val = String(r[0]).trim();
+           if(val === "" || (stopKeyword && val.toLowerCase().includes(stopKeyword.toLowerCase()))) break;
+           locs.push(val);
+           times.push(r.length > 1 ? String(r[1]).trim() : "");
+           buses.push(r.length > 2 ? (r[2] === true || String(r[2]).toLowerCase() === 'true') : false);
+       }
+   }
 }
 return { locs, times, buses };
 };
@@ -680,9 +680,9 @@ const dateCell = infoSheet.createTextFinder("Date").findNext();
 if(dateCell && dateCell.getColumn() < maxInfoCol) {
 const dVal = dateCell.offset(0,1).getValue();
 if (dVal instanceof Date) {
-    outingConfig.eventDate = Utilities.formatDate(dVal, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
+   outingConfig.eventDate = Utilities.formatDate(dVal, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
 } else {
-    outingConfig.eventDate = getVal("Date"); 
+   outingConfig.eventDate = getVal("Date"); 
 }
 }
 
@@ -852,22 +852,22 @@ const tGroupIdx = getColIndex(tHeaders, "outing grouping");
 const goneHomeIdx = tHeaders.indexOf("[Sys] Gone Home");
 
 tData.forEach(row => {
-  const name = row[tNameIdx] ? row[tNameIdx].toString().trim() : "";
-  if (name) {
-      const att = (tAttIdx > -1 && row[tAttIdx]) ? row[tAttIdx].toString().toLowerCase() : "";
-      trainees.push({
-          name: name, role: 'TRAINEE',
-          caregivers: (tCareIdx > -1 && row[tCareIdx]) ? parseInt(row[tCareIdx]) || 0 : 0,
-          attending: att,
-          volPaired: (tVolPairedIdx > -1 && row[tVolPairedIdx]) ? row[tVolPairedIdx].toString().trim() : "",
-          project: (tProjIdx > -1 && row[tProjIdx]) ? row[tProjIdx].toString().trim() : "",
-          group: (tGroupIdx > -1 && row[tGroupIdx]) ? row[tGroupIdx].toString().trim() : "",
-          isAttendingN: att === 'n',
-          isAttendingUnknown: att === '',
-          isGoneHome: (goneHomeIdx > -1 && (row[goneHomeIdx] === true || String(row[goneHomeIdx]).toLowerCase() === 'true')),
-          extra: extraDataMap[name.toLowerCase()] || {}
-      });
-  }
+ const name = row[tNameIdx] ? row[tNameIdx].toString().trim() : "";
+ if (name) {
+     const att = (tAttIdx > -1 && row[tAttIdx]) ? row[tAttIdx].toString().toLowerCase() : "";
+     trainees.push({
+         name: name, role: 'TRAINEE',
+         caregivers: (tCareIdx > -1 && row[tCareIdx]) ? parseInt(row[tCareIdx]) || 0 : 0,
+         attending: att,
+         volPaired: (tVolPairedIdx > -1 && row[tVolPairedIdx]) ? row[tVolPairedIdx].toString().trim() : "",
+         project: (tProjIdx > -1 && row[tProjIdx]) ? row[tProjIdx].toString().trim() : "",
+         group: (tGroupIdx > -1 && row[tGroupIdx]) ? row[tGroupIdx].toString().trim() : "",
+         isAttendingN: att === 'n',
+         isAttendingUnknown: att === '',
+         isGoneHome: (goneHomeIdx > -1 && (row[goneHomeIdx] === true || String(row[goneHomeIdx]).toLowerCase() === 'true')),
+         extra: extraDataMap[name.toLowerCase()] || {}
+     });
+ }
 });
 }
 
@@ -883,20 +883,20 @@ const vMeetICIdx = getColIndex(vHeaders, "meeting ic");
 const vDismissICIdx = getColIndex(vHeaders, "dismissal ic");
 
 vData.forEach(row => {
-  const att = (vAttIdx > -1 && row[vAttIdx]) ? row[vAttIdx].toString().toLowerCase() : "";
-  if (att === 'y') {
-      const name = row[vNameIdx] ? row[vNameIdx].toString().trim() : "";
-      if (name) {
-          volunteers.push({
-              name: name, role: 'VOLUNTEER',
-              project: (vProjIdx > -1 && row[vProjIdx]) ? row[vProjIdx].toString().trim() : "",
-              groupIC: (vGroupICIdx > -1 && row[vGroupICIdx]) ? (String(row[vGroupICIdx]).toLowerCase() === 'true' || String(row[vGroupICIdx]).toLowerCase() === 'y') : false,
-              meetIC: (vMeetICIdx > -1 && row[vMeetICIdx]) ? (String(row[vMeetICIdx]).toLowerCase() === 'true' || String(row[vMeetICIdx]).toLowerCase() === 'y') : false,
-              dismissIC: (vDismissICIdx > -1 && row[vDismissICIdx]) ? (String(row[vDismissICIdx]).toLowerCase() === 'true' || String(row[vDismissICIdx]).toLowerCase() === 'y') : false,
-              extra: extraDataMap[name.toLowerCase()] || {}
-          });
-      }
-  }
+ const att = (vAttIdx > -1 && row[vAttIdx]) ? row[vAttIdx].toString().toLowerCase() : "";
+ if (att === 'y') {
+     const name = row[vNameIdx] ? row[vNameIdx].toString().trim() : "";
+     if (name) {
+         volunteers.push({
+             name: name, role: 'VOLUNTEER',
+             project: (vProjIdx > -1 && row[vProjIdx]) ? row[vProjIdx].toString().trim() : "",
+             groupIC: (vGroupICIdx > -1 && row[vGroupICIdx]) ? (String(row[vGroupICIdx]).toLowerCase() === 'true' || String(row[vGroupICIdx]).toLowerCase() === 'y') : false,
+             meetIC: (vMeetICIdx > -1 && row[vMeetICIdx]) ? (String(row[vMeetICIdx]).toLowerCase() === 'true' || String(row[vMeetICIdx]).toLowerCase() === 'y') : false,
+             dismissIC: (vDismissICIdx > -1 && row[vDismissICIdx]) ? (String(row[vDismissICIdx]).toLowerCase() === 'true' || String(row[vDismissICIdx]).toLowerCase() === 'y') : false,
+             extra: extraDataMap[name.toLowerCase()] || {}
+         });
+     }
+ }
 });
 }
 
@@ -1002,11 +1002,11 @@ let changed = false;
 for (let i = 0; i < tData.length; i++) {
 const name = tData[i][tNameIdx] ? tData[i][tNameIdx].toString().trim().toLowerCase() : "";
 if (name && tUpdatesMap.hasOwnProperty(name)) {
- if (tData[i][tGroupIdx] !== tUpdatesMap[name]) {
-     tData[i][tGroupIdx] = tUpdatesMap[name];
-     tFormulas[i][tGroupIdx] = ""; 
-     changed = true;
- }
+if (tData[i][tGroupIdx] !== tUpdatesMap[name]) {
+    tData[i][tGroupIdx] = tUpdatesMap[name];
+    tFormulas[i][tGroupIdx] = ""; 
+    changed = true;
+}
 }
 }
 if (changed) {
@@ -1048,7 +1048,7 @@ const vUpdatesMap = {};
 vUpdates.forEach(u => {
 const key = u.name.trim().toLowerCase();
 if (!vUpdatesMap[key]) {
-  vUpdatesMap[key] = { groupIC: null, meetIC: null, dismissIC: null };
+ vUpdatesMap[key] = { groupIC: null, meetIC: null, dismissIC: null };
 }
 if (u.groupIC !== undefined) vUpdatesMap[key].groupIC = u.groupIC === true;
 if (u.meetIC !== undefined) vUpdatesMap[key].meetIC = u.meetIC === true;
@@ -1059,16 +1059,16 @@ let changed = false;
 for (let i = 0; i < vData.length; i++) {
 const name = vData[i][vNameIdx] ? vData[i][vNameIdx].toString().trim().toLowerCase() : "";
 if (name && vUpdatesMap.hasOwnProperty(name)) {
- const upd = vUpdatesMap[name];
- if (upd.groupIC !== null && vData[i][vGroupICIdx] !== upd.groupIC) {
-     vData[i][vGroupICIdx] = upd.groupIC; vFormulas[i][vGroupICIdx] = ""; changed = true;
- }
- if (upd.meetIC !== null && vData[i][vMeetICIdx] !== upd.meetIC) {
-     vData[i][vMeetICIdx] = upd.meetIC; vFormulas[i][vMeetICIdx] = ""; changed = true;
- }
- if (upd.dismissIC !== null && vData[i][vDismissICIdx] !== upd.dismissIC) {
-     vData[i][vDismissICIdx] = upd.dismissIC; vFormulas[i][vDismissICIdx] = ""; changed = true;
- }
+const upd = vUpdatesMap[name];
+if (upd.groupIC !== null && vData[i][vGroupICIdx] !== upd.groupIC) {
+    vData[i][vGroupICIdx] = upd.groupIC; vFormulas[i][vGroupICIdx] = ""; changed = true;
+}
+if (upd.meetIC !== null && vData[i][vMeetICIdx] !== upd.meetIC) {
+    vData[i][vMeetICIdx] = upd.meetIC; vFormulas[i][vMeetICIdx] = ""; changed = true;
+}
+if (upd.dismissIC !== null && vData[i][vDismissICIdx] !== upd.dismissIC) {
+    vData[i][vDismissICIdx] = upd.dismissIC; vFormulas[i][vDismissICIdx] = ""; changed = true;
+}
 }
 }
 if (changed) {
@@ -1339,13 +1339,13 @@ const junctureColMap = {};
 headers.forEach((h, i) => {
 const str = String(h);
 if (str.startsWith("[Att] ")) {
-  const jName = str.substring(6).trim();
-  junctures.push(jName);
-  junctureColMap[jName] = i;
+ const jName = str.substring(6).trim();
+ junctures.push(jName);
+ junctureColMap[jName] = i;
 } else if (str.startsWith("[Bus] ")) {
-  const bName = str.substring(6).trim();
-  junctures.push('__BUS__' + bName);
-  junctureColMap['__BUS__' + bName] = i;
+ const bName = str.substring(6).trim();
+ junctures.push('__BUS__' + bName);
+ junctureColMap['__BUS__' + bName] = i;
 }
 });
 
@@ -1356,7 +1356,7 @@ const targetInsertCol = lastCol + 1;
 
 sheet.getRange(1, targetInsertCol).setValue("[Att] Meeting");
 if (lastRow > 1) {
-  sheet.getRange(2, targetInsertCol, lastRow - 1).insertCheckboxes();
+ sheet.getRange(2, targetInsertCol, lastRow - 1).insertCheckboxes();
 }
 SpreadsheetApp.flush();
 
@@ -1364,16 +1364,16 @@ lastCol = targetInsertCol;
 headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 junctures = [];
 headers.forEach((h, i) => {
-  const str = String(h);
-  if (str.startsWith("[Att] ")) {
-      const jName = str.substring(6).trim();
-      junctures.push(jName);
-      junctureColMap[jName] = i;
-  } else if (str.startsWith("[Bus] ")) {
-      const bName = str.substring(6).trim();
-      junctures.push('__BUS__' + bName);
-      junctureColMap['__BUS__' + bName] = i;
-  }
+ const str = String(h);
+ if (str.startsWith("[Att] ")) {
+     const jName = str.substring(6).trim();
+     junctures.push(jName);
+     junctureColMap[jName] = i;
+ } else if (str.startsWith("[Bus] ")) {
+     const bName = str.substring(6).trim();
+     junctures.push('__BUS__' + bName);
+     junctureColMap['__BUS__' + bName] = i;
+ }
 });
 injectedMeeting = true;
 }
@@ -1390,9 +1390,9 @@ const busAttendance = {};
 
 junctures.forEach(j => {
 if (j.startsWith('__BUS__')) {
-  busAttendance[j.substring(7)] = {};
+ busAttendance[j.substring(7)] = {};
 } else {
-  attendance[j] = {};
+ attendance[j] = {};
 }
 });
 
@@ -1401,25 +1401,25 @@ const name = String(row[nameIdx]).trim();
 const att = attIdx > -1 && row[attIdx] ? String(row[attIdx]).toLowerCase().trim() : "";
 
 if (name && att === 'y') {
-  participants.push({ 
-      name: name, 
-      group: groupIdx > -1 ? String(row[groupIdx]).trim() : "", 
-      caregivers: cgIdx > -1 ? parseInt(row[cgIdx]) || 0 : 0, 
-      volPaired: volIdx > -1 ? String(row[volIdx]).trim() : "",
-      meetingLoc: meetIdx > -1 ? String(row[meetIdx]).trim() : "",
-      dismissalLoc: dismissIdx > -1 ? String(row[dismissIdx]).trim() : "",
-      extra: extraDataMap[name.toLowerCase()] || {}
-  });
+ participants.push({ 
+     name: name, 
+     group: groupIdx > -1 ? String(row[groupIdx]).trim() : "", 
+     caregivers: cgIdx > -1 ? parseInt(row[cgIdx]) || 0 : 0, 
+     volPaired: volIdx > -1 ? String(row[volIdx]).trim() : "",
+     meetingLoc: meetIdx > -1 ? String(row[meetIdx]).trim() : "",
+     dismissalLoc: dismissIdx > -1 ? String(row[dismissIdx]).trim() : "",
+     extra: extraDataMap[name.toLowerCase()] || {}
+ });
 
-  attendance['__GONE_HOME__'][name] = (goneHomeIdx > -1 && (row[goneHomeIdx] === true || String(row[goneHomeIdx]).toLowerCase() === 'true'));
-  junctures.forEach(j => {
-      const val = row[junctureColMap[j]];
-      if (j.startsWith('__BUS__')) {
-          busAttendance[j.substring(7)][name] = val !== "" ? val : "";
-      } else {
-          attendance[j][name] = (val === true || String(val).toLowerCase() === 'true');
-      }
-  });
+ attendance['__GONE_HOME__'][name] = (goneHomeIdx > -1 && (row[goneHomeIdx] === true || String(row[goneHomeIdx]).toLowerCase() === 'true'));
+ junctures.forEach(j => {
+     const val = row[junctureColMap[j]];
+     if (j.startsWith('__BUS__')) {
+         busAttendance[j.substring(7)][name] = val !== "" ? val : "";
+     } else {
+         attendance[j][name] = (val === true || String(val).toLowerCase() === 'true');
+     }
+ });
 }
 });
 
@@ -1478,9 +1478,9 @@ const newColIdx = lastCol + 1;
 sheet.insertColumnAfter(lastCol);
 sheet.getRange(1, newColIdx).setValue(targetHeader);
 if (!isBus) {
-  sheet.getRange(2, newColIdx, lastRow - 1).insertCheckboxes();
+ sheet.getRange(2, newColIdx, lastRow - 1).insertCheckboxes();
 } else {
-  sheet.getRange(2, newColIdx, lastRow - 1).clearDataValidations();
+ sheet.getRange(2, newColIdx, lastRow - 1).clearDataValidations();
 }
 SpreadsheetApp.flush();
 headers = sheet.getRange(1, 1, 1, newColIdx).getValues()[0];
@@ -1498,10 +1498,10 @@ let changed = false;
 for (let i = 0; i < namesData.length; i++) {
 const name = String(namesData[i][0]).trim().toLowerCase();
 if (name && updateMap.hasOwnProperty(name)) {
-  if (juncData[i][0] !== updateMap[name]) {
-      juncData[i][0] = updateMap[name];
-      changed = true;
-  }
+ if (juncData[i][0] !== updateMap[name]) {
+     juncData[i][0] = updateMap[name];
+     changed = true;
+ }
 }
 }
 
@@ -1618,6 +1618,11 @@ return { success: true, message: "Settings saved successfully!" };
 }
 
 function getTemplateHeaders() {
+const cacheKey = "TEMPLATE_HEADERS";
+const cache = CacheService.getScriptCache();
+const cached = cache.get(cacheKey);
+if (cached) return JSON.parse(cached);
+
 try {
 const folder = DriveApp.getFolderById(getTemplateFolderId());
 const files = folder.getFilesByType(MimeType.GOOGLE_SHEETS);
@@ -1632,7 +1637,9 @@ const tRaw = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
 const vRaw = vSheet.getRange(1, 1, 1, vSheet.getLastColumn()).getValues()[0];
 const tHeaders = tRaw.map(h => cleanHeader(h)).filter(h => h !== "");
 const vHeaders = vRaw.map(h => cleanHeader(h)).filter(h => h !== "");
-return { success: true, tHeaders: tHeaders, vHeaders: vHeaders };
+const result = { success: true, tHeaders: tHeaders, vHeaders: vHeaders };
+cache.put(cacheKey, JSON.stringify(result), 21600);
+return result;
 } catch(e) { return { success: false, message: e.toString() }; }
 }
 
@@ -1681,47 +1688,60 @@ const tabName = type === 'trainee' ? "Trainee Attendance" : "Volunteer Attendanc
 let sheet = ss.getSheetByName(tabName);
 if(!sheet && type === 'trainee') sheet = ss.getSheetByName("Trainee Attendance ");
 
-const infoSheet = ss.getSheetByName("OutingInformation");
 let meetingLocations = [];
 let dismissalLocations = [];
-
-if (infoSheet) {
-try {
-const ext = extractLocations(infoSheet);
-meetingLocations = ext.meetLocs;
-dismissalLocations = ext.disLocs;
-} catch (e) {
-console.log("getPersonData extraction err: " + e);
-}
-}
-
+let activeVolunteers = [];
 let projects = [];
+
+const pairCacheKey = getCacheKey("pair", sheetUrl);
+const pairCacheData = getLargeCache(pairCacheKey);
+if (pairCacheData) {
+try {
+ const pd = JSON.parse(pairCacheData);
+ if (pd.success && pd.data) {
+     meetingLocations = pd.data.meetingLocs || [];
+     dismissalLocations = pd.data.dismissalLocs || [];
+     if (type === 'trainee' && pd.data.volunteers) {
+         activeVolunteers = pd.data.volunteers.map(v => v.name);
+     }
+ }
+} catch(e) {}
+}
+
+if (meetingLocations.length === 0 || dismissalLocations.length === 0) {
+const infoSheet = ss.getSheetByName("OutingInformation");
+if (infoSheet) {
+ try {
+     const ext = extractLocations(infoSheet);
+     meetingLocations = ext.meetLocs;
+     dismissalLocations = ext.disLocs;
+ } catch (e) {}
+}
+}
+
+if (type === 'trainee' && activeVolunteers.length === 0) {
+try {
+ const vSheet = ss.getSheetByName("Volunteer Attendance");
+ if (vSheet) {
+     const vLastRow = vSheet.getLastRow();
+     if (vLastRow > 1) {
+         const vHeaders = vSheet.getRange(1, 1, 1, vSheet.getLastColumn()).getValues()[0];
+         let vAttIdx = getColIndex(vHeaders, "attend");
+         let vNameIdx = getColIndex(vHeaders, "name");
+         if (vNameIdx === -1) vNameIdx = 0;
+         if (vAttIdx > -1) {
+             const vData = vSheet.getRange(2, 1, vLastRow - 1, vSheet.getLastColumn()).getValues();
+             activeVolunteers = vData
+                 .filter(r => r[vAttIdx] && r[vAttIdx].toString().trim().toLowerCase() === 'y' && r[vNameIdx])
+                 .map(r => r[vNameIdx].toString().trim());
+         }
+     }
+ }
+} catch (err) {}
+}
+
 if (type === 'volunteer') {
 projects = getProjectList(sheetUrl);
-}
-
-let activeVolunteers = [];
-if (type === 'trainee') {
-try {
-const vSheet = ss.getSheetByName("Volunteer Attendance");
-if (vSheet) {
-const vLastRow = vSheet.getLastRow();
-if (vLastRow > 1) {
-const vHeaders = vSheet.getRange(1, 1, 1, vSheet.getLastColumn()).getValues()[0];
-let vAttIdx = getColIndex(vHeaders, "attend");
-let vNameIdx = getColIndex(vHeaders, "name");
-if (vNameIdx === -1) vNameIdx = 0;
-if (vAttIdx > -1) {
-const vData = vSheet.getRange(2, 1, vLastRow - 1, vSheet.getLastColumn()).getValues();
-activeVolunteers = vData
-.filter(r => r[vAttIdx] && r[vAttIdx].toString().trim().toLowerCase() === 'y' && r[vNameIdx])
-.map(r => r[vNameIdx].toString().trim());
-}
-}
-}
-} catch (err) {
-console.log("Failed fetching active volunteers: " + err.toString());
-}
 }
 
 const lastCol = sheet.getLastColumn();
@@ -1829,36 +1849,36 @@ const pairStr = getLargeCache(pairKey);
 if (pairStr) {
 const pairData = JSON.parse(pairStr);
 if (pairData.success && pairData.data) {
- const arr = role === 'TRAINEE' ? pairData.data.trainees : pairData.data.volunteers;
- let person = arr.find(p => p.name.toLowerCase() === normName);
- 
- if (!person) {
-     person = { name: name, role: role, extra: {} };
-     arr.push(person);
- }
- 
- if (attVal !== undefined) {
-     person.attending = attVal;
-     if (role === 'TRAINEE') {
-         person.isAttendingN = (attVal === 'n');
-         person.isAttendingUnknown = (attVal === '');
-     }
- }
- if (groupVal !== undefined && role === 'TRAINEE') person.group = groupVal;
- if (pairedVol !== undefined && role === 'TRAINEE') person.volPaired = pairedVol;
- 
- // Apply Volunteer Cascade Unpairing immediately in cache
- if (role === 'VOLUNTEER' && attVal === 'n') {
-     pairData.data.trainees.forEach(t => {
-         if (t.volPaired && t.volPaired.toLowerCase().includes(normName)) {
-             const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-             t.volPaired = vols.filter(v => v.toLowerCase() !== normName).join(', ');
-         }
-     });
- } else if (role === 'TRAINEE' && attVal === 'n') {
-     person.volPaired = "";
- }
- putLargeCache(pairKey, JSON.stringify(pairData));
+const arr = role === 'TRAINEE' ? pairData.data.trainees : pairData.data.volunteers;
+let person = arr.find(p => p.name.toLowerCase() === normName);
+
+if (!person) {
+    person = { name: name, role: role, extra: {} };
+    arr.push(person);
+}
+
+if (attVal !== undefined) {
+    person.attending = attVal;
+    if (role === 'TRAINEE') {
+        person.isAttendingN = (attVal === 'n');
+        person.isAttendingUnknown = (attVal === '');
+    }
+}
+if (groupVal !== undefined && role === 'TRAINEE') person.group = groupVal;
+if (pairedVol !== undefined && role === 'TRAINEE') person.volPaired = pairedVol;
+
+// Apply Volunteer Cascade Unpairing immediately in cache
+if (role === 'VOLUNTEER' && attVal === 'n') {
+    pairData.data.trainees.forEach(t => {
+        if (t.volPaired && t.volPaired.toLowerCase().includes(normName)) {
+            const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+            t.volPaired = vols.filter(v => v.toLowerCase() !== normName).join(', ');
+        }
+    });
+} else if (role === 'TRAINEE' && attVal === 'n') {
+    person.volPaired = "";
+}
+putLargeCache(pairKey, JSON.stringify(pairData));
 }
 }
 } catch(e) {}
@@ -1869,23 +1889,23 @@ try {
 const commKey = getCacheKey("comm", sheetUrl);
 const commStr = getLargeCache(commKey);
 if (commStr) {
- const commData = JSON.parse(commStr);
- if (commData.success && commData.participants) {
-     let person = commData.participants.find(p => p.name.toLowerCase() === normName);
-     if (attVal === 'n' || attVal === '') {
-         commData.participants = commData.participants.filter(p => p.name.toLowerCase() !== normName);
-     } else {
-         if (!person) {
-             person = { name: name, group: "", caregivers: 0, volPaired: "", meetingLoc: "", dismissalLoc: "", extra: {} };
-             commData.participants.push(person);
-         }
-         if (groupVal !== undefined) person.group = groupVal;
-         if (pairedVol !== undefined) person.volPaired = pairedVol;
-         if (meetLoc !== undefined) person.meetingLoc = meetLoc;
-         if (dismissLoc !== undefined) person.dismissalLoc = dismissLoc;
-     }
-     putLargeCache(commKey, JSON.stringify(commData));
- }
+const commData = JSON.parse(commStr);
+if (commData.success && commData.participants) {
+    let person = commData.participants.find(p => p.name.toLowerCase() === normName);
+    if (attVal === 'n' || attVal === '') {
+        commData.participants = commData.participants.filter(p => p.name.toLowerCase() !== normName);
+    } else {
+        if (!person) {
+            person = { name: name, group: "", caregivers: 0, volPaired: "", meetingLoc: "", dismissalLoc: "", extra: {} };
+            commData.participants.push(person);
+        }
+        if (groupVal !== undefined) person.group = groupVal;
+        if (pairedVol !== undefined) person.volPaired = pairedVol;
+        if (meetLoc !== undefined) person.meetingLoc = meetLoc;
+        if (dismissLoc !== undefined) person.dismissalLoc = dismissLoc;
+    }
+    putLargeCache(commKey, JSON.stringify(commData));
+}
 }
 } catch(e) {}
 } else if (role === 'VOLUNTEER' && attVal === 'n') {
@@ -1893,18 +1913,18 @@ try {
 const commKey = getCacheKey("comm", sheetUrl);
 const commStr = getLargeCache(commKey);
 if (commStr) {
- const commData = JSON.parse(commStr);
- if (commData.success && commData.participants) {
-     let changed = false;
-     commData.participants.forEach(t => {
-         if (t.volPaired && t.volPaired.toLowerCase().includes(normName)) {
-             const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-             t.volPaired = vols.filter(v => v.toLowerCase() !== normName).join(', ');
-             changed = true;
-         }
-     });
-     if (changed) putLargeCache(commKey, JSON.stringify(commData));
- }
+const commData = JSON.parse(commStr);
+if (commData.success && commData.participants) {
+    let changed = false;
+    commData.participants.forEach(t => {
+        if (t.volPaired && t.volPaired.toLowerCase().includes(normName)) {
+            const vols = t.volPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+            t.volPaired = vols.filter(v => v.toLowerCase() !== normName).join(', ');
+            changed = true;
+        }
+    });
+    if (changed) putLargeCache(commKey, JSON.stringify(commData));
+}
 }
 } catch(e) {}
 }
@@ -1916,11 +1936,11 @@ const namesStr = getLargeCache(namesKey);
 if (namesStr) {
 const namesData = JSON.parse(namesStr);
 if (namesData.success && namesData.names) {
- const found = namesData.names.find(n => n.toLowerCase() === normName);
- if (!found) {
-     namesData.names.push(name);
-     putLargeCache(namesKey, JSON.stringify(namesData));
- }
+const found = namesData.names.find(n => n.toLowerCase() === normName);
+if (!found) {
+    namesData.names.push(name);
+    putLargeCache(namesKey, JSON.stringify(namesData));
+}
 }
 }
 } catch(e) {}
@@ -1946,28 +1966,28 @@ let pairChanged = false;
 
 if (commData && commData.success && commData.attendance) {
 for (const [juncName, updates] of Object.entries(multipleUpdates)) {
- const isGoneHome = juncName === '__GONE_HOME__';
- const isBus = juncName.startsWith('__BUS__');
- 
- updates.forEach(u => {
-     const nMatch = String(u.name).toLowerCase();
-     if (isBus) {
-         const bName = juncName.substring(7);
-         if (!commData.busAttendance[bName]) commData.busAttendance[bName] = {};
-         commData.busAttendance[bName][u.name] = u.status;
-     } else {
-         if (!commData.attendance[juncName]) commData.attendance[juncName] = {};
-         commData.attendance[juncName][u.name] = u.status;
-     }
-     
-     if (isGoneHome && pairData && pairData.success && pairData.data) {
-         const trainee = pairData.data.trainees.find(t => t.name.toLowerCase() === nMatch);
-         if (trainee) {
-             trainee.isGoneHome = u.status;
-             pairChanged = true;
-         }
-     }
- });
+const isGoneHome = juncName === '__GONE_HOME__';
+const isBus = juncName.startsWith('__BUS__');
+
+updates.forEach(u => {
+    const nMatch = String(u.name).toLowerCase();
+    if (isBus) {
+        const bName = juncName.substring(7);
+        if (!commData.busAttendance[bName]) commData.busAttendance[bName] = {};
+        commData.busAttendance[bName][u.name] = u.status;
+    } else {
+        if (!commData.attendance[juncName]) commData.attendance[juncName] = {};
+        commData.attendance[juncName][u.name] = u.status;
+    }
+    
+    if (isGoneHome && pairData && pairData.success && pairData.data) {
+        const trainee = pairData.data.trainees.find(t => t.name.toLowerCase() === nMatch);
+        if (trainee) {
+            trainee.isGoneHome = u.status;
+            pairChanged = true;
+        }
+    }
+});
 }
 putLargeCache(commKey, JSON.stringify(commData));
 }
@@ -1991,12 +2011,12 @@ const commData = commStr ? JSON.parse(commStr) : null;
 updates.forEach(u => {
 const normName = String(u.traineeName).toLowerCase();
 if (pairData && pairData.success && pairData.data) {
- const t = pairData.data.trainees.find(x => x.name.toLowerCase() === normName);
- if (t) t.volPaired = u.volPaired;
+const t = pairData.data.trainees.find(x => x.name.toLowerCase() === normName);
+if (t) t.volPaired = u.volPaired;
 }
 if (commData && commData.success && commData.participants) {
- const p = commData.participants.find(x => x.name.toLowerCase() === normName);
- if (p) p.volPaired = u.volPaired;
+const p = commData.participants.find(x => x.name.toLowerCase() === normName);
+if (p) p.volPaired = u.volPaired;
 }
 });
 
@@ -2018,23 +2038,23 @@ const commData = commStr ? JSON.parse(commStr) : null;
 updates.forEach(u => {
 const normName = String(u.name || u.traineeName).toLowerCase();
 if (u.role === 'TRAINEE' || u.traineeName) {
- if (pairData && pairData.success && pairData.data) {
-     const t = pairData.data.trainees.find(x => x.name.toLowerCase() === normName);
-     if (t) t.group = u.group;
- }
- if (commData && commData.success && commData.participants) {
-     const p = commData.participants.find(x => x.name.toLowerCase() === normName);
-     if (p) p.group = u.group;
- }
+if (pairData && pairData.success && pairData.data) {
+    const t = pairData.data.trainees.find(x => x.name.toLowerCase() === normName);
+    if (t) t.group = u.group;
+}
+if (commData && commData.success && commData.participants) {
+    const p = commData.participants.find(x => x.name.toLowerCase() === normName);
+    if (p) p.group = u.group;
+}
 } else if (u.role === 'VOLUNTEER') {
- if (pairData && pairData.success && pairData.data) {
-     const v = pairData.data.volunteers.find(x => x.name.toLowerCase() === normName);
-     if (v) {
-         if (u.groupIC !== undefined) v.groupIC = u.groupIC;
-         if (u.meetIC !== undefined) v.meetIC = u.meetIC;
-         if (u.dismissIC !== undefined) v.dismissIC = u.dismissIC;
-     }
- }
+if (pairData && pairData.success && pairData.data) {
+    const v = pairData.data.volunteers.find(x => x.name.toLowerCase() === normName);
+    if (v) {
+        if (u.groupIC !== undefined) v.groupIC = u.groupIC;
+        if (u.meetIC !== undefined) v.meetIC = u.meetIC;
+        if (u.dismissIC !== undefined) v.dismissIC = u.dismissIC;
+    }
+}
 }
 });
 
@@ -2061,7 +2081,41 @@ return { success: false, message: e.toString() };
 lock.releaseLock();
 }
 
+if (res && res.success && res.newVolTemplateUpdate) {
+try {
+updateTemplateWithNewVolunteer(res.newVolTemplateUpdate.name, res.newVolTemplateUpdate.project);
+} catch(e) { console.log("Out-of-lock template update failed: " + e); }
+}
+
 return { success: res ? res.success : false, message: res ? res.message : "Unknown Error" };
+}
+
+function updateTemplateWithNewVolunteer(name, projectVal) {
+try {
+const templateFolder = DriveApp.getFolderById(getTemplateFolderId());
+const tFiles = templateFolder.getFilesByType(MimeType.GOOGLE_SHEETS);
+if (tFiles.hasNext()) {
+const tFile = tFiles.next();
+const tSS = SpreadsheetApp.open(tFile);
+const tSheet = tSS.getSheetByName("Volunteer Attendance");
+const tFinder = tSheet.getRange("A:A").createTextFinder(name).matchEntireCell(true);
+
+if (!tFinder.findNext()) {
+let tInsertRow = tSheet.getLastRow() + 1;
+if (tInsertRow < 2) tInsertRow = 2;
+
+tSheet.getRange(tInsertRow, 1).setValue(name);
+
+if(projectVal) {
+    const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
+    const tProjIdx = getColIndex(tHeaders, "project");
+    if (tProjIdx > -1) {
+        tSheet.getRange(tInsertRow, tProjIdx + 1).setValue(projectVal);
+    }
+}
+}
+}
+} catch (err) { console.log("Template update failed: " + err.toString()); }
 }
 
 function _submitAttendanceDataInner(form) {
@@ -2111,37 +2165,10 @@ break;
 }
 
 let insertRow = sheet.getLastRow() + 1;
-if (insertRow < 2) insertRow = 2; // Prevent overwriting headers
+if (insertRow < 2) insertRow = 2; 
 sheet.getRange(insertRow, 1, 1, newRow.length).setValues([newRow]);
 
-// --- UPDATE TEMPLATE (Name AND Project) ---
-try {
-const templateFolder = DriveApp.getFolderById(getTemplateFolderId());
-const tFiles = templateFolder.getFilesByType(MimeType.GOOGLE_SHEETS);
-if (tFiles.hasNext()) {
-const tFile = tFiles.next();
-const tSS = SpreadsheetApp.open(tFile);
-const tSheet = tSS.getSheetByName("Volunteer Attendance");
-const tFinder = tSheet.getRange("A:A").createTextFinder(name).matchEntireCell(true);
-
-if (!tFinder.findNext()) {
-let tInsertRow = tSheet.getLastRow() + 1;
-if (tInsertRow < 2) tInsertRow = 2;
-
-tSheet.getRange(tInsertRow, 1).setValue(name);
-
-if(projectVal) {
-const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
-const tProjIdx = getColIndex(tHeaders, "project");
-if (tProjIdx > -1) {
-tSheet.getRange(tInsertRow, tProjIdx + 1).setValue(projectVal);
-}
-}
-}
-}
-} catch (err) { console.log("Template update failed: " + err.toString()); }
-
-return { success: true, message: "New volunteer added successfully & Attendance updated!", ss: ss, targetName: name };
+return { success: true, message: "New volunteer added successfully & Attendance updated!", ss: ss, targetName: name, newVolTemplateUpdate: { name: name, project: projectVal } };
 } else if (form.type === 'trainee') {
 let newRow = new Array(rawHeaders.length).fill("");
 newRow[0] = name;
@@ -2164,22 +2191,20 @@ break;
 }
 
 let insertRow = sheet.getLastRow() + 1;
-if (insertRow < 2) insertRow = 2; // Prevent overwriting headers
+if (insertRow < 2) insertRow = 2; 
 sheet.getRange(insertRow, 1, 1, newRow.length).setValues([newRow]);
 
-// Inject checkboxes for dynamic columns
 const currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 currentHeaders.forEach((h, i) => {
 const str = String(h);
 if (str.startsWith("[Att] ") || str === "[Sys] Gone Home") {
-  sheet.getRange(insertRow, i + 1).insertCheckboxes();
+ sheet.getRange(insertRow, i + 1).insertCheckboxes();
 }
 });
 
 targetRow = insertRow;
 }
 } else {
-// Existing Row Logic - BATCHED UPDATE
 targetRow = cell.getRow();
 const rowRange = sheet.getRange(targetRow, 1, 1, rawHeaders.length);
 const rowData = rowRange.getValues()[0];
@@ -2197,14 +2222,45 @@ const isMatch = normHeader === normKey ||
 
 if (isMatch) {
 if (normHeader.includes("project")) {
-break; // Project is locked after initial assignment typically unless handled otherwise
+break; 
 }
 
 if (normHeader.includes("attending")) attendingStatus = value.toString().toLowerCase();
 
-if (rowData[i] !== value) {
-rowData[i] = value;
-hasChanges = true;
+if (normHeader.includes("volpaired") && form.originalData) {
+    const currentValStr = rowData[i] ? String(rowData[i]) : "";
+    
+    let oldValStr = "";
+    for (const [origKey, origVal] of Object.entries(form.originalData)) {
+        if (normalizeHeader(origKey) === normKey) {
+            oldValStr = String(origVal);
+            break;
+        }
+    }
+    
+    const newValStr = value ? String(value) : "";
+
+    const currentArr = currentValStr.split(/[,|\n]+/).map(v=>v.trim()).filter(v=>v);
+    const oldArr = oldValStr.split(/[,|\n]+/).map(v=>v.trim()).filter(v=>v);
+    const newArr = newValStr.split(/[,|\n]+/).map(v=>v.trim()).filter(v=>v);
+
+    const added = newArr.filter(v => !oldArr.includes(v));
+    const removed = oldArr.filter(v => !newArr.includes(v));
+
+    let finalArr = [...currentArr];
+    removed.forEach(r => { finalArr = finalArr.filter(v => v.toLowerCase() !== r.toLowerCase()); });
+    added.forEach(a => { if(!finalArr.some(v => v.toLowerCase() === a.toLowerCase())) finalArr.push(a); });
+
+    const finalStr = finalArr.join(', ');
+    if (rowData[i] !== finalStr) {
+        rowData[i] = finalStr;
+        hasChanges = true;
+    }
+} else {
+    if (rowData[i] !== value) {
+        rowData[i] = value;
+        hasChanges = true;
+    }
 }
 break;
 }
@@ -2235,19 +2291,19 @@ if (tLastRow > 1) {
 const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
 const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
 if (tVolPairedIdx > -1) {
- // TextFinder speeds up full-column searches massively compared to getValues()
- const searchRange = tSheet.getRange(2, tVolPairedIdx + 1, tLastRow - 1, 1);
- const finder = searchRange.createTextFinder(name).matchCase(false).findAll();
- 
- if (finder.length > 0) {
-     const nameClean = name.toLowerCase();
-     finder.forEach(cell => {
-         const currentPaired = cell.getValue().toString();
-         const vols = currentPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
-         const updatedVols = vols.filter(v => v.toLowerCase() !== nameClean);
-         cell.setValue(updatedVols.join(', '));
-     });
- }
+// TextFinder speeds up full-column searches massively compared to getValues()
+const searchRange = tSheet.getRange(2, tVolPairedIdx + 1, tLastRow - 1, 1);
+const finder = searchRange.createTextFinder(name).matchCase(false).findAll();
+
+if (finder.length > 0) {
+    const nameClean = name.toLowerCase();
+    finder.forEach(cell => {
+        const currentPaired = cell.getValue().toString();
+        const vols = currentPaired.split(/[,|\n]+/).map(v => v.trim()).filter(v => v);
+        const updatedVols = vols.filter(v => v.toLowerCase() !== nameClean);
+        cell.setValue(updatedVols.join(', '));
+    });
+}
 }
 }
 }
