@@ -83,9 +83,6 @@ break;
 case 'getAppSettings':
 result = getAppSettings();
 break;
-case 'saveAppSettings':
-result = saveAppSettings(payload);
-break;
 case 'getOutingDetails':
 result = getOutingDetails(payload);
 break;
@@ -139,7 +136,7 @@ function putLargeCache(cacheKey, jsonStr) {
 const cache = CacheService.getScriptCache();
 try {
 if (jsonStr.length < 90000) {
-cache.put(cacheKey, jsonStr, 21600); // 6 hours max
+cache.put(cacheKey, jsonStr, 21600); 
 } else {
 const chunks = [];
 let i = 0;
@@ -184,7 +181,7 @@ function invalidateCaches(url) {
 if (!url) return;
 try {
 const cache = CacheService.getScriptCache();
-const types = ["pair", "comm", "stats", "names_trainee", "names_volunteer"];
+const types = ["pair", "comm", "stats", "names_trainee", "names_volunteer", "fulldata"];
 let keysToRemove = [];
 types.forEach(type => {
 const baseKey = getCacheKey(type, url);
@@ -204,10 +201,55 @@ fetchManualPairingData(sheetUrl, true, true, ss);
 getOutingDetails(sheetUrl, true, true, ss);
 getNamesList(sheetUrl, 'trainee', true, true, ss);
 getNamesList(sheetUrl, 'volunteer', true, true, ss);
+buildAndCacheFullPersonData(sheetUrl, ss);
 } catch (e) {
 console.log("Atomic cache rebuild failed, invalidating instead: " + e);
 invalidateCaches(sheetUrl);
 }
+}
+
+// --- FULL DATA PRE-COMPILATION (Prevents SpreadsheetApp Lockouts) ---
+function buildAndCacheFullPersonData(sheetUrl, ss) {
+const result = { trainee: { headers: [], records: {} }, volunteer: { headers: [], records: {} } };
+
+const tSheet = ss.getSheetByName("Trainee Attendance") || ss.getSheetByName("Trainee Attendance ");
+if (tSheet) {
+  const data = tSheet.getDataRange().getValues();
+  if(data.length > 0) {
+      result.trainee.headers = data[0].map(h => String(h));
+      for(let i=1; i<data.length; i++) {
+          let name = String(data[i][0]).trim();
+          if(name) {
+              let formattedRow = data[i].map(val => {
+                  if (val instanceof Date) return Utilities.formatDate(val, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
+                  return val;
+              });
+              result.trainee.records[name.toLowerCase()] = formattedRow;
+          }
+      }
+  }
+}
+
+const vSheet = ss.getSheetByName("Volunteer Attendance");
+if (vSheet) {
+  const data = vSheet.getDataRange().getValues();
+  if(data.length > 0) {
+      result.volunteer.headers = data[0].map(h => String(h));
+      for(let i=1; i<data.length; i++) {
+          let name = String(data[i][0]).trim();
+          if(name) {
+              let formattedRow = data[i].map(val => {
+                  if (val instanceof Date) return Utilities.formatDate(val, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
+                  return val;
+              });
+              result.volunteer.records[name.toLowerCase()] = formattedRow;
+          }
+      }
+  }
+}
+
+putLargeCache(getCacheKey("fulldata", sheetUrl), JSON.stringify(result));
+return result;
 }
 
 // --- CRON JOB (BACKGROUND PRE-COMPUTATION) ---
@@ -280,7 +322,7 @@ result.push(f);
 }
 
 const finalResult = { success: true, data: result };
-CacheService.getScriptCache().put('CRON_OUTINGS_' + ENV, JSON.stringify(finalResult), 21600); // Max 6 hours
+CacheService.getScriptCache().put('CRON_OUTINGS_' + ENV, JSON.stringify(finalResult), 21600); 
 return finalResult;
 }
 
@@ -291,23 +333,20 @@ let cached = cache.get(cacheKey);
 if (cached) {
 try { return JSON.parse(cached); } catch(e) {}
 }
-// If CRON cache is missing, compute it synchronously
 return precomputeRecentOutings();
 }
 
 function forceBackendRefresh(payload) {
 try {
 CacheService.getScriptCache().remove('CRON_OUTINGS_' + ENV);
-precomputeRecentOutings(); // Rebuild global list immediately
+precomputeRecentOutings(); 
 
 if (payload && payload.sheetUrl) {
 const url = payload.sheetUrl;
-invalidateCaches(url); // Destroy any local cache payload mapping to this specific sheet URL
+invalidateCaches(url); 
 try {
- atomicCacheRebuild(url); // Rebuild it immediately from raw spreadsheet data
-} catch (e) {
- // If rebuilding fails (e.g. file deleted from drive entirely), it's fine, it's already invalidated
-}
+ atomicCacheRebuild(url); 
+} catch (e) {}
 }
 return { success: true, message: "Backend caches forcefully wiped and rebuilt." };
 } catch(e) {
@@ -372,7 +411,6 @@ if (!extraData[norm]) extraData[norm] = {};
 return norm;
 };
 
-// Process Trainee Attendance
 let tSheet = ss.getSheetByName("Trainee Attendance");
 if (!tSheet) tSheet = ss.getSheetByName("Trainee Attendance ");
 if (tSheet) {
@@ -383,20 +421,19 @@ const name = String(row[0]).trim();
 if (name) {
 const key = ensureInit(name);
 extraData[key].role = 'TRAINEE';
-extraData[key].t_meet = String(row[3] || '').trim(); // Col D
-extraData[key].t_meet_fetching = String(row[6] || '').trim(); // Col G
-extraData[key].t_dismiss = String(row[7] || '').trim(); // Col H
-extraData[key].t_dismiss_fetching = String(row[8] || '').trim(); // Col I
-extraData[key].t_dietary = String(row[9] || '').trim(); // Col J
-extraData[key].remark = String(row[10] || '').trim(); // Col K (Remarks)
-extraData[key].t_group = String(row[11] || '').trim(); // Col L
-extraData[key].t_paired_vol = String(row[14] || '').trim(); // Col O
-extraData[key].t_one_on_one = String(row[15] || '').trim(); // Col P
+extraData[key].t_meet = String(row[3] || '').trim();
+extraData[key].t_meet_fetching = String(row[6] || '').trim();
+extraData[key].t_dismiss = String(row[7] || '').trim();
+extraData[key].t_dismiss_fetching = String(row[8] || '').trim();
+extraData[key].t_dietary = String(row[9] || '').trim(); 
+extraData[key].remark = String(row[10] || '').trim(); 
+extraData[key].t_group = String(row[11] || '').trim(); 
+extraData[key].t_paired_vol = String(row[14] || '').trim(); 
+extraData[key].t_one_on_one = String(row[15] || '').trim(); 
 }
 }
 }
 
-// Process Volunteer Attendance
 const vSheet = ss.getSheetByName("Volunteer Attendance");
 if (vSheet) {
 const vData = vSheet.getDataRange().getDisplayValues();
@@ -406,16 +443,15 @@ const name = String(row[0]).trim();
 if (name) {
 const key = ensureInit(name);
 extraData[key].role = 'VOLUNTEER';
-extraData[key].v_meet = String(row[3] || '').trim(); // Col D
-extraData[key].v_dismiss = String(row[4] || '').trim(); // Col E
-extraData[key].v_paired_trainee = String(row[5] || '').trim(); // Col F
-extraData[key].v_group = String(row[6] || '').trim(); // Col G
-extraData[key].remark = String(row[7] || '').trim(); // Col H (Remarks)
+extraData[key].v_meet = String(row[3] || '').trim(); 
+extraData[key].v_dismiss = String(row[4] || '').trim(); 
+extraData[key].v_paired_trainee = String(row[5] || '').trim(); 
+extraData[key].v_group = String(row[6] || '').trim(); 
+extraData[key].remark = String(row[7] || '').trim(); 
 }
 }
 }
 
-// Process MISC PriVol
 const mSheet = ss.getSheetByName("MISC PriVol");
 if (mSheet) {
 const mData = mSheet.getDataRange().getDisplayValues();
@@ -424,7 +460,7 @@ const row = mData[i];
 const name = String(row[0]).trim();
 if (name) {
 const key = ensureInit(name);
-extraData[key].m_cg_contact = String(row[1] || '').trim(); // Col B
+extraData[key].m_cg_contact = String(row[1] || '').trim(); 
 }
 }
 }
@@ -516,7 +552,7 @@ sheetUrl = newFile.getUrl();
 file.makeCopy(file.getName(), newFolder);
 }
 }
-precomputeRecentOutings(); // Instantly update global CRON cache
+precomputeRecentOutings(); 
 return { success: true, message: "Folder created & Sheet populated!", url: newFolder.getUrl(), sheetUrl: sheetUrl };
 } catch (e) {
 return { success: false, message: "Error: " + e.toString() };
@@ -551,7 +587,7 @@ const folder = parents.next();
 folder.setName(newFolderName);
 }
 
-precomputeRecentOutings(); // Instantly update global CRON cache
+precomputeRecentOutings(); 
 atomicCacheRebuild(sheetUrl, ss);
 return { success: true, message: "Outing Details Updated!" };
 } catch (e) {
@@ -1123,7 +1159,7 @@ if(r[vNameIdx]) vActive.add(r[vNameIdx].toString().toLowerCase());
 const priVolMap = new Map();
 const mHeaders = mSheet.getRange(1,1,1,mSheet.getLastColumn()).getValues()[0];
 const mPairIdx = getColIndex(mHeaders, "outing pairing");
-const mVolIdx = getColIndex(mHeaders, "vol"); // Fallback column
+const mVolIdx = getColIndex(mHeaders, "vol"); 
 
 const mData = mSheet.getDataRange().getValues();
 for(let j=1; j<mData.length; j++){
@@ -1153,7 +1189,7 @@ for(let k=0; k<tFullData.length; k++){
 const tName = tFullData[k][tNameIdx] ? tFullData[k][tNameIdx].toString().toLowerCase().trim() : "";
 const tAtt = tFullData[k][tAttIdx] ? tFullData[k][tAttIdx].toString().toLowerCase().trim() : "";
 
-if(tName && tAtt === 'y') { // Explicit Y check required for auto pair
+if(tName && tAtt === 'y') { 
 const assignmentInfo = priVolMap.get(tName);
 if(assignmentInfo) {
 if(assignmentInfo.primary && vActive.has(assignmentInfo.primary.toLowerCase())) {
@@ -1349,7 +1385,6 @@ if (str.startsWith("[Att] ")) {
 }
 });
 
-// ENFORCE "Meeting" Juncture to be injected if missing
 let injectedMeeting = false;
 if (!junctures.includes("Meeting") && lastRow >= 1) {
 const targetInsertCol = lastCol + 1;
@@ -1621,7 +1656,9 @@ function getTemplateHeaders() {
 const cacheKey = "TEMPLATE_HEADERS";
 const cache = CacheService.getScriptCache();
 const cached = cache.get(cacheKey);
-if (cached) return JSON.parse(cached);
+if (cached) {
+try { return JSON.parse(cached); } catch(e) {}
+}
 
 try {
 const folder = DriveApp.getFolderById(getTemplateFolderId());
@@ -1683,10 +1720,31 @@ if (!skipLock) lock.releaseLock();
 function getPersonData(sheetUrl, type, name) {
 try {
 if (!sheetUrl || sheetUrl === "") return { success: false, message: "Invalid Sheet URL" };
-const ss = SpreadsheetApp.openByUrl(sheetUrl);
-const tabName = type === 'trainee' ? "Trainee Attendance" : "Volunteer Attendance";
-let sheet = ss.getSheetByName(tabName);
-if(!sheet && type === 'trainee') sheet = ss.getSheetByName("Trainee Attendance ");
+
+const fullDataCacheKey = getCacheKey("fulldata", sheetUrl);
+let fullDataStr = getLargeCache(fullDataCacheKey);
+let fullData = null;
+
+if (!fullDataStr) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+      fullDataStr = getLargeCache(fullDataCacheKey);
+      if (!fullDataStr) {
+          const ss = SpreadsheetApp.openByUrl(sheetUrl);
+          fullData = buildAndCacheFullPersonData(sheetUrl, ss);
+      } else {
+          fullData = JSON.parse(fullDataStr);
+      }
+  } finally {
+      lock.releaseLock();
+  }
+} else {
+  fullData = JSON.parse(fullDataStr);
+}
+
+const targetData = type === 'trainee' ? fullData.trainee : fullData.volunteer;
+const rawHeaders = targetData.headers || [];
 
 let meetingLocations = [];
 let dismissalLocations = [];
@@ -1696,125 +1754,85 @@ let projects = [];
 const pairCacheKey = getCacheKey("pair", sheetUrl);
 const pairCacheData = getLargeCache(pairCacheKey);
 if (pairCacheData) {
-try {
- const pd = JSON.parse(pairCacheData);
- if (pd.success && pd.data) {
-     meetingLocations = pd.data.meetingLocs || [];
-     dismissalLocations = pd.data.dismissalLocs || [];
-     if (type === 'trainee' && pd.data.volunteers) {
-         activeVolunteers = pd.data.volunteers.map(v => v.name);
-     }
- }
-} catch(e) {}
-}
-
-if (meetingLocations.length === 0 || dismissalLocations.length === 0) {
-const infoSheet = ss.getSheetByName("OutingInformation");
-if (infoSheet) {
- try {
-     const ext = extractLocations(infoSheet);
-     meetingLocations = ext.meetLocs;
-     dismissalLocations = ext.disLocs;
- } catch (e) {}
-}
-}
-
-if (type === 'trainee' && activeVolunteers.length === 0) {
-try {
- const vSheet = ss.getSheetByName("Volunteer Attendance");
- if (vSheet) {
-     const vLastRow = vSheet.getLastRow();
-     if (vLastRow > 1) {
-         const vHeaders = vSheet.getRange(1, 1, 1, vSheet.getLastColumn()).getValues()[0];
-         let vAttIdx = getColIndex(vHeaders, "attend");
-         let vNameIdx = getColIndex(vHeaders, "name");
-         if (vNameIdx === -1) vNameIdx = 0;
-         if (vAttIdx > -1) {
-             const vData = vSheet.getRange(2, 1, vLastRow - 1, vSheet.getLastColumn()).getValues();
-             activeVolunteers = vData
-                 .filter(r => r[vAttIdx] && r[vAttIdx].toString().trim().toLowerCase() === 'y' && r[vNameIdx])
-                 .map(r => r[vNameIdx].toString().trim());
-         }
-     }
- }
-} catch (err) {}
+  try {
+      const pd = JSON.parse(pairCacheData);
+      if (pd.success && pd.data) {
+          meetingLocations = pd.data.meetingLocs || [];
+          dismissalLocations = pd.data.dismissalLocs || [];
+          if (type === 'trainee' && pd.data.volunteers) {
+              activeVolunteers = pd.data.volunteers.map(v => v.name);
+          }
+      }
+  } catch(e) {}
 }
 
 if (type === 'volunteer') {
-projects = getProjectList(sheetUrl);
+  const pSet = new Set();
+  if (fullData.trainee && fullData.trainee.records) {
+      Object.values(fullData.trainee.records).forEach(r => {
+          const pIdx = getColIndex(fullData.trainee.headers, "project");
+          if(pIdx > -1 && r[pIdx]) pSet.add(String(r[pIdx]).trim());
+      });
+  }
+  if (fullData.volunteer && fullData.volunteer.records) {
+      Object.values(fullData.volunteer.records).forEach(r => {
+          const pIdx = getColIndex(fullData.volunteer.headers, "project");
+          if(pIdx > -1 && r[pIdx]) pSet.add(String(r[pIdx]).trim());
+      });
+  }
+  projects = Array.from(pSet).filter(p => p !== "").sort();
 }
-
-const lastCol = sheet.getLastColumn();
-const rawHeaders = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
 
 const settings = getAppSettings();
 let configCols = type === 'trainee' ? settings.traineeCols : settings.volCols;
 if (!configCols || configCols.length === 0) {
-const templateInfo = getTemplateHeaders();
-if (templateInfo.success) configCols = type === 'trainee' ? templateInfo.tHeaders : templateInfo.vHeaders;
+  const templateInfo = getTemplateHeaders();
+  if (templateInfo.success) configCols = type === 'trainee' ? templateInfo.tHeaders : templateInfo.vHeaders;
 }
 
 if (!name && type === 'volunteer') {
-return {
-success: true,
-isNew: true,
-data: {},
-headers: rawHeaders,
-config: configCols,
-meetingOpts: meetingLocations,
-dismissalOpts: dismissalLocations,
-projectOpts: projects,
-activeVolunteers: activeVolunteers
-};
+  return {
+      success: true, isNew: true, data: {}, headers: rawHeaders,
+      config: configCols, meetingOpts: meetingLocations, dismissalOpts: dismissalLocations,
+      projectOpts: projects, activeVolunteers: activeVolunteers
+  };
 }
 
 if (!name) return { success: false, message: "No name provided to search." };
 
-const textFinder = sheet.getRange("A:A").createTextFinder(name).matchEntireCell(true);
-const cell = textFinder.findNext();
+const normName = name.toLowerCase().trim();
+const rowData = targetData.records[normName];
 
-if(!cell) {
-if (type === 'volunteer') {
-return {
-success: true,
-isNew: true,
-data: {},
-headers: rawHeaders,
-config: configCols,
-meetingOpts: meetingLocations,
-dismissalOpts: dismissalLocations,
-projectOpts: projects,
-activeVolunteers: activeVolunteers
-};
-}
-return { success: false, message: "Name not found in Trainee list." };
+if (!rowData) {
+  if (type === 'volunteer') {
+      return {
+          success: true, isNew: true, data: {}, headers: rawHeaders,
+          config: configCols, meetingOpts: meetingLocations, dismissalOpts: dismissalLocations,
+          projectOpts: projects, activeVolunteers: activeVolunteers
+      };
+  }
+  return { success: false, message: "Name not found in Trainee list." };
 }
 
-const row = cell.getRow();
-const rowData = sheet.getRange(row, 1, 1, lastCol).getValues()[0];
 let record = {};
-
 rawHeaders.forEach((h, i) => {
-let normH = normalizeHeader(h);
-let key = normH;
-if (normH.includes("meetinglocation")) key = "meetinglocation";
-else if (normH.includes("dismissallocation")) key = "dismissallocation";
-else if (normH.includes("attending")) key = "attendingyn";
-else if (normH.includes("caregiver")) key = "caregiver";
+  let normH = normalizeHeader(h);
+  let key = normH;
+  if (normH.includes("meetinglocation")) key = "meetinglocation";
+  else if (normH.includes("dismissallocation")) key = "dismissallocation";
+  else if (normH.includes("attending")) key = "attendingyn";
+  else if (normH.includes("caregiver")) key = "caregiver";
 
-if(key) {
-let val = rowData[i];
-if (val instanceof Date) val = Utilities.formatDate(val, ss.getSpreadsheetTimeZone(), "yyyy-MM-dd");
-record[key] = val;
-}
+  if(key) {
+      record[key] = rowData[i];
+  }
 });
 
 return {
-success: true, isNew: false, data: record,
-headers: rawHeaders, config: configCols,
-meetingOpts: meetingLocations, dismissalOpts: dismissalLocations,
-projectOpts: projects,
-activeVolunteers: activeVolunteers
+  success: true, isNew: false, data: record,
+  headers: rawHeaders, config: configCols,
+  meetingOpts: meetingLocations, dismissalOpts: dismissalLocations,
+  projectOpts: projects, activeVolunteers: activeVolunteers
 };
 } catch(e) { return { success: false, message: e.toString() }; }
 }
@@ -1842,6 +1860,40 @@ if (normKey.includes("group")) groupVal = String(v).trim();
 if (normKey.includes("volpaired")) pairedVol = String(v).trim();
 }
 
+try {
+const fullKey = getCacheKey("fulldata", sheetUrl);
+const fullStr = getLargeCache(fullKey);
+if (fullStr) {
+  const fullData = JSON.parse(fullStr);
+  const targetData = role === 'TRAINEE' ? fullData.trainee : fullData.volunteer;
+  
+  if (!targetData.records[normName]) {
+      targetData.records[normName] = new Array(targetData.headers.length).fill("");
+      targetData.records[normName][0] = name;
+  }
+  
+  for (const [k, v] of Object.entries(data)) {
+      const normKey = normalizeHeader(k);
+      let targetIdx = -1;
+      for(let i=0; i<targetData.headers.length; i++) {
+          let hNorm = normalizeHeader(targetData.headers[i]);
+          if (hNorm === normKey || 
+             (normKey.includes("meetinglocation") && hNorm.includes("meetinglocation")) ||
+             (normKey.includes("dismissallocation") && hNorm.includes("dismissallocation")) ||
+             (normKey.includes("attending") && hNorm.includes("attending")) ||
+             (normKey.includes("caregiver") && hNorm.includes("caregiver"))) {
+              targetIdx = i;
+              break;
+          }
+      }
+      if (targetIdx > -1) {
+          targetData.records[normName][targetIdx] = v;
+      }
+  }
+  putLargeCache(fullKey, JSON.stringify(fullData));
+}
+} catch(e) {}
+
 // 1. Patch PAIR Cache
 try {
 const pairKey = getCacheKey("pair", sheetUrl);
@@ -1867,7 +1919,6 @@ if (attVal !== undefined) {
 if (groupVal !== undefined && role === 'TRAINEE') person.group = groupVal;
 if (pairedVol !== undefined && role === 'TRAINEE') person.volPaired = pairedVol;
 
-// Apply Volunteer Cascade Unpairing immediately in cache
 if (role === 'VOLUNTEER' && attVal === 'n') {
     pairData.data.trainees.forEach(t => {
         if (t.volPaired && t.volPaired.toLowerCase().includes(normName)) {
@@ -2072,7 +2123,6 @@ res = _submitAttendanceDataInner(form);
 
 if (res && res.success && res.ss) {
 SpreadsheetApp.flush();
-// Bypasses the 10-second full sheet read atomicCacheRebuild! 
 patchCachesOnAttendanceUpdate(form.sheetUrl, form.type, res.targetName, form.data);
 }
 } catch(e) {
@@ -2291,7 +2341,6 @@ if (tLastRow > 1) {
 const tHeaders = tSheet.getRange(1, 1, 1, tSheet.getLastColumn()).getValues()[0];
 const tVolPairedIdx = getColIndex(tHeaders, "vol paired");
 if (tVolPairedIdx > -1) {
-// TextFinder speeds up full-column searches massively compared to getValues()
 const searchRange = tSheet.getRange(2, tVolPairedIdx + 1, tLastRow - 1, 1);
 const finder = searchRange.createTextFinder(name).matchCase(false).findAll();
 
