@@ -225,11 +225,7 @@ precomputeRecentOutings();
 }
 
 function precomputeRecentOutings() {
-const parentFolder = DriveApp.getFolderById(getParentFolderId());
-const subfolders = parentFolder.getFolders();
-const folderList = [];
-const regex = /(\d{8})/;
-const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const parentId = getParentFolderId();
 
 const today = new Date();
 today.setDate(today.getDate() - 1);
@@ -238,10 +234,18 @@ const tM = String(today.getMonth() + 1).padStart(2, '0');
 const tD = String(today.getDate()).padStart(2, '0');
 const thresholdDateNum = parseInt(`${tY}${tM}${tD}`);
 
+// Optimization: Use DriveApp search index to prevent scanning thousands of old folders
+const query = `'${parentId}' in parents and (title contains '${tY}' or title contains '${tY - 1}') and trashed = false`;
+const subfolders = DriveApp.searchFolders(query);
+
+const folderList = [];
+const regex = /(\d{8})/;
+const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
 let count = 0;
 while (subfolders.hasNext()) {
 count++;
-if (count > 500 && folderList.length >= 20) break;
+if (count > 200 && folderList.length >= 20) break; // Hard ceiling to prevent timeout
 let folder = subfolders.next();
 let name = folder.getName();
 let match = name.match(regex);

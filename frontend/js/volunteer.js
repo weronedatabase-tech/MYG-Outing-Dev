@@ -7,6 +7,7 @@ let currentVolSheetUrl = null;
 let currentActiveVols = [];
 let currentVolPairedValue = [];
 let originalVolData = {};
+let currentFormContext = null;
 
 function initVolunteerPage() {
     const params = new URLSearchParams(window.location.search);
@@ -50,6 +51,7 @@ function setVolType(type, btn) {
     selectedVolType = type; 
     currentVolTypeRequest = type; 
     allNames = []; 
+    currentFormContext = null;
     document.getElementById('volNameList').innerHTML = ""; 
     resetSearch(); 
     
@@ -85,6 +87,7 @@ function resetVolForm() {
     currentVolTypeRequest = null; 
     allNames = []; 
     originalVolData = {};
+    currentFormContext = null;
     
     document.querySelectorAll('.vol-type-btn').forEach(b => { 
         b.classList.remove('bg-green-600', 'text-white', 'border-transparent'); 
@@ -108,14 +111,14 @@ function loadVolNames(requestedType) {
     
     if(!currentVolSheetUrl || !requestedType) return; 
 
-    input.placeholder = "Loading names..."; 
+    input.placeholder = "Loading Context..."; 
     input.disabled = true; 
 
     // Render skeleton placeholders
     list.innerHTML = Array(5).fill('<li class="px-4 py-3 border-b border-gray-200 dark:border-zinc-700"><div class="animate-pulse h-4 bg-gray-200 dark:bg-zinc-700 rounded w-2/3"></div></li>').join('');
     list.classList.remove('hidden');
 
-    apiCall('getNamesList', { url: currentVolSheetUrl, type: requestedType }).then(res => { 
+    apiCall('getAttendanceFormContext', { sheetUrl: currentVolSheetUrl, type: requestedType }).then(res => { 
         if (currentVolTypeRequest !== requestedType) return; // Prevent race conditions on rapid switching
         
         input.disabled = false; 
@@ -124,7 +127,10 @@ function loadVolNames(requestedType) {
         list.classList.add('hidden'); 
 
         if(res.success) {
+            currentFormContext = res;
             allNames = res.names; 
+            allProjects = res.projectOpts || [];
+            currentActiveVols = res.activeVolunteers || [];
         } else {
             alert("Error loading names: " + res.message);
         }
@@ -354,18 +360,15 @@ document.addEventListener('click', function(e) {
 });
 
 function loadVolData(name, isManualNew) { 
+    if(!currentFormContext) return;
+    
     const container = document.getElementById('volFormContainer'); 
     const fieldsDiv = document.getElementById('dynamicFields'); 
     const title = document.getElementById('formTitle'); 
     const submitBtn = document.getElementById('volSubmitBtn'); 
     const projectContainer = document.getElementById('newVolProjectContainer'); 
 
-    if(!currentVolSheetUrl) return;
-
     container.classList.remove('hidden'); 
-
-    // Render Field Skeletons
-    fieldsDiv.innerHTML = Array(4).fill('<div class="mb-2"><div class="animate-pulse h-3 bg-gray-200 dark:bg-zinc-700 rounded w-1/4 mb-1.5"></div><div class="animate-pulse h-10 bg-gray-100 dark:bg-zinc-800 rounded w-full"></div></div>').join(''); 
 
     if (isManualNew) { 
         title.innerText = "Add New Volunteer"; 
@@ -381,108 +384,103 @@ function loadVolData(name, isManualNew) {
         document.getElementById('newVolProjectSearch').required = false; 
     } 
 
-    apiCall('getPersonData', { url: currentVolSheetUrl, type: selectedVolType, name: name }).then(res => { 
-        fieldsDiv.innerHTML = ''; 
-        if(res.success) { 
-            const data = res.data; 
+    fieldsDiv.innerHTML = ''; 
+    const res = currentFormContext;
+    
+    const data = isManualNew ? {} : (res.peopleData[name] || {}); 
+    
+    // Deep copy to store exact pristine backend state for strict Delta calculations
+    originalVolData = JSON.parse(JSON.stringify(data || {}));
+    
+    const config = res.config; 
+    const meetingOpts = res.meetingOpts || []; 
+    const dismissalOpts = res.dismissalOpts || []; 
+    const isNew = isManualNew; 
+    allProjects = res.projectOpts || []; 
+    
+    const htmlSafeName = name ? name.replace(/"/g, '&quot;') : '';
+    title.innerHTML = isNew ? `Add New: <span class="text-green-500">Volunteer</span>` : `Update: <span class="text-blue-500">${htmlSafeName}</span>`; 
+    if(isNew) submitBtn.innerText = "Add New Volunteer & Update Attendance"; 
+    else submitBtn.innerText = "Update Attendance"; 
+    
+    let fieldsToShow = (config && config.length > 0) ? config : res.headers.map(h => h.replace(/\[.*?\]/g,"").trim()); 
+    
+    if (isNew) { 
+        const nameFieldExists = fieldsToShow.some(f => f.toLowerCase().includes("name")); 
+        if (!nameFieldExists) { 
+            const rawNameHeader = res.headers.find(h => h.toLowerCase().includes("name")) || "Volunteer Name"; 
+            fieldsToShow.unshift(rawNameHeader.replace(/\[.*?\]/g,"").trim()); 
+        } 
+    } 
+    
+    fieldsToShow.forEach(header => { 
+        let val = isNew ? "" : (getValueFuzzy(data, header)); 
+        let cleanH = header.toLowerCase().replace(/[^a-z0-9]/g, ""); 
+        let isNameField = cleanH.includes("name"); 
+        
+        if(isNew && cleanH.includes("project")) return; 
+        
+        let isReadOnly = isNameField && !isNew; 
+        if(isNew && isNameField) val = ""; 
+        if(!isNew && isNameField) val = name; 
+        
+        let inputHtml = ""; 
+        let wrapperClass = "mb-1"; 
+        if (!isNameField && !cleanH.includes("attending")) { wrapperClass += " attendance-dependent"; } 
+        
+        if (cleanH.includes("attending")) { 
+            inputHtml = ` <select name="${header}" onchange="toggleDependentFields(this)" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white rounded p-2 text-sm focus:border-green-500 shadow-sm"> <option value="" ${val===""?"selected":""}>Select...</option> <option value="Y" ${val.toLowerCase()==="y"?"selected":""}>Y (Yes)</option> <option value="N" ${val.toLowerCase()==="n"?"selected":""}>N (No)</option> </select>`; 
+        } else if (cleanH.includes("meetinglocation") || cleanH.includes("dismissallocation")) { 
+            const isDismissal = cleanH.includes("dismissal"); 
+            const optionsList = isDismissal ? dismissalOpts : meetingOpts; 
+            const placeholder = isDismissal ? "Select Dismissal..." : "Select Meeting..."; 
             
-            // Deep copy to store exact pristine backend state for strict Delta calculations
-            originalVolData = JSON.parse(JSON.stringify(data || {}));
+            let optionsHtml = optionsList.map(opt => { 
+                const isSelected = val.toString().trim().toLowerCase() === opt.toString().trim().toLowerCase(); 
+                return `<option value="${opt.replace(/"/g, '&quot;')}" ${isSelected ? "selected" : ""}>${opt}</option>`; 
+            }).join(""); 
             
-            const config = res.config; 
-            const meetingOpts = res.meetingOpts || []; 
-            const dismissalOpts = res.dismissalOpts || []; 
-            const isNew = res.isNew || isManualNew; 
-            allProjects = res.projectOpts || []; 
-            
-            const htmlSafeName = name ? name.replace(/"/g, '&quot;') : '';
-            title.innerHTML = isNew ? `Add New: <span class="text-green-500">Volunteer</span>` : `Update: <span class="text-blue-500">${htmlSafeName}</span>`; 
-            if(isNew) submitBtn.innerText = "Add New Volunteer & Update Attendance"; 
-            else submitBtn.innerText = "Update Attendance"; 
-            
-            let fieldsToShow = (config && config.length > 0) ? config : res.headers.map(h => h.replace(/\[.*?\]/g,"").trim()); 
-            
-            if (isNew) { 
-                const nameFieldExists = fieldsToShow.some(f => f.toLowerCase().includes("name")); 
-                if (!nameFieldExists) { 
-                    const rawNameHeader = res.headers.find(h => h.toLowerCase().includes("name")) || "Volunteer Name"; 
-                    fieldsToShow.unshift(rawNameHeader.replace(/\[.*?\]/g,"").trim()); 
+            const valTrimmed = val.toString().trim(); 
+            if (valTrimmed !== "") { 
+                const listHasValue = optionsList.some(opt => opt.toString().trim().toLowerCase() === valTrimmed.toLowerCase()); 
+                if (!listHasValue) { 
+                    optionsHtml += `<option value="${val.replace(/"/g, '&quot;')}" selected>${val} (Current)</option>`; 
                 } 
             } 
+            inputHtml = ` <select name="${header}" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white rounded p-2 text-sm focus:border-green-500 shadow-sm"> <option value="">${placeholder}</option> ${optionsHtml} </select>`; 
+        } else if (cleanH.includes("vol") && cleanH.includes("paired")) {
+            currentActiveVols = res.activeVolunteers || [];
+            currentVolPairedValue = val.toString().split(/[,|\n]+/).map(s=>s.trim()).filter(s=>s);
             
-            fieldsToShow.forEach(header => { 
-                let val = isNew ? "" : (getValueFuzzy(data, header)); 
-                let cleanH = header.toLowerCase().replace(/[^a-z0-9]/g, ""); 
-                let isNameField = cleanH.includes("name"); 
-                
-                if(isNew && cleanH.includes("project")) return; 
-                
-                let isReadOnly = isNameField && !isNew; 
-                if(isNew && isNameField) val = ""; 
-                if(!isNew && isNameField) val = name; 
-                
-                let inputHtml = ""; 
-                let wrapperClass = "mb-1"; 
-                if (!isNameField && !cleanH.includes("attending")) { wrapperClass += " attendance-dependent"; } 
-                
-                if (cleanH.includes("attending")) { 
-                    inputHtml = ` <select name="${header}" onchange="toggleDependentFields(this)" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white rounded p-2 text-sm focus:border-green-500 shadow-sm"> <option value="" ${val===""?"selected":""}>Select...</option> <option value="Y" ${val.toLowerCase()==="y"?"selected":""}>Y (Yes)</option> <option value="N" ${val.toLowerCase()==="n"?"selected":""}>N (No)</option> </select>`; 
-                } else if (cleanH.includes("meetinglocation") || cleanH.includes("dismissallocation")) { 
-                    const isDismissal = cleanH.includes("dismissal"); 
-                    const optionsList = isDismissal ? dismissalOpts : meetingOpts; 
-                    const placeholder = isDismissal ? "Select Dismissal..." : "Select Meeting..."; 
-                    
-                    let optionsHtml = optionsList.map(opt => { 
-                        const isSelected = val.toString().trim().toLowerCase() === opt.toString().trim().toLowerCase(); 
-                        return `<option value="${opt.replace(/"/g, '&quot;')}" ${isSelected ? "selected" : ""}>${opt}</option>`; 
-                    }).join(""); 
-                    
-                    const valTrimmed = val.toString().trim(); 
-                    if (valTrimmed !== "") { 
-                        const listHasValue = optionsList.some(opt => opt.toString().trim().toLowerCase() === valTrimmed.toLowerCase()); 
-                        if (!listHasValue) { 
-                            optionsHtml += `<option value="${val.replace(/"/g, '&quot;')}" selected>${val} (Current)</option>`; 
-                        } 
-                    } 
-                    inputHtml = ` <select name="${header}" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white rounded p-2 text-sm focus:border-green-500 shadow-sm"> <option value="">${placeholder}</option> ${optionsHtml} </select>`; 
-                } else if (cleanH.includes("vol") && cleanH.includes("paired")) {
-                    currentActiveVols = res.activeVolunteers || [];
-                    currentVolPairedValue = val.toString().split(/[,|\n]+/).map(s=>s.trim()).filter(s=>s);
-                    
-                    inputHtml = `
-                    <div class="w-full bg-gray-50 dark:bg-black border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white focus-within:border-green-500'} rounded p-2 text-sm shadow-sm">
-                        <div id="volPairedTags" class="flex flex-wrap gap-1 ${currentVolPairedValue.length > 0 ? 'mb-1' : ''}">
-                            ${currentVolPairedValue.map(v => {
-                                const jsSafeVol = v.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                                return `<span class="bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700/50 px-2 py-0.5 rounded text-xs flex items-center gap-1">${v} <i class="fa-solid fa-xmark cursor-pointer hover:text-red-500 ml-1" onclick="removeVolPaired('${jsSafeVol}')"></i></span>`;
-                            }).join('')}
-                        </div>
-                        <input type="hidden" name="${header}" id="volPairedHidden" value="${currentVolPairedValue.join(', ').replace(/"/g, '&quot;')}">
-                        <div class="relative">
-                            <input type="text" id="volPairedInput" ${isReadOnly ? 'readonly' : ''} class="w-full bg-transparent outline-none placeholder-gray-400 dark:placeholder-gray-500 text-sm" placeholder="Search volunteer..." autocomplete="off" oninput="filterActiveVols()" onfocus="filterActiveVols()">
-                            <ul id="activeVolsList" class="absolute z-50 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg mt-1 shadow-xl hidden max-h-40 overflow-y-auto pb-6"></ul>
-                        </div>
-                    </div>
-                    `;
-                } else if (cleanH.includes("remark")) { 
-                    inputHtml = `<textarea name="${header}" rows="8" ${isReadOnly ? 'readonly' : ''} class="w-full bg-gray-50 dark:bg-black border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white focus:border-green-500'} rounded p-2 text-sm resize-y [color-scheme:light] dark:[color-scheme:dark] shadow-sm">${val}</textarea>`; 
-                } else { 
-                    let type = "text"; 
-                    if(cleanH.includes("date")) type = "date"; 
-                    if(cleanH.includes("time")) type = "time"; 
-                    inputHtml = `<input name="${header}" type="${type}" value="${val.replace(/"/g, '&quot;')}" ${isReadOnly ? 'readonly' : ''} class="w-full bg-gray-50 dark:bg-black border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white focus:border-green-500'} rounded p-2 text-sm [color-scheme:light] dark:[color-scheme:dark] shadow-sm">`; 
-                } 
-                
-                fieldsDiv.innerHTML += `<div class="${wrapperClass}"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">${header}</label>${inputHtml}</div>`; 
-            }); 
-            
-            const attSelect = document.querySelector('select[name*="Attending"], select[name*="attending"]'); 
-            if(attSelect) toggleDependentFields(attSelect); 
-            
+            inputHtml = `
+            <div class="w-full bg-gray-50 dark:bg-black border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white focus-within:border-green-500'} rounded p-2 text-sm shadow-sm">
+                <div id="volPairedTags" class="flex flex-wrap gap-1 ${currentVolPairedValue.length > 0 ? 'mb-1' : ''}">
+                    ${currentVolPairedValue.map(v => {
+                        const jsSafeVol = v.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        return `<span class="bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700/50 px-2 py-0.5 rounded text-xs flex items-center gap-1">${v} <i class="fa-solid fa-xmark cursor-pointer hover:text-red-500 ml-1" onclick="removeVolPaired('${jsSafeVol}')"></i></span>`;
+                    }).join('')}
+                </div>
+                <input type="hidden" name="${header}" id="volPairedHidden" value="${currentVolPairedValue.join(', ').replace(/"/g, '&quot;')}">
+                <div class="relative">
+                    <input type="text" id="volPairedInput" ${isReadOnly ? 'readonly' : ''} class="w-full bg-transparent outline-none placeholder-gray-400 dark:placeholder-gray-500 text-sm" placeholder="Search volunteer..." autocomplete="off" oninput="filterActiveVols()" onfocus="filterActiveVols()">
+                    <ul id="activeVolsList" class="absolute z-50 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg mt-1 shadow-xl hidden max-h-40 overflow-y-auto pb-6"></ul>
+                </div>
+            </div>
+            `;
+        } else if (cleanH.includes("remark")) { 
+            inputHtml = `<textarea name="${header}" rows="8" ${isReadOnly ? 'readonly' : ''} class="w-full bg-gray-50 dark:bg-black border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white focus:border-green-500'} rounded p-2 text-sm resize-y [color-scheme:light] dark:[color-scheme:dark] shadow-sm">${val}</textarea>`; 
         } else { 
-            fieldsDiv.innerHTML = '<div class="text-red-500 dark:text-red-400 font-bold">Error: ' + res.message + '</div>'; 
+            let type = "text"; 
+            if(cleanH.includes("date")) type = "date"; 
+            if(cleanH.includes("time")) type = "time"; 
+            inputHtml = `<input name="${header}" type="${type}" value="${val.replace(/"/g, '&quot;')}" ${isReadOnly ? 'readonly' : ''} class="w-full bg-gray-50 dark:bg-black border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white focus:border-green-500'} rounded p-2 text-sm [color-scheme:light] dark:[color-scheme:dark] shadow-sm">`; 
         } 
+        
+        fieldsDiv.innerHTML += `<div class="${wrapperClass}"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">${header}</label>${inputHtml}</div>`; 
     }); 
+    
+    const attSelect = document.querySelector('select[name*="Attending"], select[name*="attending"]'); 
+    if(attSelect) toggleDependentFields(attSelect); 
 }
 
 function submitAttendance(e) { 
@@ -573,11 +571,13 @@ function submitAttendance(e) {
                     resetVolForm(); 
                     document.getElementById('volNameSearch').value = ""; 
                 } 
-                setTimeout(() => {
-                    apiCall('getNamesList', { url: currentVolSheetUrl, type: 'volunteer' }).then(r => { 
-                        if(r.success) allNames = r.names; 
-                    }); 
-                }, 500);
+                // Refresh local cache Context silently so next open is up-to-date
+                apiCall('getAttendanceFormContext', { sheetUrl: currentVolSheetUrl, type: 'volunteer' }).then(r => { 
+                    if(r.success) {
+                        currentFormContext = r;
+                        allNames = r.names; 
+                    }
+                }); 
             } 
         } else {
             showOverlay('error', res.message);
