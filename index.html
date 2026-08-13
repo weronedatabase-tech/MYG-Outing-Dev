@@ -38,20 +38,20 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <div class="flex items-center justify-between w-full min-h-[32px] gap-2">
 <div class="flex items-center gap-2 cursor-pointer shrink-0" onclick="window.location.href='./'">
 <div class="bg-primary p-1.5 rounded-lg shadow-lg shadow-blue-500/20 flex items-center justify-center">
-<i class="fa-solid fa-calendar-days text-white text-lg"></i>
+ <i class="fa-solid fa-calendar-days text-white text-lg"></i>
 </div>
 <div class="flex flex-col justify-center">
-<h1 class="text-lg md:text-xl font-black text-gray-900 dark:text-white leading-none mb-0.5">MINDS MYG</h1>
-<p class="text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 leading-none">Outings Organiser</p>
+ <h1 class="text-lg md:text-xl font-black text-gray-900 dark:text-white leading-none mb-0.5">MINDS MYG</h1>
+ <p class="text-[10px] md:text-xs font-bold text-gray-500 dark:text-gray-400 leading-none">Outings Organiser</p>
 </div>
 </div>
 <!-- Global Actions -->
 <div class="flex items-center gap-1.5 shrink-0 pl-2 ml-auto border-l border-gray-200 dark:border-zinc-700">
 <button onclick="refreshApp()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors group flex items-center p-1" title="Force Refresh Data & App">
-<i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm md:text-base group-hover:text-primary transition-transform"></i>
+ <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-sm md:text-base group-hover:text-primary transition-transform"></i>
 </button>
 <button onclick="toggleTheme()" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-[10px] md:text-xs transition-colors flex items-center p-1" title="Toggle Theme">
-<span class="text-sm md:text-base leading-none">🌗</span>
+ <span class="text-sm md:text-base leading-none">🌗</span>
 </button>
 </div>
 </div>
@@ -73,17 +73,17 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <div class="flex items-center gap-3 w-full">
 <div class="bg-green-100 dark:bg-green-900/50 p-3 rounded-lg text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform shrink-0"><i class="fa-solid fa-users text-xl"></i></div>
 <div class="flex-1 min-w-0">
-<h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-white">Volunteer & Trainee</h3>
-<p class="text-xs text-gray-500 dark:text-gray-400">Update attendance</p>
+ <h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-white">Volunteer & Trainee</h3>
+ <p class="text-xs text-gray-500 dark:text-gray-400">Update attendance</p>
 </div>
 </div>
 <div class="w-full mt-1 border-t border-gray-100 dark:border-zinc-800 pt-2" onclick="event.stopPropagation()">
 <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-1">Target Event</label>
 <div class="relative">
-<select id="volunteerEventSelect" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-1.5 px-2 text-xs text-gray-900 dark:text-white focus:border-green-500 outline-none appearance-none shadow-sm cursor-pointer hover:border-green-400 transition-colors">
-    <option disabled selected>Loading events...</option>
-</select>
-<div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500"><i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+ <select id="volunteerEventSelect" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-1.5 px-2 text-xs text-gray-900 dark:text-white focus:border-green-500 outline-none appearance-none shadow-sm cursor-pointer hover:border-green-400 transition-colors">
+     <option disabled selected>Loading events...</option>
+ </select>
+ <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500"><i class="fa-solid fa-chevron-down text-[10px]"></i></div>
 </div>
 </div>
 </div>
@@ -92,17 +92,17 @@ theme: { extend: { colors: { primary: '#3b82f6' } } }
 <div class="flex items-center gap-3 w-full">
 <div class="bg-teal-100 dark:bg-teal-900/50 p-3 rounded-lg text-teal-600 dark:text-teal-400 group-hover:scale-110 transition-transform shrink-0"><i class="fa-solid fa-clipboard-check text-xl"></i></div>
 <div class="flex-1 min-w-0">
-<h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-white">Actual Day Tracker</h3>
-<p class="text-xs text-gray-500 dark:text-gray-400">Live mark presence</p>
+ <h3 class="text-base md:text-lg font-bold text-gray-900 dark:text-white">Actual Day Tracker</h3>
+ <p class="text-xs text-gray-500 dark:text-gray-400">Live mark presence</p>
 </div>
 </div>
 <div class="w-full mt-1 border-t border-gray-100 dark:border-zinc-800 pt-2" onclick="event.stopPropagation()">
 <label class="block text-[9px] text-gray-500 font-bold uppercase tracking-wider mb-1">Target Event</label>
 <div class="relative">
-<select id="trackerEventSelect" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-1.5 px-2 text-xs text-gray-900 dark:text-white focus:border-teal-500 outline-none appearance-none shadow-sm cursor-pointer hover:border-teal-400 transition-colors">
-    <option disabled selected>Loading events...</option>
-</select>
-<div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500"><i class="fa-solid fa-chevron-down text-[10px]"></i></div>
+ <select id="trackerEventSelect" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 rounded-lg py-1.5 px-2 text-xs text-gray-900 dark:text-white focus:border-teal-500 outline-none appearance-none shadow-sm cursor-pointer hover:border-teal-400 transition-colors">
+     <option disabled selected>Loading events...</option>
+ </select>
+ <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none text-gray-500"><i class="fa-solid fa-chevron-down text-[10px]"></i></div>
 </div>
 </div>
 </div>
@@ -122,17 +122,17 @@ const trackerSelect = document.getElementById('trackerEventSelect');
 if(!volSelect || !trackerSelect) return;
 
 if(!data || data.length === 0) {
-const emptyOption = '<option disabled selected>No upcoming events</option>';
-volSelect.innerHTML = emptyOption;
-trackerSelect.innerHTML = emptyOption;
-volSelect.disabled = true;
-trackerSelect.disabled = true;
-return;
+ const emptyOption = '<option disabled selected>No upcoming events</option>';
+ volSelect.innerHTML = emptyOption;
+ trackerSelect.innerHTML = emptyOption;
+ volSelect.disabled = true;
+ trackerSelect.disabled = true;
+ return;
 }
 
 let optionsHtml = '';
 data.forEach(item => {
-optionsHtml += `<option value="${item.sheetUrl}">${item.displayName}</option>`;
+ optionsHtml += `<option value="${item.sheetUrl}">${item.displayName}</option>`;
 });
 
 volSelect.innerHTML = optionsHtml;
@@ -142,20 +142,30 @@ trackerSelect.disabled = false;
 
 const closestUrl = window.getClosestEventUrl(data);
 if(closestUrl) {
-volSelect.value = closestUrl;
-trackerSelect.value = closestUrl;
+ volSelect.value = closestUrl;
+ trackerSelect.value = closestUrl;
 }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function loadHomeEvents() {
 const localDataStr = localStorage.getItem('myg_sheetList');
 if(localDataStr) {
-try {
-    const parsed = JSON.parse(localDataStr);
-    populateHomeSelectors(parsed);
-} catch(e) {}
+ try {
+     const parsed = JSON.parse(localDataStr);
+     populateHomeSelectors(parsed);
+ } catch(e) {}
 }
-// Note: Hydration logic in main.js handles the background network refresh
+
+apiCall('getRecentOutingSheets', null).then(res => {
+ if(res.success) {
+     localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
+     populateHomeSelectors(res.data);
+ }
+});
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+loadHomeEvents();
 });
 
 function navigateFromHome(type) {
@@ -164,9 +174,9 @@ let selectEl = document.getElementById(selectId);
 let url = selectEl ? selectEl.value : null;
 
 if(!url || url.includes('Loading') || url.includes('No upcoming') || url.includes('Error')) {
-navigateTo(type + '.html');
+ navigateTo(type + '.html');
 } else {
-navigateTo(type + '.html', { url: url });
+ navigateTo(type + '.html', { url: url });
 }
 }
 </script>
