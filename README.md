@@ -33,7 +33,7 @@ To make the auto-deployment functional, you must add the following **Repository 
 *(Settings -> Secrets and variables -> Actions -> New repository secret)*
 
 #### 1. `CLASP_CREDENTIALS`
-Install clasp locally (`npm install -g @google/clasp`), log in (`clasp login --no-localhost`), and copy the entire contents of your generated `cat ~/.clasprc.json` file. Paste it as the value for `CLASP_CREDENTIALS`.
+Install clasp locally (`npm install -g @google/clasp`), log in (`clasp login`), and copy the entire contents of your generated `~/.clasprc.json` file. Paste it as the value for `CLASP_CREDENTIALS`.
 
 #### 2. `SCRIPT_ID`
 Go to your Apps Script project -> Project Settings (gear icon) -> Copy the **Script ID** and paste it here.

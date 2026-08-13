@@ -1,0 +1,14 @@
+{
+  "name": "myg-outing",
+  "version": "1.0.0",
+  "description": "MINDS MYG Outings Organiser",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo 'No build step'"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

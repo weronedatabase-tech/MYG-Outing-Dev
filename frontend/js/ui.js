@@ -12,12 +12,23 @@ async function refreshApp() {
  if(icon) icon.classList.add('fa-spin'); 
  
  // Provide UX feedback since a deep sync takes a few seconds
- showOverlay('loading', 'Syncing from Google Drive...');
+ if (typeof showOverlay === 'function') {
+     showOverlay('loading', 'Syncing Google Drive & Purging Cache...');
+ }
 
- // 1. Wipe frontend LocalStorage cache so the next load doesn't show stale data immediately
- localStorage.removeItem('myg_sheetList');
+ // 1. Save admin login session and user theme
+ const adminKey = localStorage.getItem('adminKey');
+ const theme = localStorage.getItem('theme');
 
- // 2. Determine if a specific sheet is open so we can bust its specific cache too
+ // 2. Full frontend cache purge (wipe localStorage & sessionStorage)
+ try { localStorage.clear(); } catch(e) {}
+ try { sessionStorage.clear(); } catch(e) {}
+
+ // Restore admin login session and theme
+ if (adminKey) localStorage.setItem('adminKey', adminKey);
+ if (theme) localStorage.setItem('theme', theme);
+
+ // 3. Determine if a specific sheet is open so we can bust its specific cache too
  let targetSheetUrl = null;
  if (typeof currentCommAttSheetUrl !== 'undefined' && currentCommAttSheetUrl) targetSheetUrl = currentCommAttSheetUrl;
  else if (typeof currentManualPairingSheetUrl !== 'undefined' && currentManualPairingSheetUrl) targetSheetUrl = currentManualPairingSheetUrl;
@@ -30,32 +41,34 @@ async function refreshApp() {
      targetSheetUrl = document.getElementById('commSheetSelector').value;
  }
 
- // 3. Command backend to bust and rebuild caches
+ // 4. Command backend to bust and rebuild Google Drive caches
  try {
      await apiCall('forceBackendRefresh', { sheetUrl: targetSheetUrl });
  } catch(e) {
-     console.warn("Backend refresh failed, proceeding with local refresh.");
+     console.warn("Backend refresh failed, proceeding with client purge.");
  }
 
- // 4. Force Service Worker Update
+ // 5. Unregister Service Workers & clear Cache Storage to load latest code version
  if ('serviceWorker' in navigator) {
-     navigator.serviceWorker.getRegistrations().then(regs => {
-         for (let reg of regs) {
-             reg.update();
+     try {
+         const registrations = await navigator.serviceWorker.getRegistrations();
+         for (let reg of registrations) {
+             await reg.unregister();
          }
-     });
+     } catch(e) {}
  }
 
- // 5. Clear Browser Cache Storage & Reload
  if ('caches' in window) {
-     caches.keys().then(names => {
-         Promise.all(names.map(name => caches.delete(name))).then(() => {
-             window.location.reload(true);
-         });
-     });
- } else {
-     setTimeout(() => { window.location.reload(true); }, 300);
+     try {
+         const names = await caches.keys();
+         await Promise.all(names.map(name => caches.delete(name)));
+     } catch(e) {}
  }
+
+ // 6. Hard reload with cache-busting timestamp to load latest app version
+ const cleanUrl = new URL(window.location.href);
+ cleanUrl.searchParams.set('_v', Date.now());
+ window.location.href = cleanUrl.toString();
 }
 
 function toggleTheme() { 

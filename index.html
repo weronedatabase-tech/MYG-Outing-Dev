@@ -160,6 +160,7 @@ apiCall('getRecentOutingSheets', null).then(res => {
  if(res.success) {
      localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
      populateHomeSelectors(res.data);
+     isHydrated = true;
  }
 });
 }
