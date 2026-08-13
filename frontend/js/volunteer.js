@@ -31,12 +31,17 @@ function loadVolunteerEvents() {
       }
 
       if (selectedItem) {
-          if (hiddenInput) hiddenInput.value = selectedItem.sheetUrl;
+          const oldUrl = hiddenInput ? hiddenInput.value : "";
+          const newUrl = selectedItem.sheetUrl;
+          
+          if (hiddenInput) hiddenInput.value = newUrl;
           if (nameEl) nameEl.innerText = selectedItem.displayName || selectedItem.fullName || "Upcoming Event";
           if (dateTextEl) dateTextEl.innerText = selectedItem.formattedDate || "N/A";
+          
+          if (oldUrl !== newUrl && typeof resetVolForm === 'function') {
+              resetVolForm();
+          }
       }
-
-      if (typeof resetVolForm === 'function') resetVolForm();
   };
 
   const localDataStr = localStorage.getItem('myg_sheetList');
