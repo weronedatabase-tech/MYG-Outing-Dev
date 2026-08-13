@@ -23,8 +23,9 @@ let targetSheetUrl = null;
 if (typeof currentCommAttSheetUrl !== 'undefined' && currentCommAttSheetUrl) targetSheetUrl = currentCommAttSheetUrl;
 else if (typeof currentManualPairingSheetUrl !== 'undefined' && currentManualPairingSheetUrl) targetSheetUrl = currentManualPairingSheetUrl;
 else if (typeof currentGroupingSheetUrl !== 'undefined' && currentGroupingSheetUrl) targetSheetUrl = currentGroupingSheetUrl;
-else if (document.getElementById('volSheetSelector') && document.getElementById('volSheetSelector').value && document.getElementById('volSheetSelector').value.startsWith('http')) {
-    targetSheetUrl = document.getElementById('volSheetSelector').value;
+else if (typeof currentEventUrl !== 'undefined' && currentEventUrl) targetSheetUrl = currentEventUrl;
+else if (document.getElementById('eventSelector') && document.getElementById('eventSelector').value && document.getElementById('eventSelector').value.startsWith('http')) {
+    targetSheetUrl = document.getElementById('eventSelector').value;
 } else if (document.getElementById('actualSheetSelector') && document.getElementById('actualSheetSelector').value && document.getElementById('actualSheetSelector').value.startsWith('http')) {
     targetSheetUrl = document.getElementById('actualSheetSelector').value;
 } else if (document.getElementById('commSheetSelector') && document.getElementById('commSheetSelector').value && document.getElementById('commSheetSelector').value.startsWith('http')) {
