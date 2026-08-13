@@ -1,689 +1,557 @@
-// ==========================================
-// VOLUNTEER.JS - Concurrency Optimized
-// Zero-Latency Cached Hydration Engine
-// ==========================================
-
-let currentEventUrl = null;
-let currentEventData = null; 
-let selectedRole = 'TRAINEE';
-let selectedPerson = null;
-let isNewVolunteer = false;
-let originalVolData = {};
-let allProjects = [];
 let currentActiveVols = [];
 let currentVolPairedValue = [];
-let backgroundFetchActive = false;
+let originalVolData = {};
 
-// PILLAR 3: Zero-Latency Hydration Data Stores
-let preFetchedNames = { trainee: null, volunteer: null };
+// MPA Specific Loader for Volunteer App to prevent pulling the massive comm.js bundle
+function loadVolunteerEvents() {
+  const selector = document.getElementById('volSheetSelector');
+  const spinner = document.getElementById('volSheetSpinner');
 
-// ==========================================
-// 1. API RETRY ENGINE (CONCURRENCY LOCK BYPASS)
-// ==========================================
-async function fetchWithRetry(action, payload, maxRetries = 5) {
-    for (let i = 0; i < maxRetries; i++) {
-        const res = await apiCall(action, payload);
-        if (res && res.success) return res;
-        
-        const isLockError = res && res.message && /lock|timeout|concurrent|too many|invalid response|server error/i.test(res.message);
-        
-        if (isLockError && i < maxRetries - 1) {
-            const wait = (Math.pow(2, i) * 1000) + (Math.random() * 1000);
-            if (action === 'submitAttendanceData') {
-                showOverlay('loading', `High Traffic. Retrying in ${Math.round(wait/1000)}s...`);
-            }
-            await new Promise(r => setTimeout(r, wait));
-        } else {
-            return res || { success: false, message: "Network connection error." };
-        }
-    }
-    return { success: false, message: "Server is congested. Please try again." };
+  const renderData = (data) => {
+      currentSheetList = data;
+      if (selector) {
+          selector.innerHTML = '';
+          selector.disabled = false;
+          data.forEach(item => {
+              let opt = document.createElement('option');
+              opt.value = item.sheetUrl;
+              opt.text = item.displayName;
+              selector.appendChild(opt);
+          });
+          
+          const params = new URLSearchParams(window.location.search);
+          const urlParam = params.get('url');
+          
+          if (urlParam && data.find(x => x.sheetUrl === urlParam)) {
+              selector.value = urlParam;
+          } else if (data.length > 0) {
+              const closest = window.getClosestEventUrl ? window.getClosestEventUrl(data) : data[0].sheetUrl;
+              if (closest) selector.value = closest;
+              else selector.selectedIndex = 0;
+          }
+      }
+      if (typeof resetVolForm === 'function') resetVolForm();
+  };
+
+  const localDataStr = localStorage.getItem('myg_sheetList');
+
+  if (localDataStr) {
+      try {
+          const parsed = JSON.parse(localDataStr);
+          if (parsed && parsed.length > 0) {
+              renderData(parsed);
+              if(spinner) spinner.classList.remove('hidden');
+              apiCall('getRecentOutingSheets', null).then(res => {
+                  if(spinner) spinner.classList.add('hidden');
+                  if (res.success && JSON.stringify(res.data) !== localDataStr) {
+                      localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
+                      renderData(res.data);
+                  }
+              });
+              return;
+          }
+      } catch(e) {}
+  }
+
+  if (selector) {
+      selector.innerHTML = '<option disabled selected>↻ Loading events...</option>';
+      selector.disabled = true;
+  }
+  if(spinner) spinner.classList.remove('hidden');
+
+  apiCall('getRecentOutingSheets', null).then(res => {
+      if(spinner) spinner.classList.add('hidden');
+
+      if (res.success) {
+          localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
+          if(res.data.length > 0) {
+              renderData(res.data);
+          } else {
+              if (selector) {
+                  selector.disabled = false;
+                  selector.innerHTML = '<option disabled selected>No upcoming events</option>';
+              }
+          }
+      } else {
+          if (selector) {
+              selector.disabled = false;
+              selector.innerHTML = `<option disabled selected>Error: ${res.message}</option>`;
+          }
+      }
+  });
 }
 
-// ==========================================
-// 2. INITIALIZATION & EVENT SELECTION
-// ==========================================
-function initVolunteerApp() {
-    const localDataStr = localStorage.getItem('myg_sheetList');
-    if (localDataStr) {
-        try {
-            const parsed = JSON.parse(localDataStr);
-            renderEventOptions(parsed);
-            fetchEventsInBackground(); 
-            return;
-        } catch(e){}
-    }
-    fetchEventsInBackground(true);
+function autoScrollAndFocus(input) { toggleSearchList(true); setTimeout(() => { input.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 300); }
+
+function setVolType(type, btn) { 
+selectedVolType = type; 
+currentVolTypeRequest = type; 
+allNames = []; 
+document.getElementById('volNameList').innerHTML = ""; 
+resetSearch(); 
+document.querySelectorAll('.vol-type-btn').forEach(b => { 
+b.classList.remove('bg-green-600', 'text-white', 'border-transparent'); 
+b.classList.add('bg-gray-50', 'dark:bg-black', 'text-gray-700', 'dark:text-gray-300', 'border-gray-300', 'dark:border-zinc-700'); 
+}); 
+btn.classList.remove('bg-gray-50', 'dark:bg-black', 'text-gray-700', 'dark:text-gray-300', 'border-gray-300', 'dark:border-zinc-700'); 
+btn.classList.add('bg-green-600', 'text-white', 'border-transparent'); 
+document.getElementById('volNameSection').classList.remove('hidden'); 
+document.getElementById('volFormContainer').classList.add('hidden'); 
+if (type === 'volunteer') { 
+document.getElementById('addNewVolContainer').classList.remove('hidden'); 
+} else { 
+document.getElementById('addNewVolContainer').classList.add('hidden'); 
+} 
+loadVolNames(type); 
 }
 
-function fetchEventsInBackground(showSpinner = false) {
-    const select = document.getElementById('eventSelector');
-    if (showSpinner) select.innerHTML = '<option disabled selected>Loading events...</option>';
-    
-    fetchWithRetry('getRecentOutingSheets', null).then(res => {
-        if (res && res.success) {
-            localStorage.setItem('myg_sheetList', JSON.stringify(res.data));
-            renderEventOptions(res.data);
-        } else if (showSpinner) {
-            select.innerHTML = '<option disabled selected>Error loading events</option>';
-        }
-    });
+function resetVolForm() { 
+const volNameSection = document.getElementById('volNameSection');
+if (!volNameSection) return;
+volNameSection.classList.add('hidden'); 
+document.getElementById('volFormContainer').classList.add('hidden'); 
+document.getElementById('volSubmitBtn').innerText = "Update Attendance"; 
+selectedVolType = null; 
+currentVolTypeRequest = null; 
+allNames = []; 
+originalVolData = {};
+document.querySelectorAll('.vol-type-btn').forEach(b => { 
+b.classList.remove('bg-green-600', 'text-white', 'border-transparent'); 
+b.classList.add('bg-gray-50', 'dark:bg-black', 'text-gray-700', 'dark:text-gray-300', 'border-gray-300', 'dark:border-zinc-700'); 
+}); 
+resetSearch(); 
 }
 
-function renderEventOptions(data) {
-    const select = document.getElementById('eventSelector');
-    select.innerHTML = '<option disabled selected>Select an Event...</option>';
-    data.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.sheetUrl;
-        opt.text = item.displayName;
-        select.appendChild(opt);
-    });
-    
-    const params = new URLSearchParams(window.location.search);
-    const urlParam = params.get('url');
-    if (urlParam && data.find(x => x.sheetUrl === urlParam)) {
-        select.value = urlParam;
-        onEventChange();
-    } else if (data.length > 0) {
-        const closest = window.getClosestEventUrl ? window.getClosestEventUrl(data) : data[0].sheetUrl;
-        if (closest) {
-            select.value = closest;
-            onEventChange();
-        }
-    }
+function resetSearch() { 
+const input = document.getElementById('volNameSearch'); 
+if(!input) return;
+input.value = ""; 
+toggleSearchList(false); 
+toggleClearBtn('volNameSearch');
 }
 
-function onEventChange() {
-    currentEventUrl = document.getElementById('eventSelector').value;
-    if (!currentEventUrl || currentEventUrl.includes("Select")) return;
+function loadVolNames(requestedType) { 
+const url = document.getElementById('volSheetSelector').value; 
+const input = document.getElementById('volNameSearch'); 
+const list = document.getElementById('volNameList');
+if(!url || !requestedType || url === "Select an Event") return; 
 
-    cancelForm();
-    document.getElementById('roleSearchCard').classList.add('hidden');
-    
-    const spinner = document.getElementById('eventSelectSpinner');
-    spinner.classList.remove('hidden');
-    
-    // Fetch manual pairing data which acts as a massive global cache (0ms latency usually)
-    fetchWithRetry('fetchManualPairingData', { sheetUrl: currentEventUrl }).then(res => {
-        spinner.classList.add('hidden');
-        if (res && res.success) {
-            currentEventData = res.data;
-            allProjects = [...new Set((currentEventData.volunteers || []).map(v => v.project).filter(p => p))];
-            currentActiveVols = (currentEventData.volunteers || []).filter(v => v.attending === 'y').map(v => v.name);
-            
-            document.getElementById('roleSearchCard').classList.remove('hidden');
-            setRole(selectedRole); 
-        } else {
-            alert("Failed to load event data. " + (res.message || ""));
-        }
-    });
+input.placeholder = "Loading names..."; 
+input.disabled = true; 
+
+list.innerHTML = Array(5).fill('<li class="px-4 py-3 border-b border-gray-200 dark:border-zinc-700"><div class="animate-pulse h-4 bg-gray-200 dark:bg-zinc-700 rounded w-2/3"></div></li>').join('');
+list.classList.remove('hidden');
+
+apiCall('getNamesList', { url: url, type: requestedType }).then(res => { 
+if (currentVolTypeRequest !== requestedType) return; 
+input.disabled = false; 
+input.placeholder = "Type to search..."; 
+
+list.innerHTML = ""; 
+list.classList.add('hidden'); 
+
+if(res.success) allNames = res.names; 
+}); 
 }
 
-// ==========================================
-// 3. UI STATE & SEARCHING
-// ==========================================
-function setRole(role) {
-    selectedRole = role;
-    const btnT = document.getElementById('btnRoleTrainee');
-    const btnV = document.getElementById('btnRoleVolunteer');
-    const searchInput = document.getElementById('searchInput');
-    
-    if (role === 'TRAINEE') {
-        btnT.className = "flex-1 py-2 text-sm font-bold rounded-md bg-white dark:bg-zinc-800 shadow text-blue-600 dark:text-blue-400 transition-all border border-gray-200 dark:border-zinc-700";
-        btnV.className = "flex-1 py-2 text-sm font-bold rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all border border-transparent";
-        document.getElementById('newVolBtnWrapper').classList.add('hidden');
-        searchInput.placeholder = "Search Trainee...";
-    } else {
-        btnV.className = "flex-1 py-2 text-sm font-bold rounded-md bg-white dark:bg-zinc-800 shadow text-green-600 dark:text-green-400 transition-all border border-gray-200 dark:border-zinc-700";
-        btnT.className = "flex-1 py-2 text-sm font-bold rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-all border border-transparent";
-        document.getElementById('newVolBtnWrapper').classList.remove('hidden');
-        searchInput.placeholder = "Search Volunteer...";
-    }
-    
-    clearSearch();
+function toggleSearchList(show) { 
+const list = document.getElementById('volNameList'); 
+if(!list) return;
+if(show) { 
+list.classList.remove('hidden'); 
+if(document.getElementById('volNameSearch').value.length > 0) filterNames(); 
+} else { 
+setTimeout(() => list.classList.add('hidden'), 200); 
+} 
 }
 
-function handleSearch() {
-    if (!currentEventData) return;
-    const input = document.getElementById('searchInput').value.toLowerCase().trim();
-    const dropdown = document.getElementById('searchDropdown');
-    const clearBtn = document.getElementById('clearSearchBtn');
-    
-    if (input.length > 0) clearBtn.classList.remove('hidden');
-    else clearBtn.classList.add('hidden');
-    
-    if (!input && selectedRole !== 'TRAINEE') {
-        dropdown.classList.add('hidden');
-        return;
-    }
-    
-    dropdown.innerHTML = '';
-    const list = selectedRole === 'TRAINEE' ? (currentEventData.trainees || []) : (currentEventData.volunteers || []);
-    const matches = list.filter(p => p.name.toLowerCase().includes(input));
-    
-    if (matches.length > 0) {
-        matches.forEach(m => {
-            const li = document.createElement('li');
-            li.className = `px-4 py-3 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-zinc-700 hover:text-white cursor-pointer text-sm transition-colors last:border-0 ${selectedRole === 'TRAINEE' ? 'hover:bg-blue-600' : 'hover:bg-green-600'}`;
-            li.innerText = m.name;
-            li.onmousedown = (e) => { e.preventDefault(); selectPerson(m.name); };
-            dropdown.appendChild(li);
-        });
-    } else {
-        const li = document.createElement('li');
-        li.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400 italic bg-white dark:bg-zinc-800";
-        li.innerText = "No matches found.";
-        dropdown.appendChild(li);
-    }
-    dropdown.classList.remove('hidden');
+function clearSearch() { 
+const searchEl = document.getElementById('volNameSearch');
+if(searchEl) searchEl.value = ""; 
+filterNames(); 
+toggleClearBtn('volNameSearch');
+const formEl = document.getElementById('volFormContainer');
+if(formEl) formEl.classList.add('hidden'); 
 }
 
-function clearSearch() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('clearSearchBtn').classList.add('hidden');
-    document.getElementById('searchDropdown').classList.add('hidden');
+function filterNames() { 
+const input = document.getElementById('volNameSearch'); 
+const filter = input.value.toLowerCase(); 
+const list = document.getElementById('volNameList'); 
+if(filter.length > 0) { 
+list.classList.remove('hidden'); 
+} else { 
+list.classList.add('hidden'); 
+return; 
+} 
+list.innerHTML = ""; 
+const matches = allNames.filter(n => n.toLowerCase().includes(filter)); 
+matches.forEach(name => { 
+const li = document.createElement('li'); 
+li.className = "px-4 py-3 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-zinc-700 hover:bg-cyan-600 hover:text-white cursor-pointer text-sm transition-colors last:border-0"; 
+li.innerText = name; 
+li.onmousedown = () => selectName(name); 
+list.appendChild(li); 
+}); 
+if(matches.length === 0) { 
+const li = document.createElement('li'); 
+li.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400 italic bg-white dark:bg-zinc-800"; 
+li.innerText = "No matches found."; 
+list.appendChild(li); 
+} 
 }
 
-// ==========================================
-// 4. FORM GENERATION & HYDRATION
-// ==========================================
-function selectPerson(name) {
-    selectedPerson = name;
-    isNewVolunteer = false;
-    
-    document.getElementById('roleSearchCard').classList.add('hidden');
-    document.getElementById('formCard').classList.remove('hidden');
-    document.getElementById('newVolProjectContainer').classList.add('hidden');
-    document.getElementById('newVolProjectSearch').required = false;
-    
-    const personObj = (selectedRole === 'TRAINEE' ? currentEventData.trainees : currentEventData.volunteers).find(p => p.name === name);
-    
-    const safeName = name.replace(/"/g, '&quot;');
-    const color = selectedRole === 'TRAINEE' ? 'text-blue-500 dark:text-blue-400' : 'text-green-500 dark:text-green-400';
-    const icon = selectedRole === 'TRAINEE' ? 'fa-user-graduate' : 'fa-handshake-angle';
-    
-    document.getElementById('formTitle').innerHTML = `<i class="fa-solid ${icon} ${color} mr-2"></i> Update <span class="${color} ml-1">${safeName}</span>`;
-    document.getElementById('submitBtnText').innerText = "Update Attendance";
-    
-    renderForm(personObj);
+function selectName(name) { 
+document.getElementById('volNameSearch').value = name; 
+document.getElementById('volNameList').classList.add('hidden');
+toggleClearBtn('volNameSearch'); 
+loadVolData(name, false); 
 }
 
-function setupNewVolunteer() {
-    selectedPerson = null;
-    isNewVolunteer = true;
-    
-    document.getElementById('roleSearchCard').classList.add('hidden');
-    document.getElementById('formCard').classList.remove('hidden');
-    
-    document.getElementById('newVolProjectContainer').classList.remove('hidden');
-    document.getElementById('newVolProjectSearch').value = '';
-    document.getElementById('newVolProjectSearch').required = true;
-    
-    document.getElementById('formTitle').innerHTML = `<i class="fa-solid fa-user-plus text-green-500 dark:text-green-400 mr-2"></i> Add New <span class="text-green-500 dark:text-green-400 ml-1">Volunteer</span>`;
-    document.getElementById('submitBtnText').innerText = "Add & Update Attendance";
-    
-    renderForm(null);
+function showAddNewForm() { 
+const input = document.getElementById('volNameSearch'); 
+input.value = "";
+toggleClearBtn('volNameSearch'); 
+document.getElementById('volNameList').classList.add('hidden'); 
+loadVolData(null, true); 
 }
 
-function cancelForm() {
-    document.getElementById('formCard').classList.add('hidden');
-    const rCard = document.getElementById('roleSearchCard');
-    if(rCard && !rCard.classList.contains('hidden')) return;
-    if(currentEventUrl) rCard.classList.remove('hidden');
-    clearSearch();
-    selectedPerson = null;
+function getValueFuzzy(dataObj, lookupKey) { 
+if (!dataObj) return ""; 
+if (dataObj[lookupKey] !== undefined) return dataObj[lookupKey]; 
+const cleanLookup = lookupKey.toLowerCase().replace(/[^a-z0-9]/g, ""); 
+for (let key in dataObj) { 
+const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, ""); 
+if (cleanKey === cleanLookup) return dataObj[key]; 
+if (cleanLookup.includes("caregiver") && cleanKey.includes("caregiver")) return dataObj[key]; 
+} 
+return ""; 
 }
 
-function mapKnownData(header, person, role) {
-    if (!person) return null; 
-    const h = header.toLowerCase().replace(/[^a-z0-9]/g, "");
-    const ex = person.extra || {};
-    
-    // Core Columns
-    if (h.includes("name")) return person.name || "";
-    if (h.includes("attending")) return person.attending || "";
-    if (h.includes("meetinglocation")) return (role === 'TRAINEE' ? ex.t_meet : ex.v_meet) || "";
-    if (h.includes("dismissallocation")) return (role === 'TRAINEE' ? ex.t_dismiss : ex.v_dismiss) || "";
-    if (h.includes("vol") && h.includes("paired")) return person.volPaired || "";
-    if (h.includes("project")) return person.project || "";
-    if (h.includes("remark")) return ex.remark || "";
-    if (h.includes("group")) return person.group || ex.v_group || "";
-    
-    // Extended Dynamic Columns natively mapped for 0-latency loads
-    if (h.includes("diet")) return ex.t_dietary || "";
-    if (h.includes("caregiver") || h.includes("cgcontact")) return ex.m_cg_contact || "";
-    if (h.includes("meeting") && h.includes("fetch")) return ex.t_meet_fetching || "";
-    if (h.includes("dismissal") && h.includes("fetch")) return ex.t_dismiss_fetching || "";
-    if (h.includes("oneonone") || h.includes("11")) return ex.t_one_on_one || "";
-    
-    return null; // Will cleanly trigger background hydration only for fully custom columns
+function toggleDependentFields(el) { 
+const val = el.value; 
+const deps = document.querySelectorAll('.attendance-dependent'); 
+deps.forEach(d => { 
+if(val === 'N') d.classList.add('hidden'); 
+else d.classList.remove('hidden'); 
+}); 
 }
 
-function renderForm(personObj) {
-    const container = document.getElementById('dynamicFields');
-    container.innerHTML = '';
-    originalVolData = {};
+function toggleProjectList(show) { 
+const list = document.getElementById('projectList'); 
+if(show) { 
+list.classList.remove('hidden'); 
+filterProjects(); 
+} else { 
+setTimeout(() => list.classList.add('hidden'), 200); 
+} 
+}
+
+function filterProjects() { 
+const input = document.getElementById('newVolProjectSearch'); 
+const filter = input.value.toLowerCase(); 
+const list = document.getElementById('projectList'); 
+list.innerHTML = ""; 
+const matches = allProjects.filter(p => p.toLowerCase().includes(filter)); 
+matches.forEach(proj => { 
+const li = document.createElement('li'); 
+li.className = "px-4 py-3 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-zinc-700 hover:bg-cyan-600 hover:text-white cursor-pointer text-sm transition-colors last:border-0"; 
+li.innerText = proj; 
+li.onmousedown = () => selectProject(proj); 
+list.appendChild(li); 
+}); 
+if(matches.length === 0) { 
+const li = document.createElement('li'); 
+li.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400 italic bg-white dark:bg-zinc-800"; 
+li.innerText = "No matches found."; 
+list.appendChild(li); 
+} 
+}
+
+function selectProject(proj) { 
+document.getElementById('newVolProjectSearch').value = proj; 
+document.getElementById('projectList').classList.add('hidden'); 
+toggleClearBtn('newVolProjectSearch');
+}
+
+function filterActiveVols() {
+const input = document.getElementById('volPairedInput');
+const list = document.getElementById('activeVolsList');
+if(!input || !list) return;
+
+const filter = input.value.toLowerCase().trim();
+list.innerHTML = "";
+
+if (filter.length === 0) {
+ list.classList.add('hidden');
+ return;
+}
+
+const matches = (currentActiveVols || []).filter(v => 
+ v.toLowerCase().includes(filter) && !currentVolPairedValue.includes(v)
+);
+
+list.classList.remove('hidden');
+
+matches.forEach(match => {
+ const li = document.createElement('li');
+ li.className = "px-3 py-2 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-zinc-700 hover:bg-teal-600 hover:text-white cursor-pointer text-xs transition-colors last:border-0";
+ li.innerText = match;
+ li.onmousedown = (e) => { e.preventDefault(); addVolPaired(match); };
+ list.appendChild(li);
+});
+
+if (matches.length === 0) {
+ const li = document.createElement('li');
+ li.className = "px-3 py-2 text-xs text-gray-500 dark:text-gray-400 italic bg-white dark:bg-zinc-800";
+ li.innerText = `Press Enter to add "${input.value.trim()}"`;
+ li.onmousedown = (e) => { e.preventDefault(); addVolPaired(input.value.trim()); };
+ list.appendChild(li);
+}
+}
+
+function addVolPaired(name) {
+if (!name) return;
+if (!currentVolPairedValue.includes(name)) {
+ currentVolPairedValue.push(name);
+ updateVolPairedUI();
+}
+const input = document.getElementById('volPairedInput');
+input.value = "";
+input.focus();
+filterActiveVols(); 
+}
+
+function removeVolPaired(name) {
+currentVolPairedValue = currentVolPairedValue.filter(v => v !== name);
+updateVolPairedUI();
+filterActiveVols();
+}
+
+function updateVolPairedUI() {
+const tagsContainer = document.getElementById('volPairedTags');
+const hiddenInput = document.getElementById('volPairedHidden');
+
+if(!tagsContainer || !hiddenInput) return;
+
+tagsContainer.innerHTML = currentVolPairedValue.map(v => {
+ const jsSafeVol = v.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, '&quot;');
+ return `<span class="bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700/50 px-2 py-0.5 rounded text-xs flex items-center gap-1">${v} <i class="fa-solid fa-xmark cursor-pointer hover:text-red-500 ml-1" onclick="removeVolPaired('${jsSafeVol}')"></i></span>`;
+}).join('');
+
+if (currentVolPairedValue.length > 0) {
+ tagsContainer.classList.add('mb-1');
+} else {
+ tagsContainer.classList.remove('mb-1');
+}
+
+hiddenInput.value = currentVolPairedValue.join(', ');
+}
+
+document.addEventListener('keydown', function(e) {
+if (e.target && e.target.id === 'volPairedInput') {
+ if (e.key === 'Enter' || e.key === ',') {
+     e.preventDefault();
+     if (e.target.value.trim()) {
+         addVolPaired(e.target.value.trim());
+     }
+ }
+}
+});
+
+document.addEventListener('click', function(e) {
+const list = document.getElementById('activeVolsList');
+const input = document.getElementById('volPairedInput');
+if(list && !list.classList.contains('hidden') && e.target !== input && !list.contains(e.target)) {
+ list.classList.add('hidden');
+}
+});
+
+function loadVolData(name, isManualNew) { 
+const url = document.getElementById('volSheetSelector').value; 
+const container = document.getElementById('volFormContainer'); 
+const fieldsDiv = document.getElementById('dynamicFields'); 
+const title = document.getElementById('formTitle'); 
+const submitBtn = document.getElementById('volSubmitBtn'); 
+const projectContainer = document.getElementById('newVolProjectContainer'); 
+
+container.classList.remove('hidden'); 
+
+fieldsDiv.innerHTML = Array(4).fill('<div class="mb-2"><div class="animate-pulse h-3 bg-gray-200 dark:bg-zinc-700 rounded w-1/4 mb-1.5"></div><div class="animate-pulse h-10 bg-gray-100 dark:bg-zinc-800 rounded w-full"></div></div>').join(''); 
+
+if (isManualNew) { 
+title.innerText = "Add New Volunteer"; 
+submitBtn.innerText = "Add New Volunteer & Update Attendance"; 
+projectContainer.classList.remove('hidden'); 
+document.getElementById('newVolProjectSearch').value = ""; 
+document.getElementById('newVolProjectSearch').required = true; 
+toggleClearBtn('newVolProjectSearch');
+} else { 
+title.innerText = "Loading details..."; 
+submitBtn.innerText = "Update Attendance"; 
+projectContainer.classList.add('hidden'); 
+document.getElementById('newVolProjectSearch').required = false; 
+} 
+
+apiCall('getPersonData', { url: url, type: selectedVolType, name: name }).then(res => { 
+fieldsDiv.innerHTML = ''; 
+if(res.success) { 
+    const data = res.data; 
+    originalVolData = JSON.parse(JSON.stringify(data || {}));
     
-    let schema = selectedRole === 'TRAINEE' ? window.appSettings?.traineeCols : window.appSettings?.volCols;
+    const config = res.config; 
+    const meetingOpts = res.meetingOpts || []; 
+    const dismissalOpts = res.dismissalOpts || []; 
+    const isNew = res.isNew || isManualNew; 
+    allProjects = res.projectOpts || []; 
     
-    if (!schema || schema.length === 0) {
-        schema = ['Name', 'Attending (Y/N)', 'Meeting Location', 'Dismissal Location'];
-        if (selectedRole === 'TRAINEE') schema.push('Vol Paired');
-        if (selectedRole === 'VOLUNTEER') schema.push('Project');
-        schema.push('Remarks');
-    }
+    const htmlSafeName = name ? name.replace(/"/g, '&quot;') : '';
+    title.innerHTML = isNew ? `Add New: <span class="text-green-500">Volunteer</span>` : `Update: <span class="text-blue-500">${htmlSafeName}</span>`; 
+    if(isNew) submitBtn.innerText = "Add New Volunteer & Update Attendance"; 
+    else submitBtn.innerText = "Update Attendance"; 
     
-    const meetingOpts = currentEventData?.meetingLocs || [];
-    const dismissalOpts = currentEventData?.dismissalLocs || [];
-    let hasUnknowns = false;
-    
-    schema.forEach(header => {
-        let mappedVal = "";
-        let isUnknown = false;
-        
-        if (isNewVolunteer) {
-            mappedVal = "";
-            isUnknown = false; // Never fetch if it's a blank new form
-        } else {
-            mappedVal = mapKnownData(header, personObj, selectedRole);
-            if (mappedVal === null) {
-                isUnknown = true;
-                hasUnknowns = true;
-                mappedVal = "";
-            }
-        }
-        
-        const cleanH = header.toLowerCase().replace(/[^a-z0-9]/g, "");
-        const isNameField = cleanH.includes("name");
-        
-        if (isNewVolunteer && cleanH.includes("project")) return; 
-        if (isNameField && !isNewVolunteer && selectedPerson) mappedVal = selectedPerson;
-        
-        originalVolData[header] = mappedVal; 
-        
-        const isReadOnly = isNameField && !isNewVolunteer;
-        let wrapperClass = "mb-2";
-        if (!isNameField && !cleanH.includes("attending")) wrapperClass += " attendance-dependent";
-        
-        let inputHtml = "";
-        
-        const colorClass = isUnknown 
-            ? "text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-zinc-800 animate-pulse placeholder-gray-400" 
-            : "text-gray-900 dark:text-white bg-gray-50 dark:bg-black";
-            
-        const ph = isUnknown ? "Loading details..." : "";
-        
-        // 1. Attending Select
-        if (cleanH.includes("attending")) {
-            inputHtml = `
-            <select name="${header}" onchange="toggleDependentFields(this)" data-unknown="${isUnknown}" class="w-full ${colorClass} border border-gray-300 dark:border-zinc-700 rounded-lg p-3 text-sm focus:border-primary shadow-sm outline-none transition-colors">
-                <option value="" ${mappedVal===""?"selected":""}>Select...</option>
-                <option value="Y" ${mappedVal.toLowerCase()==="y"?"selected":""}>Y (Yes)</option>
-                <option value="N" ${mappedVal.toLowerCase()==="n"?"selected":""}>N (No)</option>
-            </select>`;
+    let fieldsToShow = (config && config.length > 0) ? config : res.headers.map(h => h.replace(/\[.*?\]/g,"").trim()); 
+    if (isNew) { 
+        const nameFieldExists = fieldsToShow.some(f => f.toLowerCase().includes("name")); 
+        if (!nameFieldExists) { 
+            const rawNameHeader = res.headers.find(h => h.toLowerCase().includes("name")) || "Volunteer Name"; 
+            fieldsToShow.unshift(rawNameHeader.replace(/\[.*?\]/g,"").trim()); 
         } 
-        // 2. Locations
-        else if (cleanH.includes("meetinglocation") || cleanH.includes("dismissallocation")) {
-            const isDismissal = cleanH.includes("dismissal");
-            const optionsList = isDismissal ? dismissalOpts : meetingOpts;
-            const placeholder = isDismissal ? "Select Dismissal..." : "Select Meeting...";
-            
-            let optionsHtml = optionsList.map(opt => {
-                const isSelected = mappedVal.toString().trim().toLowerCase() === opt.toString().trim().toLowerCase();
-                return `<option value="${opt.replace(/"/g, '&quot;')}" ${isSelected ? "selected" : ""}>${opt}</option>`;
-            }).join("");
-            
-            const valTrimmed = mappedVal.toString().trim();
-            if (valTrimmed !== "" && !optionsList.some(o => o.toString().trim().toLowerCase() === valTrimmed.toLowerCase())) {
-                optionsHtml += `<option value="${mappedVal.replace(/"/g, '&quot;')}" selected>${mappedVal} (Current)</option>`;
-            }
+    } 
+    
+    fieldsToShow.forEach(header => { 
+        let val = isNew ? "" : (getValueFuzzy(data, header)); 
+        let cleanH = header.toLowerCase().replace(/[^a-z0-9]/g, ""); 
+        let isNameField = cleanH.includes("name"); 
+        if(isNew && cleanH.includes("project")) return; 
+        let isReadOnly = isNameField && !isNew; 
+        if(isNew && isNameField) val = ""; 
+        if(!isNew && isNameField) val = name; 
+        let inputHtml = ""; 
+        let wrapperClass = "mb-1"; 
+        if (!isNameField && !cleanH.includes("attending")) { wrapperClass += " attendance-dependent"; } 
+        
+        if (cleanH.includes("attending")) { 
+            inputHtml = ` <select name="${header}" onchange="toggleDependentFields(this)" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white rounded p-2 text-sm focus:border-green-500 shadow-sm"> <option value="" ${val===""?"selected":""}>Select...</option> <option value="Y" ${val.toLowerCase()==="y"?"selected":""}>Y (Yes)</option> <option value="N" ${val.toLowerCase()==="n"?"selected":""}>N (No)</option> </select>`; 
+        } else if (cleanH.includes("meetinglocation") || cleanH.includes("dismissallocation")) { 
+            const isDismissal = cleanH.includes("dismissal"); 
+            const optionsList = isDismissal ? dismissalOpts : meetingOpts; 
+            const placeholder = isDismissal ? "Select Dismissal..." : "Select Meeting..."; 
+            let optionsHtml = optionsList.map(opt => { 
+                const isSelected = val.toString().trim().toLowerCase() === opt.toString().trim().toLowerCase(); 
+                return `<option value="${opt.replace(/"/g, '&quot;')}" ${isSelected ? "selected" : ""}>${opt}</option>`; 
+            }).join(""); 
+            const valTrimmed = val.toString().trim(); 
+            if (valTrimmed !== "") { 
+                const listHasValue = optionsList.some(opt => opt.toString().trim().toLowerCase() === valTrimmed.toLowerCase()); 
+                if (!listHasValue) { 
+                    optionsHtml += `<option value="${val.replace(/"/g, '&quot;')}" selected>${val} (Current)</option>`; 
+                } 
+            } 
+            inputHtml = ` <select name="${header}" class="w-full bg-gray-50 dark:bg-black border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white rounded p-2 text-sm focus:border-green-500 shadow-sm"> <option value="">${placeholder}</option> ${optionsHtml} </select>`; 
+        } else if (cleanH.includes("vol") && cleanH.includes("paired")) {
+            currentActiveVols = res.activeVolunteers || [];
+            currentVolPairedValue = val.toString().split(/[,|\n]+/).map(s=>s.trim()).filter(s=>s);
             
             inputHtml = `
-            <select name="${header}" data-unknown="${isUnknown}" class="w-full ${colorClass} border border-gray-300 dark:border-zinc-700 rounded-lg p-3 text-sm focus:border-primary shadow-sm outline-none transition-colors">
-                <option value="">${placeholder}</option>
-                ${optionsHtml}
-            </select>`;
-        }
-        // 3. Vol Paired Typeahead
-        else if (cleanH.includes("vol") && cleanH.includes("paired")) {
-            currentVolPairedValue = mappedVal.toString().split(/[,|\n]+/).map(s=>s.trim()).filter(s=>s);
-            inputHtml = `
-            <div class="w-full ${colorClass} border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800' : 'border-gray-300 dark:border-zinc-700 focus-within:border-primary'} rounded-lg p-2 text-sm shadow-sm transition-colors">
-                <div id="volPairedTags" class="flex flex-wrap gap-1 ${currentVolPairedValue.length > 0 ? 'mb-2' : ''}">
+            <div class="w-full bg-gray-50 dark:bg-black border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white focus-within:border-green-500'} rounded p-2 text-sm shadow-sm">
+                <div id="volPairedTags" class="flex flex-wrap gap-1 ${currentVolPairedValue.length > 0 ? 'mb-1' : ''}">
                     ${currentVolPairedValue.map(v => {
                         const jsSafeVol = v.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                        return `<span class="bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50 px-2 py-1 rounded text-xs flex items-center gap-1">${v} <i class="fa-solid fa-xmark cursor-pointer hover:text-red-500 ml-1" onclick="removeVolPaired('${jsSafeVol}')"></i></span>`;
+                        return `<span class="bg-teal-50 text-teal-700 border border-teal-200 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700/50 px-2 py-0.5 rounded text-xs flex items-center gap-1">${v} <i class="fa-solid fa-xmark cursor-pointer hover:text-red-500 ml-1" onclick="removeVolPaired('${jsSafeVol}')"></i></span>`;
                     }).join('')}
                 </div>
                 <input type="hidden" name="${header}" id="volPairedHidden" value="${currentVolPairedValue.join(', ').replace(/"/g, '&quot;')}">
                 <div class="relative">
-                    <input type="text" id="volPairedInput" ${isReadOnly ? 'readonly' : ''} class="w-full bg-transparent outline-none placeholder-gray-400 dark:placeholder-gray-500 text-sm p-1" placeholder="Type volunteer name..." autocomplete="off" oninput="filterActiveVols()" onfocus="filterActiveVols()">
-                    <ul id="activeVolsList" class="absolute z-50 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg mt-1 shadow-xl hidden max-h-40 overflow-y-auto pb-6 custom-scrollbar"></ul>
+                    <input type="text" id="volPairedInput" ${isReadOnly ? 'readonly' : ''} class="w-full bg-transparent outline-none placeholder-gray-400 dark:placeholder-gray-500 text-sm" placeholder="Search volunteer..." autocomplete="off" oninput="filterActiveVols()" onfocus="filterActiveVols()">
+                    <ul id="activeVolsList" class="absolute z-50 w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg mt-1 shadow-xl hidden max-h-40 overflow-y-auto pb-6"></ul>
                 </div>
-            </div>`;
-        }
-        // 4. Remarks
-        else if (cleanH.includes("remark")) {
-            inputHtml = `<textarea name="${header}" rows="4" placeholder="${ph}" data-unknown="${isUnknown}" ${isReadOnly ? 'readonly' : ''} class="w-full ${colorClass} border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 focus:border-primary'} rounded-lg p-3 text-sm resize-y shadow-sm outline-none transition-colors">${mappedVal}</textarea>`;
-        }
-        // 5. Default
-        else {
-            let type = "text";
-            if(cleanH.includes("date")) type = "date";
-            if(cleanH.includes("time")) type = "time";
-            
-            inputHtml = `<input name="${header}" type="${type}" value="${mappedVal.replace(/"/g, '&quot;')}" placeholder="${ph}" data-unknown="${isUnknown}" ${isReadOnly ? 'readonly' : ''} class="w-full ${colorClass} border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 focus:border-primary'} rounded-lg p-3 text-sm shadow-sm outline-none transition-colors">`;
-        }
-        
-        container.innerHTML += `<div class="${wrapperClass}"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 tracking-wide uppercase">${header}</label>${inputHtml}</div>`;
-    });
-    
-    const attSelect = document.querySelector('select[name*="Attending"], select[name*="attending"]');
-    if(attSelect) toggleDependentFields(attSelect);
-    
-    // Only fire background sync if there's actually a completely unknown custom column
-    if (hasUnknowns && !isNewVolunteer && selectedPerson) {
-        syncBackgroundData(selectedPerson, selectedRole);
-    }
-}
-
-function toggleDependentFields(el) { 
-    const val = el.value; 
-    const deps = document.querySelectorAll('.attendance-dependent'); 
-    deps.forEach(d => { 
-        if(val === 'N') d.classList.add('hidden'); 
-        else d.classList.remove('hidden'); 
-    }); 
-}
-
-// Background Hydration of completely custom dynamic columns (Skeleton UI Replacer)
-async function syncBackgroundData(name, role) {
-    if (backgroundFetchActive) return;
-    backgroundFetchActive = true;
-    
-    try {
-        const res = await apiCall('getPersonData', { url: currentEventUrl, type: role.toLowerCase(), name });
-        if (res && res.success && res.data) {
-            const form = document.getElementById('attendanceForm');
-            const inputs = form.querySelectorAll('input[data-unknown="true"], select[data-unknown="true"], textarea[data-unknown="true"]');
-            
-            inputs.forEach(input => {
-                const headerName = input.name;
-                if (headerName) {
-                    const fetchedVal = getValueFuzzy(res.data, headerName);
-                    
-                    if (input.tagName === 'SELECT') {
-                        const opts = Array.from(input.options).map(o => o.value.toLowerCase());
-                        if (fetchedVal && !opts.includes(fetchedVal.toLowerCase())) {
-                            input.add(new Option(`${fetchedVal} (Current)`, fetchedVal));
-                        }
-                    }
-                    
-                    input.value = fetchedVal;
-                    originalVolData[headerName] = fetchedVal; 
-                    
-                    input.classList.remove('text-gray-400', 'dark:text-gray-500', 'bg-gray-100', 'dark:bg-zinc-800', 'animate-pulse', 'placeholder-gray-400');
-                    input.classList.add('text-gray-900', 'dark:text-white', 'bg-gray-50', 'dark:bg-black');
-                    
-                    if (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA') input.placeholder = "";
-                    input.dataset.unknown = "false";
-                }
-            });
-        }
-    } catch(e) {} finally {
-        backgroundFetchActive = false;
-    }
-}
-
-function getValueFuzzy(dataObj, lookupKey) { 
-    if (!dataObj) return ""; 
-    if (dataObj[lookupKey] !== undefined) return dataObj[lookupKey]; 
-    const cleanLookup = lookupKey.toLowerCase().replace(/[^a-z0-9]/g, ""); 
-    for (let key in dataObj) { 
-        const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, ""); 
-        if (cleanKey === cleanLookup) return dataObj[key]; 
-        if (cleanLookup.includes("caregiver") && cleanKey.includes("caregiver")) return dataObj[key]; 
-    } 
-    return ""; 
-}
-
-// ==========================================
-// 5. COMPONENT HELPERS (PROJECTS & VOL PAIRED)
-// ==========================================
-
-function toggleProjectList(show) { 
-    const list = document.getElementById('projectList'); 
-    if(show) { 
-        list.classList.remove('hidden'); 
-        filterProjects(); 
-    } else { 
-        setTimeout(() => list.classList.add('hidden'), 200); 
-    } 
-}
-
-function filterProjects() { 
-    const input = document.getElementById('newVolProjectSearch'); 
-    const filter = input.value.toLowerCase(); 
-    const list = document.getElementById('projectList'); 
-    const clearBtn = document.getElementById('clearBtn-newVolProjectSearch');
-    
-    if (filter.length > 0) clearBtn.classList.remove('hidden');
-    else clearBtn.classList.add('hidden');
-    
-    list.innerHTML = ""; 
-    const matches = allProjects.filter(p => p.toLowerCase().includes(filter)); 
-    
-    matches.forEach(proj => { 
-        const li = document.createElement('li'); 
-        li.className = "px-4 py-3 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-zinc-700 hover:bg-green-600 hover:text-white cursor-pointer text-sm transition-colors last:border-0"; 
-        li.innerText = proj; 
-        li.onmousedown = (e) => { e.preventDefault(); selectProject(proj); }; 
-        list.appendChild(li); 
-    }); 
-    
-    if(matches.length === 0) { 
-        const li = document.createElement('li'); 
-        li.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400 italic bg-white dark:bg-zinc-800"; 
-        li.innerText = "No matches found. Typing will save as new project."; 
-        list.appendChild(li); 
-    } 
-}
-
-function selectProject(proj) { 
-    document.getElementById('newVolProjectSearch').value = proj; 
-    document.getElementById('projectList').classList.add('hidden'); 
-    document.getElementById('clearBtn-newVolProjectSearch').classList.remove('hidden');
-}
-
-function clearProjectSearch() {
-    document.getElementById('newVolProjectSearch').value = '';
-    document.getElementById('clearBtn-newVolProjectSearch').classList.add('hidden');
-    filterProjects();
-}
-
-function filterActiveVols() {
-    const input = document.getElementById('volPairedInput');
-    const list = document.getElementById('activeVolsList');
-    if(!input || !list) return;
-
-    const filter = input.value.toLowerCase().trim();
-    list.innerHTML = "";
-
-    if (filter.length === 0) {
-        list.classList.add('hidden');
-        return;
-    }
-
-    const matches = (currentActiveVols || []).filter(v => 
-        v.toLowerCase().includes(filter) && !currentVolPairedValue.includes(v)
-    );
-
-    list.classList.remove('hidden');
-
-    matches.forEach(match => {
-        const li = document.createElement('li');
-        li.className = "px-4 py-3 bg-white dark:bg-zinc-800 text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-zinc-700 hover:bg-blue-600 hover:text-white cursor-pointer text-sm transition-colors last:border-0";
-        li.innerText = match;
-        li.onmousedown = (e) => { e.preventDefault(); addVolPaired(match); };
-        list.appendChild(li);
-    });
-
-    if (matches.length === 0) {
-        const li = document.createElement('li');
-        li.className = "px-4 py-3 text-sm text-gray-500 dark:text-gray-400 italic bg-white dark:bg-zinc-800 cursor-pointer hover:bg-blue-50 dark:hover:bg-zinc-700";
-        li.innerText = `Press Enter to add "${input.value.trim()}"`;
-        li.onmousedown = (e) => { e.preventDefault(); addVolPaired(input.value.trim()); };
-        list.appendChild(li);
-    }
-}
-
-function addVolPaired(name) {
-    if (!name) return;
-    if (!currentVolPairedValue.includes(name)) {
-        currentVolPairedValue.push(name);
-        updateVolPairedUI();
-    }
-    const input = document.getElementById('volPairedInput');
-    input.value = "";
-    input.focus();
-    filterActiveVols(); 
-}
-
-function removeVolPaired(name) {
-    currentVolPairedValue = currentVolPairedValue.filter(v => v !== name);
-    updateVolPairedUI();
-    filterActiveVols();
-}
-
-function updateVolPairedUI() {
-    const tagsContainer = document.getElementById('volPairedTags');
-    const hiddenInput = document.getElementById('volPairedHidden');
-    if(!tagsContainer || !hiddenInput) return;
-
-    tagsContainer.innerHTML = currentVolPairedValue.map(v => {
-        const jsSafeVol = v.replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, '&quot;');
-        return `<span class="bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-700/50 px-2 py-1 rounded text-xs flex items-center gap-1">${v} <i class="fa-solid fa-xmark cursor-pointer hover:text-red-500 ml-1" onclick="removeVolPaired('${jsSafeVol}')"></i></span>`;
-    }).join('');
-
-    if (currentVolPairedValue.length > 0) tagsContainer.classList.add('mb-2');
-    else tagsContainer.classList.remove('mb-2');
-
-    hiddenInput.value = currentVolPairedValue.join(', ');
-}
-
-document.addEventListener('keydown', function(e) {
-    if (e.target && e.target.id === 'volPairedInput') {
-        if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault();
-            if (e.target.value.trim()) addVolPaired(e.target.value.trim());
-        }
-    }
-});
-
-document.addEventListener('click', function(e) {
-    const list = document.getElementById('activeVolsList');
-    const input = document.getElementById('volPairedInput');
-    if(list && !list.classList.contains('hidden') && e.target !== input && !list.contains(e.target)) {
-        list.classList.add('hidden');
-    }
-});
-
-// ==========================================
-// 6. FORM SUBMISSION (DELTA)
-// ==========================================
-function submitForm(e) { 
-    e.preventDefault(); 
-    
-    const volInput = document.getElementById('volPairedInput');
-    if (volInput && volInput.value.trim()) {
-        addVolPaired(volInput.value.trim());
-    }
-    
-    let currentFormData = {}; 
-    const formData = new FormData(document.getElementById('attendanceForm')); 
-    formData.forEach((value, key) => currentFormData[key] = value); 
-    
-    let target = selectedPerson; 
-    if (!target) { 
-        for (let k in currentFormData) { 
-            if (k.toLowerCase().includes("name")) { 
-                target = currentFormData[k]; 
-                break; 
-            } 
+            </div>
+            `;
+        } else if (cleanH.includes("remark")) { 
+            inputHtml = `<textarea name="${header}" rows="8" ${isReadOnly ? 'readonly' : ''} class="w-full bg-gray-50 dark:bg-black border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white focus:border-green-500'} rounded p-2 text-sm resize-y [color-scheme:light] dark:[color-scheme:dark] shadow-sm">${val}</textarea>`; 
+        } else { 
+            let type = "text"; 
+            if(cleanH.includes("date")) type = "date"; 
+            if(cleanH.includes("time")) type = "time"; 
+            inputHtml = `<input name="${header}" type="${type}" value="${val.replace(/"/g, '&quot;')}" ${isReadOnly ? 'readonly' : ''} class="w-full bg-gray-50 dark:bg-black border ${isReadOnly ? 'border-gray-200 dark:border-zinc-800 text-gray-500' : 'border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white focus:border-green-500'} rounded p-2 text-sm [color-scheme:light] dark:[color-scheme:dark] shadow-sm">`; 
         } 
-    }
-    
-    let deltaObj = {};
-    let isChanged = false;
-    for (let key in currentFormData) {
-        // Handle undefined edge cases securely
-        let oldV = originalVolData[key] || "";
-        let newV = currentFormData[key] || "";
-        if (oldV.toString().trim() !== newV.toString().trim()) {
-            deltaObj[key] = newV;
-            isChanged = true;
-        }
-    }
-    
-    if (!isChanged) {
-        showOverlay('success', 'No changes detected.');
-        setTimeout(() => { closeOverlay(); cancelForm(); }, 1500);
-        return;
-    }
-    
-    // Crucial identifiers for backend lookup
-    for (let k in currentFormData) {
-        if (k.toLowerCase().includes("name") || k.toLowerCase().includes("project")) {
-            deltaObj[k] = currentFormData[k];
-        }
-    }
-    
-    const btnText = document.getElementById('submitBtnText');
-    const btnSpin = document.getElementById('submitBtnSpinner');
-    const btn = document.getElementById('submitBtn');
-    
-    btnText.innerText = "Saving...";
-    btnSpin.classList.remove('hidden');
-    btn.disabled = true;
-    
-    const payload = { sheetUrl: currentEventUrl, type: selectedRole, data: deltaObj, targetName: target }; 
-    
-    fetchWithRetry('submitAttendanceData', payload).then(res => { 
-        btn.disabled = false;
-        btnText.innerText = "Update Attendance";
-        btnSpin.classList.add('hidden');
-        
-        if (res && res.success) {
-            showOverlay('success', res.message || "Attendance updated.");
-            
-            // Instantly update Local Event Cache to preserve Optimistic UI bounds
-            if (currentEventData) {
-                const arr = selectedRole === 'TRAINEE' ? currentEventData.trainees : currentEventData.volunteers;
-                let cachedP = arr.find(p => p.name === target);
-                if (!cachedP && isNewVolunteer) {
-                    cachedP = { name: target, role: selectedRole, extra: {} };
-                    arr.push(cachedP);
-                }
-                if (cachedP) {
-                    for (let key in deltaObj) {
-                        const h = key.toLowerCase().replace(/[^a-z0-9]/g, "");
-                        const val = deltaObj[key];
-                        if (h.includes("attending")) cachedP.attending = val.toLowerCase();
-                        if (h.includes("meetinglocation")) { if (selectedRole==='TRAINEE') {if(!cachedP.extra) cachedP.extra={}; cachedP.extra.t_meet=val;} else {if(!cachedP.extra) cachedP.extra={}; cachedP.extra.v_meet=val;} }
-                        if (h.includes("dismissallocation")) { if (selectedRole==='TRAINEE') {if(!cachedP.extra) cachedP.extra={}; cachedP.extra.t_dismiss=val;} else {if(!cachedP.extra) cachedP.extra={}; cachedP.extra.v_dismiss=val;} }
-                        if (h.includes("vol") && h.includes("paired")) cachedP.volPaired = val;
-                        if (h.includes("project")) cachedP.project = val;
-                    }
-                }
-            }
-            
-            setTimeout(() => { 
-                closeOverlay(); 
-                cancelForm(); 
-            }, 1500);
-        } else {
-            showOverlay('error', res ? res.message : "Failed to connect to backend.");
-        }
+        fieldsDiv.innerHTML += `<div class="${wrapperClass}"><label class="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">${header}</label>${inputHtml}</div>`; 
     }); 
+    
+    const attSelect = document.querySelector('select[name*="Attending"], select[name*="attending"]'); 
+    if(attSelect) toggleDependentFields(attSelect); 
+} else { 
+    fieldsDiv.innerHTML = '<div class="text-red-500 dark:text-red-400 font-bold">Error: ' + res.message + '</div>'; 
+} 
+}); 
+}
+
+function submitAttendance(e) { 
+e.preventDefault(); 
+
+const volInput = document.getElementById('volPairedInput');
+if (volInput && volInput.value.trim()) {
+addVolPaired(volInput.value.trim());
+}
+
+let dataObj = {}; 
+const formData = new FormData(document.getElementById('attendanceForm')); 
+formData.forEach((value, key) => dataObj[key] = value); 
+
+let target = document.getElementById('volNameSearch').value; 
+if (!target || target === "") { 
+for (let k in dataObj) { 
+    if (k.toLowerCase().includes("name")) { 
+        target = dataObj[k]; 
+        break; 
+    } 
+} 
+}
+
+// Compute Delta payload to prevent redundant writes
+let deltaObj = {};
+let isChanged = false;
+for (let key in dataObj) {
+if (dataObj[key] !== originalVolData[key]) {
+    deltaObj[key] = dataObj[key];
+    isChanged = true;
+}
+}
+
+// If completely identical to original data, bypass API
+if (!isChanged) {
+showOverlay('success', 'No changes detected.');
+setTimeout(() => { closeOverlay(); }, 1500);
+return;
+}
+
+// Ensure critical identifiers are passed in the delta for processing
+for (let k in dataObj) {
+if (k.toLowerCase().includes("name") || k.toLowerCase().includes("project")) {
+    deltaObj[k] = dataObj[k];
+}
+}
+
+showOverlay('loading', 'Saving Attendance...');
+
+const payload = { sheetUrl: document.getElementById('volSheetSelector').value, type: selectedVolType, data: deltaObj, targetName: target }; 
+
+apiCall('submitAttendanceData', payload).then(res => { 
+if(res.success) {
+    showOverlay('success', res.message);
+    if(selectedVolType === 'volunteer') { 
+        if(res.message.includes("added")) { 
+            resetVolForm(); 
+            document.getElementById('volNameSearch').value = ""; 
+        } 
+        const url = document.getElementById('volSheetSelector').value; 
+        setTimeout(() => {
+            apiCall('getNamesList', { url: url, type: 'volunteer' }).then(r => { if(r.success) allNames = r.names; }); 
+        }, 500);
+    } 
+} else {
+    showOverlay('error', res.message);
+}
+}); 
 }
